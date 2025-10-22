@@ -1,0 +1,114 @@
+<nav class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- LOGO -->
+      <div class="flex items-center gap-2">
+        <i class="fas fa-paper-plane text-orange-500 text-2xl"></i>
+        <span class="text-2xl font-black bg-gradient-to-r from-orange-500 to-teal-400 bg-clip-text text-transparent">
+          TrinoFlow
+        </span>
+      </div>
+
+      <!-- MENU DESKTOP -->
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#" class="flex items-center gap-2 text-gray-600 hover:text-orange-500 font-semibold transition">
+          <i class="fas fa-home"></i> Inicio
+        </a>
+        <a href="#" class="flex items-center gap-2 text-gray-600 hover:text-orange-500 font-semibold transition">
+          <i class="fas fa-compass"></i> Explorar
+        </a>
+
+        <!-- NOTIFICACIONES -->
+        <div class="relative">
+          <button (click)="toggleNotifications($event)" class="notification-toggle flex items-center gap-2 text-gray-600 hover:text-orange-500 font-semibold transition relative">
+            <i class="fas fa-bell text-lg"></i>
+            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{{ notificationsCount }}</span>
+          </button>
+
+          <!-- Dropdown Notificaciones -->
+          <div *ngIf="showNotifications" class="notification-panel absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500 to-teal-400 px-4 py-3">
+              <h3 class="text-white font-bold text-lg">Notificaciones</h3>
+            </div>
+            <div class="max-h-96 overflow-y-auto">
+              <a href="#" class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition border-b border-gray-100">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">JL</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-900"><span class="font-semibold">Juan López</span> comentó en tu publicación</p>
+                  <p class="text-xs text-gray-500 mt-1">Hace 10 minutos</p>
+                </div>
+                <div class="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0 mt-2"></div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- PERFIL -->
+        <div class="relative">
+          <button (click)="toggleProfileMenu($event)" class="profile-toggle flex items-center gap-2 text-gray-600 hover:text-orange-500 font-semibold transition">
+            <img [src]="user.avatar" alt="avatar" class="w-8 h-8 rounded-full border border-gray-300">
+            <span>{{ user.name }}</span>
+          </button>
+
+          <!-- Dropdown perfil -->
+          <div *ngIf="showProfileMenu" class="profile-dropdown absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-2 animate-fade-in">
+            <div class="px-4 py-2 border-b border-gray-100">
+              <p class="font-semibold text-gray-800">{{ user.name }}</p>
+              <p class="text-sm text-gray-500">{{ user.username }}</p>
+            </div>
+            <a href="#" class="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
+              <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
+              <i class="fas fa-user-plus"></i> Registrarse
+            </a>
+            <hr class="my-2 border-gray-200">
+            <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-gray-100 transition">
+              <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTÓN PUBLICAR -->
+	<app-crear-post *ngIf="showCrearPost" (close)="showCrearPost = false"></app-crear-post>
+
+      <!-- BOTÓN MENU MÓVIL -->
+      <button (click)="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-orange-500 p-2">
+        <i [ngClass]="showMobileMenu ? 'fas fa-times text-2xl' : 'fas fa-bars text-2xl'"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MENU MÓVIL -->
+  <div *ngIf="showMobileMenu" class="md:hidden border-t border-gray-200 bg-white animate-fade-in">
+    <div class="px-4 py-2 space-y-2">
+      <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition font-semibold">
+        <i class="fas fa-home text-orange-500"></i> Inicio
+      </a>
+      <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition font-semibold">
+        <i class="fas fa-compass text-orange-500"></i> Explorar
+      </a>
+
+      <button (click)="toggleNotifications($event)" class="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition font-semibold">
+        <i class="fas fa-bell text-orange-500"></i> Notificaciones
+        <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{{ notificationsCount }}</span>
+      </button>
+
+      <button (click)="toggleProfileMenu($event)" class="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition font-semibold">
+        <img [src]="user.avatar" alt="avatar" class="w-7 h-7 rounded-full border border-gray-300">
+        {{ user.name }}
+      </button>
+
+      <!-- Dropdown Perfil en Móvil -->
+      <div *ngIf="showProfileMenu" class="ml-6 space-y-1">
+        <a href="#" class="block text-gray-600 hover:text-orange-500 font-medium"><i class="fas fa-sign-in-alt"></i> Iniciar sesión</a>
+        <a href="#" class="block text-gray-600 hover:text-orange-500 font-medium"><i class="fas fa-user-plus"></i> Registrarse</a>
+        <button (click)="logout()" class="block text-red-600 font-medium hover:text-red-700">Cerrar sesión</button>
+      </div>
+
+      <button (click)="onOpenCreate()" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-5 py-3 rounded-xl font-bold hover:shadow-lg transition">
+        <i class="fas fa-plus-circle mr-2"></i> Publicar
+      </button>
+    </div>
+  </div>
+</nav>
