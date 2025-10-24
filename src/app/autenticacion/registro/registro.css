@@ -1,0 +1,5 @@
+button[type="submit"] {
+  background: linear-gradient(to right, #f97316, #ea580c) !important;
+  color: white !important;
+  border: none !important;
+}

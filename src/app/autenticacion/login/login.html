@@ -1,16 +1,16 @@
-<div class="lg:flex h-screen">
+<div class="lg:flex h-screen bg-white">
   <!-- Left Side - Form -->
-  <div class="lg:w-1/2 h-full flex flex-col">
+  <div class="lg:w-1/2 h-full flex flex-col bg-white">
     <div class="py-6 px-8 bg-gradient-to-br from-orange-50 to-teal-50 lg:bg-white">
       <div class="cursor-pointer flex items-center">
         <i class="fas fa-paper-plane text-orange-500 text-3xl"></i>
-<div style="font-size: 1.5rem; background: linear-gradient(to right, #f97316, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.05em; margin-left: 0.75rem; font-weight: 900;">
+        <div style="font-size: 1.5rem; background: linear-gradient(to right, #f97316, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.05em; margin-left: 0.75rem; font-weight: 900;">
           TrinoFlow
         </div>
       </div>
     </div>
     
-    <div class="flex-1 flex items-center justify-center px-8 sm:px-16 md:px-24 lg:px-12 xl:px-20">
+    <div class="flex-1 flex items-center justify-center px-8 sm:px-16 md:px-24 lg:px-12 xl:px-20 bg-white">
       <div class="w-full max-w-md">
         <h2 class="text-center text-3xl text-gray-900 font-black lg:text-left xl:text-4xl">
           ¡Bienvenido de nuevo!
@@ -26,7 +26,7 @@
               <input 
                 [(ngModel)]="emailOrUsername"
                 name="emailOrUsername"
-                class="w-full text-sm py-2.5 px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition mt-1.5" 
+                class="w-full text-sm py-2.5 px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition mt-1.5 bg-white text-gray-900" 
                 type="text" 
                 placeholder="estudiante@universidad.edu"
                 required
@@ -37,23 +37,27 @@
               <div class="flex justify-between items-center">
                 <div class="text-sm font-bold text-gray-700 tracking-wide">Contraseña</div>
               </div>
-              <div class="relative">
+              <div class="relative mt-1.5">
                 <input 
                   [(ngModel)]="password"
                   name="password"
-                  class="w-full text-sm py-2.5 px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition mt-1.5" 
+                  class="w-full text-sm py-2.5 px-4 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition bg-white text-gray-900" 
                   [type]="showPassword ? 'text' : 'password'" 
                   placeholder="Ingresa tu contraseña"
                   required>
-             </div>
+                <button 
+                  type="button"
+                  (click)="togglePasswordVisibility()"
+                  class="absolute right-3 top-4/5 transform -translate-y-1/2 text-gray-500 hover:text-black focus:outline-none transition">
+                  <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
             </div>
             
-            
             <div class="mt-6">
-	    <button
+              <button
                 type="submit"
-                class="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 w-full rounded-xl tracking-wide font-bold text-base hover:shadow-lg transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-orange-300"
-              >
+                class="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 w-full rounded-xl tracking-wide font-bold text-base hover:shadow-lg transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-orange-300">
                 <i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión
               </button>
             </div>
@@ -69,21 +73,20 @@
       </div>
     </div>
   </div>
-  
 
   <!-- Right Side - Illustration -->
- <div class="hidden lg:flex flex-col items-center justify-center bg-gradient-to-br from-orange-500 via-orange-400 to-teal-400 flex-1 p-8 h-full">
-            <div class="max-w-xl w-full">
-                <div class="text-center mb-8">
-                    <h3 class="text-4xl font-black text-white mb-4">Conecta con tu comunidad</h3>
-                    <p class="text-white text-lg font-medium opacity-90">Comparte conocimientos, colabora en proyectos y crece académicamente</p>
-                </div>
-                
-                <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
-                    <img src="./logito.png" 
-                         class="w-full h-auto drop-shadow-2xl">
-                </div>
-            </div>
-        </div>
+  <div class="hidden lg:flex flex-col items-center justify-center bg-gradient-to-br from-orange-500 via-orange-400 to-teal-400 flex-1 p-8 h-full">
+    <div class="max-w-xl w-full">
+      <div class="text-center mb-8">
+        <h3 class="text-4xl font-black text-white mb-4">Conecta con tu comunidad</h3>
+        <p class="text-white text-lg font-medium opacity-90">Comparte conocimientos, colabora en proyectos y crece académicamente</p>
+      </div>
+      
+      <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
+        <img src="./logito.png" 
+             alt="TrinoFlow Illustration"
+             class="w-full h-auto drop-shadow-2xl">
+      </div>
+    </div>
+  </div>
 </div>
-
