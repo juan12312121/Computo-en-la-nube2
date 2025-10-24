@@ -1,10 +1,10 @@
-// ==================== navbar.component.ts ====================
 import { Component, EventEmitter, Output, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BotonCrearPost } from '../boton-crear-post/boton-crear-post';
 import { ThemeService, Theme } from '../../core/servicios/temas';
 import { Subscription } from 'rxjs';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 interface Notification {
   id: number;
@@ -21,7 +21,18 @@ interface Notification {
   standalone: true,
   imports: [CommonModule, RouterModule, BotonCrearPost],
   templateUrl: './navbar.html',
-  styleUrls: ['./navbar.css']
+  styleUrls: ['./navbar.css'],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ height: '0', opacity: '0' }),
+        animate('300ms ease-out', style({ height: '*', opacity: '1' }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ height: '0', opacity: '0' }))
+      ])
+    ])
+  ]
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   @Output() openCreate = new EventEmitter<void>();
@@ -36,6 +47,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   };
 
   showMobileMenu = false;
+  showMobileProfileMenu = false; // Nueva propiedad
   showProfileMenu = false;
   showNotifications = false;
   showThemeMenu = false;
@@ -97,22 +109,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.notifications.filter(n => n.isUnread).length;
   }
 
-  // Obtener el tema actual
   get currentThemeData(): Theme {
     return this.currentTheme;
   }
 
-  // Obtener el ID del tema actual para el HTML
   get currentThemeId(): string {
     return this.currentTheme.id;
   }
 
   constructor(private themeService: ThemeService) {
-    // Inicializar el tema actual y la lista de temas
     this.currentTheme = this.themeService.getCurrentTheme();
     this.themes = this.themeService.getThemes();
 
-    // Cerrar menús al hacer clic fuera
     document.addEventListener('click', (event: Event) => {
       const target = event.target as HTMLElement;
       if (
@@ -131,7 +139,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Suscribirse a cambios de tema desde el servicio
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
       console.log('✅ Tema cambiado a:', theme.name);
@@ -139,13 +146,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Limpiar suscripción para evitar memory leaks
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
     }
+    document.body.classList.remove('mobile-menu-open');
   }
 
-  // Aplicar tema usando el servicio global
   applyTheme(themeId: string): void {
     this.themeService.setTheme(themeId);
     this.showThemeMenu = false;
@@ -156,6 +162,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showProfileMenu = false;
     this.showNotifications = false;
     this.showThemeMenu = false;
+    this.showMobileProfileMenu = false; // Cerrar dropdown de perfil
+    
+    if (this.showMobileMenu) {
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.classList.remove('mobile-menu-open');
+    }
+  }
+
+  // Nuevo método para toggle del dropdown de perfil móvil
+  toggleMobileProfileMenu(): void {
+    this.showMobileProfileMenu = !this.showMobileProfileMenu;
   }
 
   toggleProfileMenu(event: MouseEvent): void {
@@ -202,6 +220,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isLoggedIn = false;
     this.showProfileMenu = false;
     this.showMobileMenu = false;
+    this.showMobileProfileMenu = false;
+    document.body.classList.remove('mobile-menu-open');
     console.log('Cerrando sesión...');
   }
 

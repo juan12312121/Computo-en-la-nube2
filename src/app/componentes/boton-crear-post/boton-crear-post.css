@@ -1,0 +1,96 @@
+/* Contenedor del emoji picker */
+.emoji-picker-wrapper {
+  position: relative;
+}
+
+/* Estilos generales del picker */
+.emoji-picker-container {
+  position: relative;
+}
+
+/* Scrollbar personalizado para el emoji picker desktop */
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar {
+  width: 8px;
+}
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb {
+  background: #f97316;
+  border-radius: 10px;
+}
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb:hover {
+  background: #ea580c;
+}
+
+/* Scrollbar para móvil */
+.emoji-picker-container .fixed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.emoji-picker-container .fixed::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.emoji-picker-container .fixed::-webkit-scrollbar-thumb {
+  background: #f97316;
+  border-radius: 3px;
+}
+
+/* Animación para el emoji picker desktop */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emoji-picker-container > div.hidden.sm\:block {
+  animation: slideDown 0.2s ease-out;
+}
+
+/* Animación para el emoji picker móvil */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emoji-picker-container .fixed {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Mejorar el tap en móviles */
+@media (max-width: 640px) {
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .emoji-picker-container button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Asegurar que el z-index funcione correctamente */
+.emoji-picker-wrapper {
+  z-index: 10;
+}
+
+/* Prevenir scroll del body cuando el picker móvil está abierto */
+body.emoji-picker-open {
+  overflow: hidden;
+}
