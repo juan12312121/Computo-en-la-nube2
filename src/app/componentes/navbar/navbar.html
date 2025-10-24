@@ -1,0 +1,378 @@
+<nav class="navbar sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- contenedor principal: no hacer wrap -->
+    <div class="flex items-center h-14 flex-nowrap w-full">
+
+      <!-- LEFT: LOGO -->
+      <div class="flex items-center gap-3 logo">
+        <a routerLink="/principal" class="flex items-center gap-2">
+          <i class="fas fa-paper-plane text-3xl transition-all duration-300"
+             [ngClass]="currentThemeData.icon"
+             aria-hidden="true"></i>
+          <span class="font-extrabold text-2xl leading-none tracking-tight transition-all duration-300 logo-gradient-text"
+                [attr.data-theme]="currentTheme"
+                style="letter-spacing: -0.02em;">
+            TrinoFlow
+          </span>
+        </a>
+      </div>
+
+      <!-- CENTER: NAV LINKS (centrados en desktop, ocultos en móvil) -->
+      <div class="flex-1 hidden md:flex justify-center">
+        <div class="flex items-center gap-6">
+          <a routerLink="/principal"
+             class="flex items-center gap-2 text-gray-600 font-semibold transition"
+             [ngClass]="currentThemeData.hoverText">
+            <i class="fas fa-home"></i><span class="ml-1">Inicio</span>
+          </a>
+
+          <a routerLink="/explorar"
+             class="flex items-center gap-2 text-gray-600 font-semibold transition"
+             [ngClass]="currentThemeData.hoverText">
+            <i class="fas fa-compass"></i><span class="ml-1">Explorar</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT: ACTIONS (tema, notificaciones, perfil, publicar) -->
+      <div class="ml-auto flex items-center gap-3 actions">
+
+        <!-- THEME ICON (solo desktop) -->
+        <div class="relative hidden md:block">
+          <button (click)="toggleThemeMenu($event)"
+                  class="flex items-center gap-2 text-gray-600 p-2 rounded-md transition"
+                  [ngClass]="currentThemeData.hoverText"
+                  aria-label="Cambiar tema">
+            <i class="fas fa-palette" aria-hidden="true"></i>
+            <span class="hidden lg:inline text-xs text-gray-500 ml-1">{{ currentThemeData.name }}</span>
+          </button>
+
+          <!-- Dropdown Temas (desktop) -->
+          <div *ngIf="showThemeMenu"
+               class="theme-dropdown bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
+            <div class="px-4 py-3 border-b">
+              <p class="text-sm font-semibold text-gray-700">Seleccionar tema</p>
+            </div>
+            <div class="p-2">
+              <button *ngFor="let theme of themes"
+                      (click)="applyTheme(theme.id); $event.stopPropagation()"
+                      class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition">
+                <span class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+                      [style.background]="theme.color"
+                      [title]="theme.name"></span>
+                <div class="flex-1 text-left">
+                  <div class="text-sm font-medium text-gray-800">{{ theme.name }}</div>
+                  <div class="text-xs text-gray-500">{{ theme.id }}</div>
+                </div>
+                <div *ngIf="currentTheme === theme.id" [ngClass]="theme.checkIcon">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATIONS (desktop) -->
+        <div class="relative">
+          <button (click)="toggleNotifications($event)"
+                  class="relative p-2 rounded-md text-gray-600 transition"
+                  [ngClass]="currentThemeData.hoverText"
+                  aria-label="Notificaciones">
+            <i class="fas fa-bell text-lg" aria-hidden="true"></i>
+            <span *ngIf="notificationsCount > 0"
+                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg">
+              {{ notificationsCount }}
+            </span>
+          </button>
+
+          <!-- Dropdown Notificaciones (desktop) -->
+          <div *ngIf="showNotifications"
+               class="notification-panel bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
+            <div class="px-5 py-4"
+                 [style.background]="currentTheme === 'default' ? 'linear-gradient(to right, #f97316, #2dd4bf)' :
+                                     currentTheme === 'deep-ocean' ? 'linear-gradient(to right, #38bdf8, #0ea5e9)' :
+                                     currentTheme === 'neutro' ? 'linear-gradient(to right, #10b981, #34d399)' :
+                                     currentTheme === 'vibrante' ? 'linear-gradient(to right, #ef4444, #fbbf24)' :
+                                     'linear-gradient(to right, #ec4899, #a855f7, #4f46e5)'">
+              <div class="flex items-center justify-between">
+                <h3 class="text-white font-bold text-lg">Notificaciones</h3>
+                <button *ngIf="notificationsCount > 0"
+                        (click)="markAllAsRead()"
+                        class="text-white text-xs hover:underline">
+                  Marcar todas
+                </button>
+              </div>
+            </div>
+
+            <div class="max-h-96 overflow-y-auto">
+              <div *ngIf="notifications.length === 0" class="px-4 py-8 text-center text-gray-500">
+                <i class="fas fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                <p class="text-sm">No tienes notificaciones</p>
+              </div>
+
+              <a *ngFor="let notification of notifications"
+                 href="#"
+                 (click)="markAsRead(notification.id); $event.preventDefault()"
+                 class="flex items-start gap-3 px-4 py-3 transition-all duration-300 border-b border-gray-100 group relative"
+                 [ngClass]="currentThemeData.hoverBackground">
+                <div [style.background]="notification.avatarColor"
+                     class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                  {{ notification.initials }}
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-900">
+                    <span class="font-semibold" [ngClass]="currentThemeData.textPrimary">{{ notification.user }}</span>
+                    {{ notification.action }}
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">{{ notification.time }}</p>
+                </div>
+
+                <div *ngIf="notification.isUnread"
+                     class="w-2 h-2 rounded-full flex-shrink-0 mt-2 shadow-sm"
+                     [ngClass]="currentThemeData.bgPrimary"></div>
+
+                <button (click)="deleteNotification(notification.id); $event.stopPropagation(); $event.preventDefault()"
+                        class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-opacity"
+                        aria-label="Eliminar notificación">
+                  <i class="fas fa-times text-sm"></i>
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROFILE (solo desktop) -->
+        <div class="relative hidden md:flex">
+          <button (click)="toggleProfileMenu($event)"
+                  class="profile-toggle flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                  aria-label="Abrir perfil">
+            <img [src]="user.avatar" alt="avatar" class="w-9 h-9 rounded-full border-2 border-gray-300 object-cover">
+            <span class="hidden lg:inline text-sm font-medium text-gray-700">{{ user.name }}</span>
+            <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform duration-200"
+               [class.rotate-180]="showProfileMenu"
+               aria-hidden="true"></i>
+          </button>
+
+          <div *ngIf="showProfileMenu"
+               class="profile-dropdown absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 animate-fadeIn">
+
+            <!-- Header del menú -->
+            <div class="px-4 py-3 border-b border-gray-200"
+                 [style.background]="currentTheme === 'default' ? 'linear-gradient(to bottom right, #fff7ed, white, #f0fdfa)' :
+                                     currentTheme === 'deep-ocean' ? 'linear-gradient(to bottom right, #f0f9ff, white, #e0f2fe)' :
+                                     currentTheme === 'neutro' ? 'linear-gradient(to bottom right, #ecfdf5, white, #d1fae5)' :
+                                     currentTheme === 'vibrante' ? 'linear-gradient(to bottom right, #fef2f2, white, #fefce8)' :
+                                     'linear-gradient(to bottom right, #fdf2f8, white, #faf5ff)'">
+              <p class="font-semibold text-gray-900 text-sm truncate">{{ user.name }}</p>
+              <p class="text-xs text-gray-600 truncate">{{ user.username }}</p>
+            </div>
+
+            <!-- Opciones del menú -->
+            <div class="py-1.5">
+              <a routerLink="/perfil"
+                 (click)="showProfileMenu = false"
+                 class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-all duration-200 group"
+                 [ngClass]="currentThemeData.hoverBackground">
+                <i class="fas fa-user w-4 text-sm group-hover:scale-110 transition-transform"
+                   [ngClass]="currentThemeData.textPrimary"></i>
+                <span class="font-medium">Mi Perfil</span>
+              </a>
+
+              <a routerLink="/login"
+                 (click)="showProfileMenu = false"
+                 class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-all duration-200 group"
+                 [ngClass]="currentThemeData.hoverBackground">
+                <i class="fas fa-sign-in-alt w-4 text-sm group-hover:scale-110 transition-transform"
+                   [ngClass]="currentThemeData.textSecondary"></i>
+                <span class="font-medium">Iniciar sesión</span>
+              </a>
+
+              <a routerLink="/registro"
+                 (click)="showProfileMenu = false"
+                 class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-all duration-200 group"
+                 [ngClass]="currentThemeData.hoverBackground">
+                <i class="fas fa-user-plus text-blue-500 w-4 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Registrarse</span>
+              </a>
+
+              <hr class="my-1.5 border-gray-200">
+
+              <button (click)="logout()"
+                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all duration-200 text-left group">
+                <i class="fas fa-sign-out-alt w-4 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold">Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PUBLICAR (desktop) - USANDO CLASES CSS -->
+        <div class="hidden sm:block">
+          <button (click)="onOpenCreate()"
+                  class="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm text-white transition-all duration-300 hover:shadow-md"
+                  [ngClass]="'btn-publicar-' + currentTheme">
+            <i class="fas fa-plus-circle"></i> Publicar
+          </button>
+        </div>
+
+        <!-- HAMBURGER (móvil): visible en md:hidden -->
+        <div class="md:hidden">
+          <button (click)="toggleMobileMenu()"
+                  class="p-2 rounded-md text-gray-600 transition"
+                  [ngClass]="currentThemeData.hoverText"
+                  aria-label="Abrir menú móvil">
+            <i [ngClass]="showMobileMenu ? 'fas fa-times text-2xl' : 'fas fa-bars text-2xl'"></i>
+          </button>
+        </div>
+
+      </div> <!-- end actions -->
+    </div>
+  </div>
+
+  <!-- PANEL DE NOTIFICACIONES MÓVIL -->
+  <div *ngIf="showNotifications" class="md:hidden fixed inset-0 bg-white z-50 overflow-y-auto">
+    <div class="sticky top-0 z-10 px-6 py-4"
+         [style.background]="currentTheme === 'default' ? 'linear-gradient(to right, #f97316, #2dd4bf)' :
+                             currentTheme === 'deep-ocean' ? 'linear-gradient(to right, #38bdf8, #0ea5e9)' :
+                             currentTheme === 'neutro' ? 'linear-gradient(to right, #10b981, #34d399)' :
+                             currentTheme === 'vibrante' ? 'linear-gradient(to right, #ef4444, #fbbf24)' :
+                             'linear-gradient(to right, #ec4899, #a855f7, #4f46e5)'">
+      <div class="flex items-center justify-between">
+        <h3 class="text-white font-bold text-xl">Notificaciones</h3>
+        <button (click)="toggleNotifications($event)" class="text-white p-2">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      <button *ngIf="notificationsCount > 0"
+              (click)="markAllAsRead()"
+              class="text-white text-sm hover:underline mt-2">
+        Marcar todas como leídas
+      </button>
+    </div>
+
+    <div class="pb-4">
+      <div *ngIf="notifications.length === 0" class="px-4 py-20 text-center text-gray-500">
+        <i class="fas fa-bell-slash text-6xl mb-4 text-gray-300"></i>
+        <p class="text-lg">No tienes notificaciones</p>
+      </div>
+
+      <a *ngFor="let notification of notifications"
+         href="#"
+         (click)="markAsRead(notification.id); $event.preventDefault()"
+         class="flex items-start gap-4 px-6 py-4 transition-all duration-300 border-b border-gray-100 active:bg-gray-100 relative"
+         [ngClass]="currentThemeData.hoverBackground">
+        <div [style.background]="notification.avatarColor"
+             class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
+          {{ notification.initials }}
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <p class="text-base text-gray-900">
+            <span class="font-semibold" [ngClass]="currentThemeData.textPrimary">{{ notification.user }}</span>
+            {{ notification.action }}
+          </p>
+          <p class="text-sm text-gray-500 mt-1">{{ notification.time }}</p>
+        </div>
+
+        <div class="flex flex-col items-end gap-2">
+          <div *ngIf="notification.isUnread"
+               class="w-3 h-3 rounded-full shadow-sm"
+               [ngClass]="currentThemeData.bgPrimary"></div>
+          <button (click)="deleteNotification(notification.id); $event.stopPropagation(); $event.preventDefault()"
+                  class="text-gray-400 hover:text-red-500 p-2">
+            <i class="fas fa-trash text-sm"></i>
+          </button>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- MENU MÓVIL -->
+  <div *ngIf="showMobileMenu" class="md:hidden border-t border-gray-200 bg-white">
+    <div class="px-4 py-2 space-y-2">
+      <a routerLink="/principal"
+         (click)="toggleMobileMenu()"
+         class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg transition-all duration-200"
+         [ngClass]="currentThemeData.hoverBackground">
+        <i class="fas fa-home w-5" [ngClass]="currentThemeData.textPrimary"></i> Inicio
+      </a>
+
+      <a routerLink="/explorar"
+         (click)="toggleMobileMenu()"
+         class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg transition-all duration-200"
+         [ngClass]="currentThemeData.hoverBackground">
+        <i class="fas fa-compass w-5" [ngClass]="currentThemeData.textPrimary"></i> Explorar
+      </a>
+
+      <button (click)="toggleProfileMenu($event)"
+              class="flex items-center gap-3 w-full px-4 py-3 text-gray-700 rounded-lg transition-all duration-200"
+              [ngClass]="currentThemeData.hoverBackground">
+        <img [src]="user.avatar" alt="avatar" class="w-7 h-7 rounded-full border-2 border-gray-300">
+        {{ user.name }}
+      </button>
+
+      <!-- Dropdown Perfil en Móvil -->
+      <div *ngIf="showProfileMenu" class="ml-6 space-y-2 bg-gray-50 rounded-lg p-3">
+        <a routerLink="/perfil"
+           (click)="toggleMobileMenu()"
+           class="flex items-center gap-2 px-3 py-2 text-gray-600 font-medium rounded-lg hover:bg-white transition-all duration-200"
+           [ngClass]="currentThemeData.hoverText">
+          <i class="fas fa-user w-4"></i> Mi Perfil
+        </a>
+
+        <a routerLink="/login"
+           (click)="toggleMobileMenu()"
+           class="flex items-center gap-2 px-3 py-2 text-gray-600 font-medium rounded-lg hover:bg-white transition-all duration-200"
+           [ngClass]="currentThemeData.hoverText">
+          <i class="fas fa-sign-in-alt w-4"></i> Iniciar sesión
+        </a>
+
+        <a routerLink="/registro"
+           (click)="toggleMobileMenu()"
+           class="flex items-center gap-2 px-3 py-2 text-gray-600 font-medium rounded-lg hover:bg-white transition-all duration-200"
+           [ngClass]="currentThemeData.hoverText">
+          <i class="fas fa-user-plus w-4"></i> Registrarse
+        </a>
+
+        <button (click)="logout()"
+                class="flex items-center gap-2 px-3 py-2 text-red-600 font-medium hover:bg-red-50 rounded-lg transition-all duration-200 w-full text-left">
+          <i class="fas fa-sign-out-alt w-4"></i> Cerrar sesión
+        </button>
+      </div>
+
+      <!-- THEME SELECT (MÓVIL) -->
+      <div class="pt-2 border-t border-gray-100">
+        <div class="text-sm font-semibold text-gray-600 px-2 pb-2">Tema</div>
+        <div class="space-y-2 px-2">
+          <button *ngFor="let theme of themes"
+                  (click)="applyTheme(theme.id); toggleMobileMenu(); $event.stopPropagation()"
+                  class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition">
+            <span class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+                  [style.background]="theme.color"
+                  [title]="theme.name"></span>
+            <div class="flex-1 text-left">
+              <div class="text-sm font-medium text-gray-800">{{ theme.name }}</div>
+              <div class="text-xs text-gray-500">{{ theme.id }}</div>
+            </div>
+            <div *ngIf="currentTheme === theme.id" [ngClass]="theme.checkIcon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTÓN PUBLICAR MÓVIL - USANDO CLASES CSS -->
+      <div class="pt-3">
+        <button (click)="onOpenCreate(); toggleMobileMenu()"
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold text-white transition-all duration-300"
+                [ngClass]="'btn-publicar-' + currentTheme">
+          <i class="fas fa-plus-circle mr-1"></i> Publicar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR POST -->
+  <app-boton-crear-post *ngIf="showCrearPost" (close)="showCrearPost = false"></app-boton-crear-post>
+</nav>

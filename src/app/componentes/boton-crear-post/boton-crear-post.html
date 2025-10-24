@@ -1,0 +1,75 @@
+<!-- Modal de Crear Post -->
+<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeModal()">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+      <h2 style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(to right, #f97316, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        Crear Publicación
+      </h2>
+      <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+        <i class="fas fa-times text-2xl"></i>
+      </button>
+    </div>
+
+    <!-- Cuerpo del modal -->
+    <div class="p-6 space-y-4">
+      
+      <!-- Usuario info -->
+      <div class="flex items-center gap-3">
+        <img src="https://i.pravatar.cc/100" alt="avatar" class="w-12 h-12 rounded-full border-2 border-orange-500">
+        <div>
+          <p class="font-semibold text-gray-800">Juan Carlos</p>
+          <p class="text-sm text-gray-500">@juan123</p>
+        </div>
+      </div>
+
+      <!-- Textarea -->
+      <textarea
+        [(ngModel)]="postContent"
+        placeholder="¿Qué estás pensando?"
+        class="w-full min-h-[150px] p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-gray-800"
+      ></textarea>
+
+      <!-- Vista previa de imagen -->
+      <div *ngIf="selectedImage" class="relative">
+        <img [src]="selectedImage" alt="preview" class="w-full rounded-xl max-h-96 object-cover">
+        <button
+          (click)="removeImage()"
+          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Opciones -->
+      <div class="flex items-center gap-4 pt-4 border-t border-gray-200">
+        <label class="flex items-center gap-2 text-gray-600 hover:text-orange-500 cursor-pointer transition">
+          <i class="fas fa-image text-xl"></i>
+          <span class="font-medium">Foto</span>
+          <input type="file" accept="image/*" (change)="onImageSelect($event)" class="hidden">
+        </label>
+        <button class="flex items-center gap-2 text-gray-600 hover:text-orange-500 transition">
+          <i class="fas fa-smile text-xl"></i>
+          <span class="font-medium">Emoji</span>
+        </button>
+        <button class="flex items-center gap-2 text-gray-600 hover:text-orange-500 transition">
+          <i class="fas fa-map-marker-alt text-xl"></i>
+          <span class="font-medium">Ubicación</span>
+        </button>
+      </div>
+
+      <!-- Botón publicar -->
+      <button
+        (click)="publicarPost()"
+        [disabled]="!postContent.trim()"
+        style="width: 100%; background: linear-gradient(to right, #f97316, #ea580c); color: white; padding: 0.75rem; border-radius: 0.75rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.3s;"
+        [style.opacity]="!postContent.trim() ? '0.5' : '1'"
+        [style.cursor]="!postContent.trim() ? 'not-allowed' : 'pointer'"
+      >
+        <i class="fas fa-paper-plane mr-2"></i>
+        Publicar
+      </button>
+    </div>
+  </div>
+</div>

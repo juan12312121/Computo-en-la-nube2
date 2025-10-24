@@ -1,0 +1,242 @@
+/* ==================== LOGO CON GRADIENTE ==================== */
+
+/* Clase base del logo */
+.logo .logo-gradient-text {
+  display: inline-block !important;
+  font-weight: 800 !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Gradientes por tema - Vibrantes y con animación */
+.logo-gradient-text[data-theme="default"] {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 30%, #2dd4bf 70%, #14b8a6 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="deep-ocean"] {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="neutro"] {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="vibrante"] {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 30%, #fbbf24 70%, #fde047 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="discordia"] {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 25%, #a855f7 50%, #c084fc 75%, #6366f1 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+/* Animación sutil del gradiente */
+.logo-gradient-text {
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Fallback sin gradiente */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .logo-gradient-text {
+    -webkit-text-fill-color: #f97316 !important;
+    background: none !important;
+  }
+}
+
+/* ==================== NAVBAR BASE ==================== */
+
+.navbar {
+  position: relative;
+  min-height: 4.5rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.navbar > div > .flex {
+  flex-wrap: nowrap;
+}
+
+.navbar .h-14 {
+  height: 4.5rem !important;
+}
+
+.navbar .actions {
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ==================== BOTONES PUBLICAR ==================== */
+
+.btn-publicar-default {
+  background: linear-gradient(to right, #f97316, #ea580c) !important;
+  color: white !important;
+}
+
+.btn-publicar-deep-ocean {
+  background: linear-gradient(to right, #38bdf8, #3b82f6) !important;
+  color: white !important;
+}
+
+.btn-publicar-neutro {
+  background: linear-gradient(to right, #10b981, #059669) !important;
+  color: white !important;
+}
+
+.btn-publicar-vibrante {
+  background: linear-gradient(to right, #ef4444, #dc2626) !important;
+  color: white !important;
+}
+
+.btn-publicar-discordia {
+  background: linear-gradient(to right, #ec4899, #9333ea) !important;
+  color: white !important;
+}
+
+/* Hover en todos los botones */
+[class*="btn-publicar-"]:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== DROPDOWNS ==================== */
+
+.theme-dropdown,
+.profile-dropdown,
+.notification-panel {
+  position: absolute !important;
+  top: calc(100% + 0.25rem) !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  max-width: 24rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideDown 0.2s ease-out;
+}
+
+.theme-dropdown {
+  max-width: 20rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== ANIMACIONES Y EFECTOS ==================== */
+
+.navbar *, .navbar button, .navbar a, .navbar i {
+  transition: all 0.3s ease;
+}
+
+/* Hover en logo */
+.logo:hover .fa-paper-plane {
+  transform: rotate(15deg) scale(1.15);
+}
+
+.logo:hover .logo-gradient-text {
+  filter: brightness(1.15) saturate(1.2);
+  transform: scale(1.03);
+}
+
+/* Hover en iconos */
+.navbar button:hover i,
+.navbar a:hover i {
+  transform: scale(1.1);
+}
+
+/* Notificaciones pulsantes */
+.navbar .bg-red-500 {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Chevron rotación */
+.fa-chevron-down {
+  transition: transform 0.2s ease;
+}
+
+.fa-chevron-down.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 640px) {
+  .logo .logo-gradient-text {
+    font-size: 1.5rem !important;
+  }
+  
+  .logo .fa-paper-plane {
+    font-size: 1.75rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .notification-panel:not(.md\:hidden),
+  .profile-dropdown:not(.md\:hidden),
+  .theme-dropdown:not(.md\:hidden) {
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    top: 56px !important;
+  }
+}
+
+/* ==================== ACCESIBILIDAD ==================== */
+
+.navbar button:focus-visible,
+.navbar a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar *, .navbar button, .navbar a, .navbar i {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ==================== UTILIDADES ==================== */
+
+.navbar button {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.navbar button:active,
+.navbar a:active {
+  transform: scale(0.98);
+}
+
+.notification-panel .overflow-y-auto {
+  scroll-behavior: smooth;
+}
+
+@media print {
+  .navbar {
+    display: none;
+  }
+}

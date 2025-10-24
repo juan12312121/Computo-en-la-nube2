@@ -1,0 +1,48 @@
+/* estilos mínimos; la mayor parte la controla Tailwind */
+.logo-text {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* navbar.css - reglas específicas que mejoran el comportamiento del dropdown y evitan wrap */
+
+/* marca el navbar para reglas específicas */
+.navbar { position: relative; }
+
+/* fuerza que el contenedor principal no haga wrap */
+.navbar > div > .flex { flex-wrap: nowrap; }
+
+/* evita que los dropdowns empujen el header */
+.theme-dropdown,
+.profile-dropdown,
+.notification-panel {
+  position: absolute !important;
+  top: calc(100% + 0.25rem) !important; /* debajo del header */
+  right: 0 !important;
+  left: auto !important;
+  z-index: 9999 !important;
+  width: auto;
+  max-width: 24rem;
+}
+
+/* variante para dropdown de temas si necesitas anchura menor */
+.theme-dropdown { max-width: 20rem; }
+
+/* compactar paddings y gap del area de acciones (desktop) */
+.navbar .actions { gap: 0.5rem; align-items: center; }
+
+/* reducir altura visual del header */
+.navbar .h-14 { height: 3.5rem; }
+
+/* utilidades responsivas extras */
+@media (max-width: 1024px) {
+  /* avatar más pequeño en pantallas medianas */
+  .profile-toggle img { width: 32px; height: 32px; }
+}
+
+@media (max-width: 640px) {
+  /* logo más pequeño en móviles */
+  .logo span { font-size: 1rem; }
+  .profile-toggle img { width: 28px; height: 28px; }
+}
+
+
