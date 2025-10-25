@@ -117,13 +117,31 @@
   top: calc(100% + 0.25rem) !important;
   right: 0 !important;
   z-index: 9999 !important;
-  max-width: 24rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideDown 0.2s ease-out;
 }
 
 .theme-dropdown {
   max-width: 20rem;
+  width: 20rem;
+}
+
+.profile-dropdown {
+  width: 14rem;
+}
+
+.notification-panel {
+  width: 22rem;
+  max-width: 22rem;
+}
+
+/* ==================== DROPDOWNS - TEXTO ADAPTABLE ==================== */
+
+/* Permitir que el texto se adapte a los temas */
+.notification-panel,
+.theme-dropdown,
+.profile-dropdown {
+  /* Los colores de texto serán controlados por las clases de tema desde Angular */
 }
 
 @keyframes slideDown {

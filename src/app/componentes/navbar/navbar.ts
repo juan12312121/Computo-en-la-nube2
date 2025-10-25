@@ -16,6 +16,12 @@ interface Notification {
   isUnread: boolean;
 }
 
+interface User {
+  name: string;
+  username: string;
+  avatar: string;
+}
+
 @Component({
   selector: 'app-navbar',
   standalone: true,
@@ -40,19 +46,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isLoggedIn = true;
   showCrearPost = false;
 
-  user = {
+  user: User = {
     name: 'Juan Carlos',
     username: '@juan123',
     avatar: 'https://i.pravatar.cc/100'
   };
 
   showMobileMenu = false;
-  showMobileProfileMenu = false; // Nueva propiedad
+  showMobileProfileMenu = false;
   showProfileMenu = false;
   showNotifications = false;
   showThemeMenu = false;
 
-  currentTheme: Theme;
+  currentTheme!: Theme;
   themes: Theme[] = [];
   
   private themeSubscription?: Subscription;
@@ -162,7 +168,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showProfileMenu = false;
     this.showNotifications = false;
     this.showThemeMenu = false;
-    this.showMobileProfileMenu = false; // Cerrar dropdown de perfil
+    this.showMobileProfileMenu = false;
     
     if (this.showMobileMenu) {
       document.body.classList.add('mobile-menu-open');
@@ -171,7 +177,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Nuevo método para toggle del dropdown de perfil móvil
   toggleMobileProfileMenu(): void {
     this.showMobileProfileMenu = !this.showMobileProfileMenu;
   }
