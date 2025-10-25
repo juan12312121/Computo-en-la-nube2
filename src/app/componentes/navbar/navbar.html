@@ -1,18 +1,27 @@
 <!-- navbar.component.html -->
-<nav class="navbar sticky top-0 z-50 shadow-sm"
-     [ngClass]="[currentTheme.navbarBg || '', 'border-b', currentTheme.navbarBorder || '']">
+<nav
+  class="navbar sticky top-0 z-50 shadow-sm"
+  [ngClass]="[currentTheme.navbarBg || '', 'border-b', currentTheme.navbarBorder || '']"
+>
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center h-14 flex-nowrap w-full">
-
       <!-- LEFT: LOGO -->
       <div class="flex items-center gap-3 logo">
-        <a routerLink="/principal" class="flex items-center gap-2" (click)="$event.stopPropagation()">
-          <i class="fas fa-paper-plane text-3xl transition-all duration-300"
-             [ngClass]="currentThemeData.icon || ''"
-             aria-hidden="true"></i>
-          <span class="font-extrabold text-2xl leading-none tracking-tight transition-all duration-300 logo-gradient-text"
-                [attr.data-theme]="currentThemeId"
-                style="letter-spacing: -0.02em;">
+        <a
+          routerLink="/principal"
+          class="flex items-center gap-2"
+          (click)="$event.stopPropagation()"
+        >
+          <i
+            class="fas fa-paper-plane text-3xl transition-all duration-300"
+            [ngClass]="currentThemeData.icon || ''"
+            aria-hidden="true"
+          ></i>
+          <span
+            class="font-extrabold text-2xl leading-none tracking-tight transition-all duration-300 logo-gradient-text"
+            [attr.data-theme]="currentThemeId"
+            style="letter-spacing: -0.02em"
+          >
             TrinoFlow
           </span>
         </a>
@@ -21,17 +30,21 @@
       <!-- CENTER: NAV LINKS -->
       <div class="flex-1 hidden md:flex justify-center">
         <div class="flex items-center gap-6">
-          <a routerLink="/principal"
-             class="flex items-center gap-2 font-semibold transition"
-             [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
-             (click)="$event.stopPropagation()">
+          <a
+            routerLink="/principal"
+            class="flex items-center gap-2 font-semibold transition"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+            (click)="$event.stopPropagation()"
+          >
             <i class="fas fa-home"></i><span class="ml-1">Inicio</span>
           </a>
 
-          <a routerLink="/explorar"
-             class="flex items-center gap-2 font-semibold transition"
-             [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
-             (click)="$event.stopPropagation()">
+          <a
+            routerLink="/explorar"
+            class="flex items-center gap-2 font-semibold transition"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+            (click)="$event.stopPropagation()"
+          >
             <i class="fas fa-compass"></i><span class="ml-1">Explorar</span>
           </a>
         </div>
@@ -39,37 +52,53 @@
 
       <!-- RIGHT: ACTIONS -->
       <div class="ml-auto flex items-center gap-3 actions">
-
         <!-- THEME ICON (desktop) -->
         <div class="relative hidden md:block">
-          <button (click)="toggleThemeMenu($event)"
-                  class="flex items-center gap-2 p-2 rounded-md transition"
-                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
-                  aria-label="Cambiar tema">
+          <button
+            (click)="toggleThemeMenu($event)"
+            class="flex items-center gap-2 p-2 rounded-md transition"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+            aria-label="Cambiar tema"
+          >
             <i class="fas fa-palette" aria-hidden="true"></i>
-            <span class="hidden lg:inline text-xs ml-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+            <span
+              class="hidden lg:inline text-xs ml-1"
+              [ngClass]="currentTheme.textSecondaryClass || ''"
+            >
               {{ currentThemeData.name }}
             </span>
           </button>
 
           <!-- Dropdown Temas -->
-          <div *ngIf="showThemeMenu"
-               class="theme-dropdown border rounded-xl shadow-2xl overflow-hidden"
-               [ngClass]="[currentTheme.cardBg || '']">
+          <div
+            *ngIf="showThemeMenu"
+            class="theme-dropdown border rounded-xl shadow-2xl overflow-hidden"
+            [ngClass]="[currentTheme.cardBg || '']"
+          >
             <div class="px-4 py-3 border-b" [ngClass]="currentTheme.borderColor || ''">
-              <p class="text-sm font-semibold" [ngClass]="currentTheme.textPrimaryClass || ''">Seleccionar tema</p>
+              <p class="text-sm font-semibold" [ngClass]="currentTheme.textPrimaryClass || ''">
+                Seleccionar tema
+              </p>
             </div>
             <div class="p-2">
-              <button *ngFor="let theme of themes"
-                      (click)="applyTheme(theme.id); $event.stopPropagation()"
-                      class="w-full flex items-center gap-3 px-3 py-2 rounded-md transition"
-                      [ngClass]="currentTheme.hoverBgLight || ''">
-                <span class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
-                      [style.background]="theme.color"
-                      [title]="theme.name"></span>
+              <button
+                *ngFor="let theme of themes"
+                (click)="applyTheme(theme.id); $event.stopPropagation()"
+                class="w-full flex items-center gap-3 px-3 py-2 rounded-md transition"
+                [ngClass]="currentTheme.hoverBgLight || ''"
+              >
+                <span
+                  class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+                  [style.background]="theme.color"
+                  [title]="theme.name"
+                ></span>
                 <div class="flex-1 text-left">
-                  <div class="text-sm font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">{{ theme.name }}</div>
-                  <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ theme.id }}</div>
+                  <div class="text-sm font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">
+                    {{ theme.name }}
+                  </div>
+                  <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+                    {{ theme.id }}
+                  </div>
                 </div>
                 <div *ngIf="currentThemeId === theme.id" [class]="theme.checkIcon || ''">
                   <i class="fas fa-check-circle"></i>
@@ -81,65 +110,95 @@
 
         <!-- NOTIFICATIONS (desktop) -->
         <div class="relative hidden md:block">
-          <button (click)="toggleNotifications($event)"
-                  class="relative p-2 rounded-md transition"
-                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
-                  aria-label="Notificaciones">
+          <button
+            (click)="toggleNotifications($event)"
+            class="relative p-2 rounded-md transition"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+            aria-label="Notificaciones"
+          >
             <i class="fas fa-bell text-lg" aria-hidden="true"></i>
-            <span *ngIf="notificationsCount > 0"
-                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg">
+            <span
+              *ngIf="notificationsCount > 0"
+              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg"
+            >
               {{ notificationsCount }}
             </span>
           </button>
 
           <!-- Dropdown Notificaciones DESKTOP -->
-          <div *ngIf="showNotifications"
-               class="notification-panel border rounded-xl shadow-2xl overflow-hidden"
-               [ngClass]="[currentTheme.cardBg || '']">
+          <div
+            *ngIf="showNotifications"
+            class="notification-panel border rounded-xl shadow-2xl overflow-hidden"
+            [ngClass]="[currentTheme.cardBg || '']"
+          >
             <div class="px-5 py-4 bg-gradient-to-r from-orange-500 to-orange-600">
               <div class="flex items-center justify-between">
                 <h3 class="text-black font-bold text-lg">Notificaciones</h3>
-                <button *ngIf="notificationsCount > 0"
-                        (click)="markAllAsRead()"
-                        class="text-black font-bold text-xs hover:underline">
+                <button
+                  *ngIf="notificationsCount > 0"
+                  (click)="markAllAsRead()"
+                  class="text-black font-bold text-xs hover:underline"
+                >
                   Marcar todas
                 </button>
               </div>
             </div>
 
             <div class="max-h-96 overflow-y-auto">
-              <div *ngIf="notifications.length === 0" class="px-4 py-8 text-center" [ngClass]="currentTheme.textSecondaryClass || ''">
+              <div
+                *ngIf="notifications.length === 0"
+                class="px-4 py-8 text-center"
+                [ngClass]="currentTheme.textSecondaryClass || ''"
+              >
                 <i class="fas fa-bell-slash text-4xl mb-2 opacity-50"></i>
                 <p class="text-sm">No tienes notificaciones</p>
               </div>
 
-              <a *ngFor="let notification of notifications"
-                 href="#"
-                 (click)="markAsRead(notification.id); $event.preventDefault(); $event.stopPropagation()"
-                 class="flex items-start gap-3 px-4 py-3 transition-all duration-300 border-b group relative"
-                 [ngClass]="[currentThemeData.hoverBackground || '', currentTheme.borderColor || '']">
-                <div [style.background]="notification.avatarColor"
-                     class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+              <a
+                *ngFor="let notification of notifications"
+                href="#"
+                (click)="
+                  markAsRead(notification.id); $event.preventDefault(); $event.stopPropagation()
+                "
+                class="flex items-start gap-3 px-4 py-3 transition-all duration-300 border-b group relative"
+                [ngClass]="[currentThemeData.hoverBackground || '', currentTheme.borderColor || '']"
+              >
+                <div
+                  [style.background]="notification.avatarColor"
+                  class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+                >
                   {{ notification.initials }}
                 </div>
 
                 <div class="flex-1 min-w-0">
                   <p class="text-sm" [ngClass]="currentTheme.textPrimaryClass || ''">
-                    <span class="font-semibold" [ngClass]="currentThemeData.textPrimary || ''">{{ notification.user }}</span>
+                    <span class="font-semibold" [ngClass]="currentThemeData.textPrimary || ''">{{
+                      notification.user
+                    }}</span>
                     {{ notification.action }}
                   </p>
-                  <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">{{ notification.time }}</p>
+                  <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+                    {{ notification.time }}
+                  </p>
                 </div>
 
-                <div *ngIf="notification.isUnread"
-                     class="w-2 h-2 rounded-full flex-shrink-0 mt-2 shadow-sm"
-                     [ngClass]="currentThemeData.bgPrimary || ''"></div>
+                <div
+                  *ngIf="notification.isUnread"
+                  class="w-2 h-2 rounded-full flex-shrink-0 mt-2 shadow-sm"
+                  [ngClass]="currentThemeData.bgPrimary || ''"
+                ></div>
 
-                <button (click)="deleteNotification(notification.id); $event.stopPropagation(); $event.preventDefault()"
-                        class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 hover:text-red-500 transition-opacity"
-                        [ngClass]="currentTheme.textSecondaryClass || ''"
-                        aria-label="Eliminar notificación">
-                  <i class="fas fa-times text-sm"></i>
+                <button
+                  (click)="
+                    deleteNotification(notification.id);
+                    $event.stopPropagation();
+                    $event.preventDefault()
+                  "
+                  class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 transition-opacity"
+                  [ngClass]="currentTheme.textSecondaryClass || ''"
+                  aria-label="Eliminar notificación"
+                >
+                  <i class="fas fa-times text-sm text-black"></i>
                 </button>
               </a>
             </div>
@@ -148,13 +207,17 @@
 
         <!-- NOTIFICATIONS BUTTON (móvil) -->
         <div class="relative md:hidden">
-          <button (click)="toggleNotifications($event)"
-                  class="relative p-2 rounded-md transition"
-                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
-                  aria-label="Notificaciones">
+          <button
+            (click)="toggleNotifications($event)"
+            class="relative p-2 rounded-md transition"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+            aria-label="Notificaciones"
+          >
             <i class="fas fa-bell text-lg" aria-hidden="true"></i>
-            <span *ngIf="notificationsCount > 0"
-                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg">
+            <span
+              *ngIf="notificationsCount > 0"
+              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg"
+            >
               {{ notificationsCount }}
             </span>
           </button>
@@ -162,60 +225,108 @@
 
         <!-- PROFILE (desktop) -->
         <div class="relative hidden md:flex">
-          <button (click)="toggleProfileMenu($event)"
-                  class="profile-toggle flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200"
-                  [ngClass]="currentTheme.hoverBgLight || ''"
-                  aria-label="Abrir perfil">
-            <img [src]="user.avatar" alt="avatar" class="w-9 h-9 rounded-full border-2 object-cover" [ngClass]="currentTheme.borderColor || ''">
-            <span class="hidden lg:inline text-sm font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">{{ user.name }}</span>
-            <i class="fas fa-chevron-down text-xs transition-transform duration-200"
-               [ngClass]="currentTheme.textSecondaryClass || ''"
-               [class.rotate-180]="showProfileMenu"
-               aria-hidden="true"></i>
+          <button
+            (click)="toggleProfileMenu($event)"
+            class="profile-toggle flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200"
+            [ngClass]="currentTheme.hoverBgLight || ''"
+            aria-label="Abrir perfil"
+          >
+            <img
+              [src]="user.avatar"
+              alt="avatar"
+              class="w-9 h-9 rounded-full border-2 object-cover"
+              [ngClass]="currentTheme.borderColor || ''"
+            />
+            <span
+              class="hidden lg:inline text-sm font-medium"
+              [ngClass]="currentTheme.textPrimaryClass || ''"
+              >{{ user.name }}</span
+            >
+            <i
+              class="fas fa-chevron-down text-xs transition-transform duration-200"
+              [ngClass]="currentTheme.textSecondaryClass || ''"
+              [class.rotate-180]="showProfileMenu"
+              aria-hidden="true"
+            ></i>
           </button>
 
-          <div *ngIf="showProfileMenu"
-               class="profile-dropdown absolute right-0 top-full mt-2 w-56 border rounded-lg shadow-xl overflow-hidden z-50 animate-fadeIn"
-               [ngClass]="[currentTheme.cardBg || '']">
-
-            <div class="px-4 py-3 border-b"
-                 [ngClass]="[currentTheme.borderColor || '', currentTheme.hoverBgLight || '']">
-              <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">{{ user.name }}</p>
-              <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">{{ user.username }}</p>
+          <div
+            *ngIf="showProfileMenu"
+            class="profile-dropdown absolute right-0 top-full mt-2 w-56 border rounded-lg shadow-xl overflow-hidden z-50 animate-fadeIn"
+            [ngClass]="[currentTheme.cardBg || '']"
+          >
+            <div
+              class="px-4 py-3 border-b"
+              [ngClass]="[currentTheme.borderColor || '', currentTheme.hoverBgLight || '']"
+            >
+              <p
+                class="font-semibold text-sm truncate"
+                [ngClass]="currentTheme.textPrimaryClass || ''"
+              >
+                {{ user.name }}
+              </p>
+              <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                {{ user.username }}
+              </p>
             </div>
 
             <div class="py-1.5">
-              <a routerLink="/perfil"
-                 (click)="showProfileMenu = false"
-                 class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
-                 [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
-                <i class="fas fa-user w-4 text-sm group-hover:scale-110 transition-transform"
-                   [ngClass]="currentThemeData.textPrimary || ''"></i>
+              <a
+                routerLink="/perfil"
+                (click)="showProfileMenu = false"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
+                [ngClass]="[
+                  currentTheme.textPrimaryClass || '',
+                  currentThemeData.hoverBackground || ''
+                ]"
+              >
+                <i
+                  class="fas fa-user w-4 text-sm group-hover:scale-110 transition-transform"
+                  [ngClass]="currentThemeData.textPrimary || ''"
+                ></i>
                 <span class="font-medium">Mi Perfil</span>
               </a>
 
-              <a routerLink="/login"
-                 (click)="showProfileMenu = false"
-                 class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
-                 [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
-                <i class="fas fa-sign-in-alt w-4 text-sm group-hover:scale-110 transition-transform"
-                   [ngClass]="currentThemeData.textSecondary || ''"></i>
+              <a
+                routerLink="/login"
+                (click)="showProfileMenu = false"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
+                [ngClass]="[
+                  currentTheme.textPrimaryClass || '',
+                  currentThemeData.hoverBackground || ''
+                ]"
+              >
+                <i
+                  class="fas fa-sign-in-alt w-4 text-sm group-hover:scale-110 transition-transform"
+                  [ngClass]="currentThemeData.textSecondary || ''"
+                ></i>
                 <span class="font-medium">Iniciar sesión</span>
               </a>
 
-              <a routerLink="/registro"
-                 (click)="showProfileMenu = false"
-                 class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
-                 [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
-                <i class="fas fa-user-plus text-blue-500 w-4 text-sm group-hover:scale-110 transition-transform"></i>
+              <a
+                routerLink="/registro"
+                (click)="showProfileMenu = false"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
+                [ngClass]="[
+                  currentTheme.textPrimaryClass || '',
+                  currentThemeData.hoverBackground || ''
+                ]"
+              >
+                <i
+                  class="fas fa-user-plus text-blue-500 w-4 text-sm group-hover:scale-110 transition-transform"
+                ></i>
                 <span class="font-medium">Registrarse</span>
               </a>
 
-              <hr class="my-1.5" [ngClass]="currentTheme.borderColor || ''">
+              <hr class="my-1.5" [ngClass]="currentTheme.borderColor || ''" />
 
-              <button (click)="logout()"
-                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all duration-200 text-left group">
-                <i class="fas fa-sign-out-alt w-4 text-sm group-hover:scale-110 transition-transform"></i>
+              <button
+                (click)="logout()"
+                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all duration-200 text-left group"
+              >
+                <i
+                  class="fas fa-sign-out-alt w-4 text-sm group-hover:scale-110 transition-transform"
+                ></i>
                 <span class="font-semibold">Cerrar sesión</span>
               </button>
             </div>
@@ -224,29 +335,37 @@
 
         <!-- PUBLICAR (desktop) -->
         <div class="hidden sm:block">
-          <button (click)="onOpenCreate()"
-                  class="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm text-white transition-all duration-300 hover:shadow-md"
-                  [ngClass]="'btn-publicar-' + (currentThemeId || 'default')">
+          <button
+            (click)="onOpenCreate()"
+            class="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm text-white transition-all duration-300 hover:shadow-md"
+            [ngClass]="'btn-publicar-' + (currentThemeId || 'default')"
+          >
             <i class="fas fa-plus-circle"></i> Publicar
           </button>
         </div>
 
         <!-- HAMBURGER (móvil) -->
         <div class="md:hidden">
-          <button (click)="toggleMobileMenu()"
-                  class="p-2 rounded-md transition"
-                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
-                  aria-label="Abrir menú móvil">
+          <button
+            (click)="toggleMobileMenu()"
+            class="p-2 rounded-md transition"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+            aria-label="Abrir menú móvil"
+          >
             <i [ngClass]="showMobileMenu ? 'fas fa-times text-2xl' : 'fas fa-bars text-2xl'"></i>
           </button>
         </div>
-
-      </div> <!-- end actions -->
+      </div>
+      <!-- end actions -->
     </div>
   </div>
 
   <!-- PANEL DE NOTIFICACIONES MÓVIL -->
-  <div *ngIf="showNotifications" class="md:hidden fixed inset-0 z-50 overflow-y-auto" [ngClass]="currentTheme.cardBg || ''">
+  <div
+    *ngIf="showNotifications"
+    class="md:hidden fixed inset-0 z-50 overflow-y-auto"
+    [ngClass]="currentTheme.cardBg || ''"
+  >
     <div class="sticky top-0 z-10 px-6 py-4" [ngClass]="currentTheme.headerGradient || ''">
       <div class="flex items-center justify-between">
         <h3 class="text-black font-bold text-xl">Notificaciones</h3>
@@ -254,44 +373,64 @@
           <i class="fas fa-times text-2xl"></i>
         </button>
       </div>
-      <button *ngIf="notificationsCount > 0"
-              (click)="markAllAsRead()"
-              class="text-white text-sm hover:underline mt-2">
+      <button
+        *ngIf="notificationsCount > 0"
+        (click)="markAllAsRead()"
+        class="text-white text-sm hover:underline mt-2"
+      >
         Marcar todas como leídas
       </button>
     </div>
 
     <div class="pb-4">
-      <div *ngIf="notifications.length === 0" class="px-4 py-20 text-center" [ngClass]="currentTheme.textSecondaryClass || ''">
+      <div
+        *ngIf="notifications.length === 0"
+        class="px-4 py-20 text-center"
+        [ngClass]="currentTheme.textSecondaryClass || ''"
+      >
         <i class="fas fa-bell-slash text-6xl mb-4 opacity-50"></i>
         <p class="text-lg">No tienes notificaciones</p>
       </div>
 
-      <a *ngFor="let notification of notifications"
-         href="#"
-         (click)="markAsRead(notification.id); $event.preventDefault(); $event.stopPropagation()"
-         class="flex items-start gap-4 px-6 py-4 transition-all duration-300 border-b active:opacity-75 relative"
-         [ngClass]="[currentThemeData.hoverBackground || '', currentTheme.borderColor || '']">
-        <div [style.background]="notification.avatarColor"
-             class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
+      <a
+        *ngFor="let notification of notifications"
+        href="#"
+        (click)="markAsRead(notification.id); $event.preventDefault(); $event.stopPropagation()"
+        class="flex items-start gap-4 px-6 py-4 transition-all duration-300 border-b active:opacity-75 relative"
+        [ngClass]="[currentThemeData.hoverBackground || '', currentTheme.borderColor || '']"
+      >
+        <div
+          [style.background]="notification.avatarColor"
+          class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm"
+        >
           {{ notification.initials }}
         </div>
 
         <div class="flex-1 min-w-0">
           <p class="text-base" [ngClass]="currentTheme.textPrimaryClass || ''">
-            <span class="font-semibold" [ngClass]="currentThemeData.textPrimary || ''">{{ notification.user }}</span>
+            <span class="font-semibold" [ngClass]="currentThemeData.textPrimary || ''">{{
+              notification.user
+            }}</span>
             {{ notification.action }}
           </p>
-          <p class="text-sm mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">{{ notification.time }}</p>
+          <p class="text-sm mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+            {{ notification.time }}
+          </p>
         </div>
 
         <div class="flex flex-col items-end gap-2">
-          <div *ngIf="notification.isUnread"
-               class="w-3 h-3 rounded-full shadow-sm"
-               [ngClass]="currentThemeData.bgPrimary || ''"></div>
-          <button (click)="deleteNotification(notification.id); $event.stopPropagation(); $event.preventDefault()"
-                  class="hover:text-red-500 p-2"
-                  [ngClass]="currentTheme.textSecondaryClass || ''">
+          <div
+            *ngIf="notification.isUnread"
+            class="w-3 h-3 rounded-full shadow-sm"
+            [ngClass]="currentThemeData.bgPrimary || ''"
+          ></div>
+          <button
+            (click)="
+              deleteNotification(notification.id); $event.stopPropagation(); $event.preventDefault()
+            "
+            class="hover:text-red-500 p-2"
+            [ngClass]="currentTheme.textSecondaryClass || ''"
+          >
             <i class="fas fa-trash text-sm"></i>
           </button>
         </div>
@@ -300,72 +439,124 @@
   </div>
 
   <!-- MENU MÓVIL -->
-  <div *ngIf="showMobileMenu" class="md:hidden border-t" [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+  <div
+    *ngIf="showMobileMenu"
+    class="md:hidden border-t"
+    [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']"
+  >
     <div class="px-4 py-2 space-y-2">
-      <a routerLink="/principal"
-         (click)="toggleMobileMenu(); $event.stopPropagation()"
-         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
-         [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+      <a
+        routerLink="/principal"
+        (click)="toggleMobileMenu(); $event.stopPropagation()"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']"
+      >
         <i class="fas fa-home w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Inicio
       </a>
 
-      <a routerLink="/explorar"
-         (click)="toggleMobileMenu(); $event.stopPropagation()"
-         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
-         [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+      <a
+        routerLink="/explorar"
+        (click)="toggleMobileMenu(); $event.stopPropagation()"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']"
+      >
         <i class="fas fa-compass w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Explorar
       </a>
 
-      <button (click)="toggleProfileMenu($event)"
-              class="flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200"
-              [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
-        <img [src]="user.avatar" alt="avatar" class="w-7 h-7 rounded-full border-2" [ngClass]="currentTheme.borderColor || ''">
+      <button
+        (click)="toggleProfileMenu($event)"
+        class="flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']"
+      >
+        <img
+          [src]="user.avatar"
+          alt="avatar"
+          class="w-7 h-7 rounded-full border-2"
+          [ngClass]="currentTheme.borderColor || ''"
+        />
         {{ user.name }}
       </button>
 
       <!-- Dropdown Perfil en Móvil -->
-      <div *ngIf="showProfileMenu" class="ml-6 space-y-2 rounded-lg p-3" [ngClass]="currentTheme.hoverBgLight || ''">
-        <a routerLink="/perfil"
-           (click)="toggleMobileMenu(); $event.stopPropagation()"
-           class="flex items-center gap-2 px-3 py-2 font-medium rounded-lg transition-all duration-200"
-           [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '', currentTheme.hoverBgLight || '']">
+      <div
+        *ngIf="showProfileMenu"
+        class="ml-6 space-y-2 rounded-lg p-3"
+        [ngClass]="currentTheme.hoverBgLight || ''"
+      >
+        <a
+          routerLink="/perfil"
+          (click)="toggleMobileMenu(); $event.stopPropagation()"
+          class="flex items-center gap-2 px-3 py-2 font-medium rounded-lg transition-all duration-200"
+          [ngClass]="[
+            currentTheme.textSecondaryClass || '',
+            currentThemeData.hoverText || '',
+            currentTheme.hoverBgLight || ''
+          ]"
+        >
           <i class="fas fa-user w-4"></i> Mi Perfil
         </a>
 
-        <a routerLink="/login"
-           (click)="toggleMobileMenu(); $event.stopPropagation()"
-           class="flex items-center gap-2 px-3 py-2 font-medium rounded-lg transition-all duration-200"
-           [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '', currentTheme.hoverBgLight || '']">
+        <a
+          routerLink="/login"
+          (click)="toggleMobileMenu(); $event.stopPropagation()"
+          class="flex items-center gap-2 px-3 py-2 font-medium rounded-lg transition-all duration-200"
+          [ngClass]="[
+            currentTheme.textSecondaryClass || '',
+            currentThemeData.hoverText || '',
+            currentTheme.hoverBgLight || ''
+          ]"
+        >
           <i class="fas fa-sign-in-alt w-4"></i> Iniciar sesión
         </a>
 
-        <a routerLink="/registro"
-           (click)="toggleMobileMenu(); $event.stopPropagation()"
-           class="flex items-center gap-2 px-3 py-2 font-medium rounded-lg transition-all duration-200"
-           [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '', currentTheme.hoverBgLight || '']">
+        <a
+          routerLink="/registro"
+          (click)="toggleMobileMenu(); $event.stopPropagation()"
+          class="flex items-center gap-2 px-3 py-2 font-medium rounded-lg transition-all duration-200"
+          [ngClass]="[
+            currentTheme.textSecondaryClass || '',
+            currentThemeData.hoverText || '',
+            currentTheme.hoverBgLight || ''
+          ]"
+        >
           <i class="fas fa-user-plus w-4"></i> Registrarse
         </a>
 
-        <button (click)="logout()"
-                class="flex items-center gap-2 px-3 py-2 text-red-600 font-medium hover:bg-red-50 rounded-lg transition-all duration-200 w-full text-left">
+        <button
+          (click)="logout()"
+          class="flex items-center gap-2 px-3 py-2 text-red-600 font-medium hover:bg-red-50 rounded-lg transition-all duration-200 w-full text-left"
+        >
           <i class="fas fa-sign-out-alt w-4"></i> Cerrar sesión
         </button>
       </div>
 
       <!-- THEME SELECT (MÓVIL) -->
       <div class="pt-2 border-t" [ngClass]="currentTheme.borderColor || ''">
-        <div class="text-sm font-semibold px-2 pb-2" [ngClass]="currentTheme.textSecondaryClass || ''">Tema</div>
+        <div
+          class="text-sm font-semibold px-2 pb-2"
+          [ngClass]="currentTheme.textSecondaryClass || ''"
+        >
+          Tema
+        </div>
         <div class="space-y-2 px-2">
-          <button *ngFor="let theme of themes"
-                  (click)="applyTheme(theme.id); toggleMobileMenu(); $event.stopPropagation()"
-                  class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition"
-                  [ngClass]="currentTheme.hoverBgLight || ''">
-            <span class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-                  [style.background]="theme.color"
-                  [title]="theme.name"></span>
+          <button
+            *ngFor="let theme of themes"
+            (click)="applyTheme(theme.id); toggleMobileMenu(); $event.stopPropagation()"
+            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition"
+            [ngClass]="currentTheme.hoverBgLight || ''"
+          >
+            <span
+              class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+              [style.background]="theme.color"
+              [title]="theme.name"
+            ></span>
             <div class="flex-1 text-left">
-              <div class="text-sm font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">{{ theme.name }}</div>
-              <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ theme.id }}</div>
+              <div class="text-sm font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">
+                {{ theme.name }}
+              </div>
+              <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+                {{ theme.id }}
+              </div>
             </div>
             <div *ngIf="currentThemeId === theme.id" [class]="theme.checkIcon || ''">
               <i class="fas fa-check-circle"></i>
@@ -376,9 +567,11 @@
 
       <!-- BOTÓN PUBLICAR MÓVIL -->
       <div class="pt-3">
-        <button (click)="onOpenCreate(); toggleMobileMenu(); $event.stopPropagation()"
-                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold text-white transition-all duration-300"
-                [ngClass]="'btn-publicar-' + (currentThemeId || 'default')">
+        <button
+          (click)="onOpenCreate(); toggleMobileMenu(); $event.stopPropagation()"
+          class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold text-white transition-all duration-300"
+          [ngClass]="'btn-publicar-' + (currentThemeId || 'default')"
+        >
           <i class="fas fa-plus-circle mr-1"></i> Publicar
         </button>
       </div>
@@ -386,5 +579,8 @@
   </div>
 
   <!-- MODAL CREAR POST -->
-  <app-boton-crear-post *ngIf="showCrearPost" (close)="showCrearPost = false"></app-boton-crear-post>
+  <app-boton-crear-post
+    *ngIf="showCrearPost"
+    (close)="showCrearPost = false"
+  ></app-boton-crear-post>
 </nav>

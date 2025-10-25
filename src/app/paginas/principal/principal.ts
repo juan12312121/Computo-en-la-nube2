@@ -30,6 +30,15 @@ interface Post {
   showComments?: boolean;
 }
 
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  avatar: string;
+  avatarColor: string;
+  isFollowing: boolean;
+}
+
 @Component({
   selector: 'app-principal',
   standalone: true,
@@ -41,6 +50,14 @@ export class Principal {
   showCreateModal = false;
   showPostDetailModal = false;
   selectedPost: Post | null = null;
+
+  // Variables para compartir
+  showShareModal = false;
+  sharePostId: number | null = null;
+  searchQuery = '';
+  selectedTab: 'redes' | 'usuarios' = 'redes';
+  linkCopied = false;
+  selectedUsers: number[] = [];
 
   posts: Post[] = [
     {
@@ -101,6 +118,15 @@ export class Principal {
         { id: 8, author: 'Mónica Hernández', avatar: 'MH', text: '¡Qué orgullo! Representan a nuestra universidad de la mejor manera 💜', time: '18 h', avatarColor: 'from-pink-400 to-pink-600' }
       ]
     }
+  ];
+
+  users: User[] = [
+    { id: 1, name: 'Juan López', username: '@juanlopez', avatar: 'JL', avatarColor: 'from-orange-400 to-orange-600', isFollowing: true },
+    { id: 2, name: 'Ana García', username: '@anagarcia', avatar: 'AG', avatarColor: 'from-purple-400 to-purple-600', isFollowing: true },
+    { id: 3, name: 'Carlos Ruiz', username: '@carlosruiz', avatar: 'CR', avatarColor: 'from-blue-400 to-blue-600', isFollowing: false },
+    { id: 4, name: 'Laura Martínez', username: '@lauramtz', avatar: 'LM', avatarColor: 'from-pink-400 to-pink-600', isFollowing: true },
+    { id: 5, name: 'Pedro Sánchez', username: '@pedrosanchez', avatar: 'PS', avatarColor: 'from-green-400 to-green-600', isFollowing: false },
+    { id: 6, name: 'Sofia Torres', username: '@sofiatorres', avatar: 'ST', avatarColor: 'from-teal-400 to-teal-600', isFollowing: true }
   ];
 
   commentInputs: { [key: number]: string } = {};
@@ -176,5 +202,115 @@ export class Principal {
     if (event.key === 'Enter') {
       this.addComment(postId);
     }
+  }
+
+  // Funciones para compartir
+  openShareModal(postId: number) {
+    this.sharePostId = postId;
+    this.showShareModal = true;
+    this.searchQuery = '';
+    this.selectedUsers = [];
+    this.linkCopied = false;
+    this.selectedTab = 'redes';
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeShareModal() {
+    this.showShareModal = false;
+    this.sharePostId = null;
+    document.body.style.overflow = 'auto';
+  }
+
+  onShareBackdropClick(event: MouseEvent) {
+    if ((event.target as HTMLElement).classList.contains('share-modal-backdrop')) {
+      this.closeShareModal();
+    }
+  }
+
+  switchShareTab(tab: 'redes' | 'usuarios') {
+    this.selectedTab = tab;
+    this.searchQuery = '';
+  }
+
+  get filteredUsers(): User[] {
+    if (!this.searchQuery.trim()) {
+      return this.users;
+    }
+    const query = this.searchQuery.toLowerCase();
+    return this.users.filter(user =>
+      user.name.toLowerCase().includes(query) ||
+      user.username.toLowerCase().includes(query)
+    );
+  }
+
+  toggleUserSelection(userId: number) {
+    const index = this.selectedUsers.indexOf(userId);
+    if (index > -1) {
+      this.selectedUsers.splice(index, 1);
+    } else {
+      this.selectedUsers.push(userId);
+    }
+  }
+
+  isUserSelected(userId: number): boolean {
+    return this.selectedUsers.includes(userId);
+  }
+
+  shareToSocial(platform: string) {
+    const post = this.posts.find(p => p.id === this.sharePostId);
+    if (!post) return;
+
+    const postUrl = `https://redstudent.com/post/${post.id}`;
+    const text = post.content;
+
+    let shareUrl = '';
+
+    switch(platform) {
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + postUrl)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'email':
+        shareUrl = `mailto:?subject=${encodeURIComponent('Mira esta publicación')}&body=${encodeURIComponent(text + '\n\n' + postUrl)}`;
+        break;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, '_blank');
+    }
+  }
+
+  copyLink() {
+    const postUrl = `https://redstudent.com/post/${this.sharePostId}`;
+    navigator.clipboard.writeText(postUrl).then(() => {
+      this.linkCopied = true;
+      setTimeout(() => {
+        this.linkCopied = false;
+      }, 2000);
+    });
+  }
+
+  sendToUsers() {
+    if (this.selectedUsers.length === 0) return;
+
+    const post = this.posts.find(p => p.id === this.sharePostId);
+    if (post) {
+      post.shares += this.selectedUsers.length;
+    }
+
+    console.log('Compartiendo con usuarios:', this.selectedUsers);
+    alert(`Publicación compartida con ${this.selectedUsers.length} usuario(s)`);
+    this.closeShareModal();
   }
 }

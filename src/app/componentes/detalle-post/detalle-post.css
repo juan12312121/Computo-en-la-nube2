@@ -63,3 +63,24 @@ input:focus {
 .transform.hover\:scale-105:hover {
   transition: transform 0.2s ease;
 }
+
+/* Asegurar que el botón de enviar mantenga sus colores */
+button.bg-gradient-to-r {
+  background-image: linear-gradient(to right, #f97316, #ea580c);
+  color: white !important;
+}
+
+button.bg-gradient-to-r:hover {
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
+}
+
+button.bg-gradient-to-r:active {
+  transform: scale(0.95);
+}
+
+button[disabled] {
+  opacity: 1 !important;
+  background: #d1d5db !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+}

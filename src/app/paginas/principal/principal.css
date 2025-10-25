@@ -1,0 +1,96 @@
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejora del scroll en listas de usuarios */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Animación para el check de usuarios seleccionados */
+.fa-check {
+  animation: checkPop 0.3s ease-out;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Transición suave para el botón de copiar */
+button:active {
+  transform: scale(0.95);
+}
+
+/* Mejora visual para input de búsqueda */
+input:focus {
+  transition: all 0.2s ease;
+}
+
+/* Animación hover para iconos sociales */
+.transform.hover\:scale-105:hover {
+  transition: transform 0.2s ease;
+}
+
+/* Asegurar que el botón de enviar mantenga sus colores */
+button.bg-gradient-to-r {
+  background-image: linear-gradient(to right, #f97316, #ea580c) !important;
+  color: white !important;
+}
+
+button.bg-gradient-to-r:hover {
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
+}
+
+button.bg-gradient-to-r:active {
+  transform: scale(0.95);
+}
+
+button[disabled] {
+  opacity: 1 !important;
+  background: #d1d5db !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+}
+
+/* Z-index para modales */
+.share-modal-backdrop {
+  z-index: 60;
+}
+
+/* Smooth transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}

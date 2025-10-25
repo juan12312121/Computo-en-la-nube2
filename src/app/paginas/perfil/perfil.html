@@ -1,5 +1,7 @@
 <app-navbar (openCreate)="openCreateModal()"></app-navbar>
 
+
+
 <!-- Profile Container -->
 <div class="max-w-5xl mx-auto px-4 py-6">
   <!-- Profile Header Card -->
@@ -21,14 +23,26 @@
         </div>
 
         <!-- Action Button -->
-        <div class="mt-4 md:mt-0">
-          <button
-            (click)="toggleProfileMode()"
-            [class]="isOwnProfile ? 'bg-gray-200 text-gray-700 px-6 py-2 rounded-xl font-bold hover:bg-gray-300 transition' : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:shadow-lg transition transform hover:-translate-y-0.5'">
-            <i [class]="isOwnProfile ? 'fas fa-edit mr-2' : 'fas fa-user-plus mr-2'"></i>
-            {{ isOwnProfile ? 'Editar perfil' : 'Seguir' }}
-          </button>
-        </div>
+        <div class="profile-actions">
+  <button
+    *ngIf="isOwnProfile"
+    (click)="toggleProfileMode()"
+    class="btn-editar"
+    aria-label="Editar perfil">
+    <i class="fas fa-edit icon-left" aria-hidden="true"></i>
+    Editar perfil
+  </button>
+
+  <button
+    *ngIf="!isOwnProfile"
+    (click)="toggleProfileMode()"
+    class="btn-seguir"
+    aria-label="Seguir">
+    <i class="fas fa-user-plus icon-left" aria-hidden="true"></i>
+    Seguir
+  </button>
+</div>
+
       </div>
 
       <!-- Bio and Info -->
