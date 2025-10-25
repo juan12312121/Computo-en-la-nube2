@@ -1,106 +1,138 @@
 <app-navbar (openCreate)="openCreateModal()"></app-navbar>
 
-<!-- Feed -->
-<div class="max-w-2xl mx-auto px-4 py-4">
-  <div *ngFor="let post of posts" class="bg-white border border-gray-200 rounded-lg mb-4 hover:shadow-md transition">
-    <!-- Header -->
+<!-- Main Feed Container -->
+<div class="max-w-2xl mx-auto px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-4">
+  <!-- Post Cards -->
+  <div *ngFor="let post of posts" class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
+    <!-- Post Header -->
     <div class="px-4 pt-3 pb-2">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br {{post.avatarColor}} flex items-center justify-center text-white font-semibold text-sm">
-          {{post.avatar}}
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br {{ post.avatarColor }} flex items-center justify-center text-white font-bold">
+            {{ post.avatar }}
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900">{{ post.author }}</h3>
+            <p class="text-gray-500 text-xs">{{ post.time }}</p>
+          </div>
         </div>
-        <div>
-          <h3 class="font-semibold text-gray-900 text-sm leading-tight">{{post.author}}</h3>
-          <p class="text-gray-500 text-xs">{{post.time}}</p>
-        </div>
+        <button class="text-gray-400 hover:text-gray-600 transition p-2">
+          <i class="fas fa-ellipsis-h"></i>
+        </button>
       </div>
     </div>
 
-    <!-- Content -->
-    <div class="px-4 pb-2">
-      <p class="text-gray-900 text-sm leading-snug">{{post.content}}</p>
+    <!-- Post Content -->
+    <div class="px-4 pb-3">
+      <p class="text-gray-900 leading-relaxed text-sm sm:text-base">{{ post.content }}</p>
     </div>
 
-    <!-- Image -->
-    <div *ngIf="post.image" class="mt-2">
+    <!-- Post Image -->
+    <div *ngIf="post.image"
+         (click)="openPostDetail(post.id)"
+         class="cursor-pointer hover:opacity-95 transition">
       <img [src]="post.image" [alt]="post.category" class="w-full h-auto">
     </div>
 
     <!-- Category Tag -->
-    <div class="px-4 pt-2">
-      <span class="inline-block {{post.categoryColor}} text-white px-3 py-1 rounded-full text-xs font-semibold">
-        {{post.category}}
+    <div class="px-4 pt-3">
+      <span class="inline-block {{ post.categoryColor }} text-white px-3 py-1.5 rounded-full text-xs font-semibold">
+        {{ post.category }}
       </span>
     </div>
 
-    <!-- Stats -->
-    <div class="px-4 py-2 flex items-center justify-between text-xs text-gray-500">
-      <span>{{post.likes}} Me gusta</span>
-      <span>{{post.comments.length}} comentarios · {{post.shares}} compartidos</span>
+    <!-- Post Stats -->
+    <div class="px-4 py-3 flex items-center justify-between text-sm text-gray-500">
+      <button
+        (click)="openPostDetail(post.id)"
+        class="hover:underline font-medium">
+        {{ post.likes }} Me gusta
+      </button>
+      <button
+        (click)="openPostDetail(post.id)"
+        class="hover:underline font-medium text-right">
+        {{ post.comments.length }} comentarios · {{ post.shares }} compartidos
+      </button>
     </div>
 
-    <!-- Actions -->
-    <div class="border-t border-gray-200 px-2 py-1 flex items-center gap-1">
-      <button (click)="toggleLike(post.id)" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md hover:bg-gray-100 transition font-semibold text-sm" [ngClass]="post.liked ? 'text-orange-500' : 'text-gray-600'">
-        <i class="fas fa-heart" [ngClass]="post.liked ? '' : 'far'"></i>
-        Me gusta
+    <!-- Action Buttons -->
+    <div class="border-t border-gray-200 px-2 py-1.5 flex items-center gap-1">
+      <button
+        (click)="toggleLike(post.id)"
+        [class]="post.liked ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-orange-50 text-orange-500 font-bold transition text-sm' : 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition text-sm'">
+        <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+        <span>Me gusta</span>
       </button>
-      <button (click)="toggleComments(post.id)" class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md hover:bg-gray-100 transition font-semibold text-sm text-gray-600">
+      <button
+        (click)="toggleComments(post.id)"
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition text-sm">
         <i class="fas fa-comment"></i>
-        Comentar
+        <span>Comentar</span>
       </button>
-      <button class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md hover:bg-gray-100 transition font-semibold text-sm text-gray-600">
+      <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition text-sm">
         <i class="fas fa-share"></i>
-        Compartir
+        <span>Compartir</span>
       </button>
     </div>
 
-    <!-- Quick Comment Input -->
-    <div class="border-t border-gray-200 px-4 py-2">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-          TU
+    <!-- Comments Section (Expandable) -->
+    <div *ngIf="post.showComments" class="border-t border-gray-200 bg-gray-50">
+      <!-- Existing Comments -->
+      <div *ngIf="post.comments.length > 0" class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
+        <div *ngFor="let comment of post.comments" class="flex gap-2.5">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br {{ comment.avatarColor }} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+            {{ comment.avatar }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="bg-white rounded-2xl px-4 py-2.5 shadow-sm break-words">
+              <p class="font-bold text-sm text-gray-900">{{ comment.author }}</p>
+              <p class="text-sm text-gray-900 mt-1 leading-relaxed">{{ comment.text }}</p>
+            </div>
+            <div class="flex items-center gap-3 mt-1.5 px-3 text-xs text-gray-500">
+              <span>{{ comment.time }}</span>
+              <button class="hover:underline font-semibold">Me gusta</button>
+              <button class="hover:underline font-semibold hidden sm:inline">Responder</button>
+            </div>
+          </div>
         </div>
-        <div class="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
+      </div>
+
+      <!-- No Comments Message -->
+      <div *ngIf="post.comments.length === 0" class="px-4 py-12 text-center">
+        <i class="fas fa-comments text-4xl text-gray-300 mb-3"></i>
+        <p class="text-gray-500 text-sm font-medium">No hay comentarios aún</p>
+        <p class="text-gray-400 text-xs mt-1">Sé el primero en comentar</p>
+      </div>
+
+      <!-- Comment Input -->
+      <div class="px-4 py-3 border-t border-gray-200 bg-white">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+            TU
+          </div>
           <input
             type="text"
             [(ngModel)]="commentInputs[post.id]"
             (keypress)="onCommentKeyPress($event, post.id)"
             placeholder="Escribe un comentario..."
-            class="flex-1 bg-transparent outline-none text-sm"
-          />
-          <button (click)="addComment(post.id)" class="text-orange-500 hover:text-orange-600">
-            <i class="fas fa-paper-plane"></i>
+            class="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-w-0">
+          <button
+            (click)="addComment(post.id)"
+            [disabled]="!commentInputs[post.id]?.trim()"
+            [class]="commentInputs[post.id]?.trim() ? 'text-orange-500 hover:text-orange-600 active:scale-95 transition-all p-2' : 'text-gray-400 cursor-not-allowed p-2'">
+            <i class="fas fa-paper-plane text-lg"></i>
           </button>
         </div>
       </div>
     </div>
-
-    <!-- Comments Section -->
-    <div *ngIf="post.showComments" class="border-t border-gray-200 px-4 py-3 space-y-2">
-      <div *ngFor="let comment of post.comments" class="flex gap-2">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-br {{comment.avatarColor}} flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-          {{comment.avatar}}
-        </div>
-        <div class="flex-1">
-          <div class="bg-gray-100 rounded-2xl px-3 py-2 inline-block max-w-full">
-            <p class="font-semibold text-xs text-gray-900 leading-tight">{{comment.author}}</p>
-            <p class="text-sm text-gray-900 leading-snug">{{comment.text}}</p>
-          </div>
-          <div class="flex items-center gap-4 px-3 mt-1 text-xs text-gray-500 font-semibold">
-            <button class="hover:underline">Me gusta</button>
-            <button class="hover:underline">Responder</button>
-            <span>{{comment.time}}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- View More Comments -->
-    <div *ngIf="!post.showComments && post.comments.length > 0" class="px-4 pb-3">
-      <button (click)="toggleComments(post.id)" class="text-gray-500 hover:text-gray-700 text-sm font-semibold">
-        Ver los {{post.comments.length}} comentarios
-      </button>
-    </div>
   </div>
 </div>
+
+<!-- Modal de Detalle del Post -->
+<app-detalle-post
+  [post]="selectedPost"
+  [isVisible]="showPostDetailModal"
+  (close)="closePostDetail()"
+  (likeToggled)="toggleLike($event)"
+  (commentAdded)="handleCommentAdded($event)">
+</app-detalle-post>

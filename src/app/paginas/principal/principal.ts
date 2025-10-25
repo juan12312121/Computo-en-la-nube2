@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DetallePost } from '../../componentes/detalle-post/detalle-post';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
 
 interface Comment {
@@ -32,12 +33,14 @@ interface Post {
 @Component({
   selector: 'app-principal',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, DetallePost],
   templateUrl: './principal.html',
   styleUrls: ['./principal.css']
 })
 export class Principal {
   showCreateModal = false;
+  showPostDetailModal = false;
+  selectedPost: Post | null = null;
 
   posts: Post[] = [
     {
@@ -110,6 +113,18 @@ export class Principal {
     this.showCreateModal = false;
   }
 
+  openPostDetail(postId: number) {
+    this.selectedPost = this.posts.find(p => p.id === postId) || null;
+    this.showPostDetailModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closePostDetail() {
+    this.showPostDetailModal = false;
+    this.selectedPost = null;
+    document.body.style.overflow = 'auto';
+  }
+
   toggleLike(postId: number) {
     const post = this.posts.find(p => p.id === postId);
     if (post) {
@@ -140,6 +155,20 @@ export class Principal {
         avatarColor: 'from-blue-400 to-blue-600'
       });
       this.commentInputs[postId] = '';
+    }
+  }
+
+  handleCommentAdded(event: {postId: number, comment: string}) {
+    const post = this.posts.find(p => p.id === event.postId);
+    if (post) {
+      post.comments.push({
+        id: Date.now(),
+        author: 'Tú',
+        avatar: 'TU',
+        text: event.comment,
+        time: 'Ahora',
+        avatarColor: 'from-blue-400 to-blue-600'
+      });
     }
   }
 

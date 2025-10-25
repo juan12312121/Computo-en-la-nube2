@@ -1,6 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
-import { CommonModule } from '@angular/common';
 
 interface Post {
   id: number;
@@ -91,41 +91,41 @@ export class PerfilComponent {
   ];
 
   documents: Document[] = [
-    { 
-      id: 1, 
-      name: 'Apuntes de Algoritmos.pdf', 
-      description: 'Notas completas del curso de Algoritmos y Estructuras de Datos, incluye ejemplos prácticos...', 
-      icon: 'fa-file-pdf', 
-      color: 'text-red-500', 
-      size: '2.4 MB', 
-      date: 'Hace 3 días' 
+    {
+      id: 1,
+      name: 'Apuntes de Algoritmos.pdf',
+      description: 'Notas completas del curso de Algoritmos y Estructuras de Datos, incluye ejemplos prácticos...',
+      icon: 'fa-file-pdf',
+      color: 'text-red-500',
+      size: '2.4 MB',
+      date: 'Hace 3 días'
     },
-    { 
-      id: 2, 
-      name: 'Proyecto Final React.zip', 
-      description: 'Código fuente del proyecto final de Desarrollo Web con React, Node.js y MongoDB...', 
-      icon: 'fa-file-archive', 
-      color: 'text-yellow-500', 
-      size: '15.7 MB', 
-      date: 'Hace 1 semana' 
+    {
+      id: 2,
+      name: 'Proyecto Final React.zip',
+      description: 'Código fuente del proyecto final de Desarrollo Web con React, Node.js y MongoDB...',
+      icon: 'fa-file-archive',
+      color: 'text-yellow-500',
+      size: '15.7 MB',
+      date: 'Hace 1 semana'
     },
-    { 
-      id: 3, 
-      name: 'Presentación IA.pptx', 
-      description: 'Diapositivas de la presentación sobre Inteligencia Artificial y Machine Learning...', 
-      icon: 'fa-file-powerpoint', 
-      color: 'text-orange-500', 
-      size: '8.3 MB', 
-      date: 'Hace 2 semanas' 
+    {
+      id: 3,
+      name: 'Presentación IA.pptx',
+      description: 'Diapositivas de la presentación sobre Inteligencia Artificial y Machine Learning...',
+      icon: 'fa-file-powerpoint',
+      color: 'text-orange-500',
+      size: '8.3 MB',
+      date: 'Hace 2 semanas'
     },
-    { 
-      id: 4, 
-      name: 'Resumen Cálculo.docx', 
-      description: 'Resumen del curso de Cálculo Diferencial e Integral con fórmulas importantes...', 
-      icon: 'fa-file-word', 
-      color: 'text-blue-500', 
-      size: '1.2 MB', 
-      date: 'Hace 3 semanas' 
+    {
+      id: 4,
+      name: 'Resumen Cálculo.docx',
+      description: 'Resumen del curso de Cálculo Diferencial e Integral con fórmulas importantes...',
+      icon: 'fa-file-word',
+      color: 'text-blue-500',
+      size: '1.2 MB',
+      date: 'Hace 3 semanas'
     }
   ];
 
