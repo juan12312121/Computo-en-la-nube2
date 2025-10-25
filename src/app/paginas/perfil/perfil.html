@@ -6,7 +6,7 @@
   <div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
     <!-- Cover Photo -->
     <div class="h-48 bg-gradient-to-br from-orange-400 via-orange-500 to-teal-400"></div>
-    
+
     <!-- Profile Info -->
     <div class="px-6 pb-6">
       <div class="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-4">
@@ -19,10 +19,10 @@
             <p class="text-gray-500 font-medium">@maria_dev</p>
           </div>
         </div>
-        
+
         <!-- Action Button -->
         <div class="mt-4 md:mt-0">
-          <button 
+          <button
             (click)="toggleProfileMode()"
             [class]="isOwnProfile ? 'bg-gray-200 text-gray-700 px-6 py-2 rounded-xl font-bold hover:bg-gray-300 transition' : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:shadow-lg transition transform hover:-translate-y-0.5'">
             <i [class]="isOwnProfile ? 'fas fa-edit mr-2' : 'fas fa-user-plus mr-2'"></i>
@@ -30,13 +30,13 @@
           </button>
         </div>
       </div>
-      
+
       <!-- Bio and Info -->
       <div class="space-y-3 mb-4">
         <p class="text-gray-700 leading-relaxed">
           💻 Desarrolladora Full Stack | Apasionada por React y Node.js | Siempre aprendiendo algo nuevo ✨
         </p>
-        
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <div class="flex items-center gap-2 text-gray-600">
             <i class="fas fa-graduation-cap text-orange-500"></i>
@@ -55,7 +55,7 @@
             <a href="#" class="font-medium text-orange-500 hover:underline">portfolio.mariadev.com</a>
           </div>
         </div>
-        
+
         <!-- Social Links -->
         <div class="flex gap-3 pt-2">
           <a href="#" class="w-9 h-9 bg-gray-100 hover:bg-orange-100 rounded-full flex items-center justify-center text-gray-600 hover:text-orange-500 transition">
@@ -69,7 +69,7 @@
           </a>
         </div>
       </div>
-      
+
       <!-- Stats -->
       <div class="flex gap-6 pt-4 border-t border-gray-200">
         <div class="text-center">
@@ -87,38 +87,40 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Tabs Navigation -->
   <div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-x-auto">
     <div class="flex min-w-max px-2">
-      <button 
+      <button
         (click)="switchTab('todo')"
         [class]="activeTab === 'todo' ? 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-orange-500 text-orange-500' : 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-gray-300'">
         <i class="fas fa-th-large mr-2"></i>Todo
       </button>
-      <button 
+      <button
         (click)="switchTab('fotos')"
         [class]="activeTab === 'fotos' ? 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-orange-500 text-orange-500' : 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-gray-300'">
         <i class="fas fa-images mr-2"></i>Fotos
       </button>
-      <button 
+      <button
         (click)="switchTab('documentos')"
         [class]="activeTab === 'documentos' ? 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-orange-500 text-orange-500' : 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-gray-300'">
         <i class="fas fa-file-alt mr-2"></i>Documentos
       </button>
-      <button 
+      <button
         (click)="switchTab('secciones')"
         [class]="activeTab === 'secciones' ? 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-orange-500 text-orange-500' : 'flex-1 px-6 py-4 font-bold text-sm transition border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-gray-300'">
         <i class="fas fa-folder mr-2"></i>Secciones
       </button>
     </div>
   </div>
-  
+
   <!-- Content Area -->
   <div>
     <!-- Todo Tab Content -->
     <div *ngIf="activeTab === 'todo'" class="space-y-4">
-      <div *ngFor="let post of posts" class="bg-white border border-gray-200 rounded-lg hover:shadow-md transition">
+      <div *ngFor="let post of posts"
+           (click)="openPostDetail(post.id)"
+           class="bg-white border border-gray-200 rounded-lg hover:shadow-md transition cursor-pointer">
         <div class="px-4 pt-3 pb-2">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -147,7 +149,7 @@
 
         <div class="px-4 py-2 flex items-center justify-between text-xs text-gray-500">
           <span>{{ post.likes }} Me gusta</span>
-          <span>{{ post.comments }} comentarios</span>
+          <span>{{ post.comments.length }} comentarios</span>
         </div>
 
         <div class="border-t border-gray-200 px-2 py-1 flex items-center gap-1">
@@ -166,19 +168,19 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Fotos Tab Content -->
     <div *ngIf="activeTab === 'fotos'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-      <div *ngFor="let photo of photos" 
-           (click)="openPhotoModal(photo.id)"
+      <div *ngFor="let photo of photos"
+           (click)="openPhotoDetail(photo.id)"
            class="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition">
         <img [src]="photo.url" alt="Foto" class="w-full h-full object-cover">
       </div>
     </div>
-    
+
     <!-- Documentos Tab Content -->
     <div *ngIf="activeTab === 'documentos'" class="space-y-3">
-      <div *ngFor="let doc of documents" 
+      <div *ngFor="let doc of documents"
            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
         <div class="flex items-start gap-4">
           <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -198,10 +200,10 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Secciones Tab Content -->
     <div *ngIf="activeTab === 'secciones'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div *ngFor="let section of sections" 
+      <div *ngFor="let section of sections"
            (click)="openSectionModal(section.id)"
            class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition cursor-pointer">
         <div class="flex items-center gap-4 mb-3">
@@ -222,77 +224,18 @@
   </div>
 </div>
 
-<!-- Modal para ver foto -->
-<div *ngIf="showPhotoModal" 
-     (click)="onModalBackdropClick($event, 'photo')"
-     class="modal-backdrop fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-  <button (click)="closePhotoModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl z-10">
-    <i class="fas fa-times"></i>
-  </button>
-  
-  <div class="max-w-6xl w-full h-full flex flex-col md:flex-row gap-4">
-    <!-- Image Container -->
-    <div class="flex-1 flex items-center justify-center">
-      <img [src]="selectedPhoto?.url" alt="Foto" class="max-w-full max-h-full object-contain rounded-lg">
-    </div>
-    
-    <!-- Comments Sidebar -->
-    <div class="w-full md:w-96 bg-white rounded-lg flex flex-col max-h-[80vh]">
-      <!-- Header -->
-      <div class="p-4 border-b border-gray-200">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
-            MR
-          </div>
-          <div>
-            <h3 class="font-semibold text-gray-900">María Rodríguez</h3>
-            <p class="text-xs text-gray-500">Hace 2 horas</p>
-          </div>
-        </div>
-        <p class="mt-3 text-sm text-gray-700">{{ selectedPhoto?.caption }}</p>
-      </div>
-      
-      <!-- Stats -->
-      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between text-sm">
-        <button class="flex items-center gap-2 text-orange-500 font-semibold hover:text-orange-600">
-          <i class="fas fa-heart"></i>
-          <span>127 Me gusta</span>
-        </button>
-        <span class="text-gray-500">8 comentarios</span>
-      </div>
-      
-      <!-- Comments -->
-      <div class="flex-1 overflow-y-auto p-4 space-y-3">
-        <div class="flex gap-2">
-          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-            JL
-          </div>
-          <div class="flex-1">
-            <div class="bg-gray-100 rounded-2xl px-3 py-2">
-              <p class="font-semibold text-xs text-gray-900">Juan López</p>
-              <p class="text-sm text-gray-900">¡Increíble trabajo María! 🔥</p>
-            </div>
-            <p class="text-xs text-gray-500 mt-1 px-3">Hace 1 h</p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Comment Input -->
-      <div class="p-4 border-t border-gray-200">
-        <div class="flex items-center gap-2">
-          <input type="text" placeholder="Añade un comentario..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500">
-          <button class="text-orange-500 hover:text-orange-600 font-semibold">
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- Componente de Detalle de Post -->
+<app-detalle-post
+  [post]="selectedPost"
+  [isVisible]="showPostDetail"
+  (close)="closePostDetail()"
+  (likeToggled)="onLikeToggled($event)"
+  (commentAdded)="onCommentAdded($event)">
+</app-detalle-post>
 
 <!-- Modal para ver sección -->
-<div *ngIf="showSectionModal" 
-     (click)="onModalBackdropClick($event, 'section')"
+<div *ngIf="showSectionModal"
+     (click)="onModalBackdropClick($event)"
      class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
     <!-- Header -->
@@ -310,10 +253,12 @@
         <i class="fas fa-times text-xl"></i>
       </button>
     </div>
-    
+
     <!-- Content -->
     <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-      <div *ngFor="let post of posts" class="bg-gray-50 border border-gray-200 rounded-lg mb-4 hover:shadow-md transition">
+      <div *ngFor="let post of posts"
+           (click)="openPostDetail(post.id)"
+           class="bg-gray-50 border border-gray-200 rounded-lg mb-4 hover:shadow-md transition cursor-pointer">
         <div class="px-4 pt-3 pb-2">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -336,7 +281,7 @@
 
         <div class="px-4 py-2 flex items-center justify-between text-xs text-gray-500">
           <span>{{ post.likes }} Me gusta</span>
-          <span>{{ post.comments }} comentarios</span>
+          <span>{{ post.comments.length }} comentarios</span>
         </div>
 
         <div class="border-t border-gray-200 px-2 py-1 flex items-center gap-1 text-sm font-medium text-gray-600">
