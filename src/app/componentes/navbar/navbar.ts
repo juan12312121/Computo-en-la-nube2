@@ -1,10 +1,12 @@
-import { Component, EventEmitter, Output, OnInit, OnDestroy } from '@angular/core';
+// ==================== navbar.component.ts ====================
+import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { BotonCrearPost } from '../boton-crear-post/boton-crear-post';
-import { ThemeService, Theme } from '../../core/servicios/temas';
+import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { trigger, transition, style, animate } from '@angular/animations';
+import { AutenticacionService, Usuario } from '../../core/servicios/autenticacion/autenticacion';
+import { Theme, ThemeService } from '../../core/servicios/temas';
+import { BotonCrearPost } from '../boton-crear-post/boton-crear-post';
 
 interface Notification {
   id: number;
@@ -14,12 +16,6 @@ interface Notification {
   time: string;
   avatarColor: string;
   isUnread: boolean;
-}
-
-interface User {
-  name: string;
-  username: string;
-  avatar: string;
 }
 
 @Component({
@@ -42,16 +38,16 @@ interface User {
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   @Output() openCreate = new EventEmitter<void>();
+  
+  // Referencias a los sliders
+  @ViewChild('themeSlider') themeSlider?: ElementRef<HTMLDivElement>;
+  @ViewChild('themeSliderMobile') themeSliderMobile?: ElementRef<HTMLDivElement>;
 
-  isLoggedIn = true;
+  // Usuario autenticado
+  currentUser: Usuario | null = null;
+  isLoggedIn = false;
+  
   showCrearPost = false;
-
-  user: User = {
-    name: 'Juan Carlos',
-    username: '@juan123',
-    avatar: 'https://i.pravatar.cc/100'
-  };
-
   showMobileMenu = false;
   showMobileProfileMenu = false;
   showProfileMenu = false;
@@ -61,7 +57,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
   currentTheme!: Theme;
   themes: Theme[] = [];
   
+  // Control de scroll para desktop
+  canScrollLeft = false;
+  canScrollRight = true;
+  
+  // Control de scroll para móvil
+  canScrollLeftMobile = false;
+  canScrollRightMobile = true;
+  
   private themeSubscription?: Subscription;
+  private authSubscription?: Subscription;
 
   notifications: Notification[] = [
     {
@@ -123,10 +128,39 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.currentTheme.id;
   }
 
-  constructor(private themeService: ThemeService) {
+  // Getters para el usuario
+  get userName(): string {
+    return this.currentUser?.nombre_completo || 'Usuario';
+  }
+
+  get userUsername(): string {
+    return this.currentUser?.nombre_usuario ? `@${this.currentUser.nombre_usuario}` : '@usuario';
+  }
+
+  get userAvatar(): string {
+    return this.currentUser?.foto_perfil_url || 'https://i.pravatar.cc/100';
+  }
+
+  get userInitials(): string {
+    if (!this.currentUser?.nombre_completo) return 'U';
+    const names = this.currentUser.nombre_completo.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return names[0][0].toUpperCase();
+  }
+
+  constructor(
+    private themeService: ThemeService,
+    private authService: AutenticacionService,
+    private router: Router
+  ) {
+    console.log('🚀 Navbar inicializado');
+    
     this.currentTheme = this.themeService.getCurrentTheme();
     this.themes = this.themeService.getThemes();
 
+    // Cerrar dropdowns al hacer click fuera
     document.addEventListener('click', (event: Event) => {
       const target = event.target as HTMLElement;
       if (
@@ -145,20 +179,44 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('📱 Navbar OnInit - Inicializando suscripciones');
+
+    // Suscribirse a cambios de tema
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
-      console.log('✅ Tema cambiado a:', theme.name);
+      console.log('🎨 Tema cambiado a:', theme.name);
     });
+
+    // Suscribirse a cambios de autenticación
+    this.authSubscription = this.authService.currentUser.subscribe(user => {
+      this.currentUser = user;
+      this.isLoggedIn = !!user;
+      
+      console.log('👤 Estado de autenticación actualizado:');
+      console.log('   - Usuario:', user ? user.nombre_usuario : 'No autenticado');
+      console.log('   - Logueado:', this.isLoggedIn);
+      console.log('   - Datos completos:', user);
+    });
+
+    // Log inicial del usuario
+    const initialUser = this.authService.currentUserValue;
+    console.log('👥 Usuario inicial al cargar navbar:', initialUser);
   }
 
   ngOnDestroy(): void {
+    console.log('🔚 Navbar OnDestroy - Limpiando suscripciones');
+    
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
+    }
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
     }
     document.body.classList.remove('mobile-menu-open');
   }
 
   applyTheme(themeId: string): void {
+    console.log('🎨 Aplicando tema:', themeId);
     this.themeService.setTheme(themeId);
     this.showThemeMenu = false;
   }
@@ -170,6 +228,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showThemeMenu = false;
     this.showMobileProfileMenu = false;
     
+    console.log('📱 Menú móvil:', this.showMobileMenu ? 'Abierto' : 'Cerrado');
+    
     if (this.showMobileMenu) {
       document.body.classList.add('mobile-menu-open');
     } else {
@@ -179,6 +239,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   toggleMobileProfileMenu(): void {
     this.showMobileProfileMenu = !this.showMobileProfileMenu;
+    console.log('👤 Menú perfil móvil:', this.showMobileProfileMenu ? 'Abierto' : 'Cerrado');
   }
 
   toggleProfileMenu(event: MouseEvent): void {
@@ -186,6 +247,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showProfileMenu = !this.showProfileMenu;
     this.showNotifications = false;
     this.showThemeMenu = false;
+    console.log('👤 Menú perfil:', this.showProfileMenu ? 'Abierto' : 'Cerrado');
   }
 
   toggleNotifications(event: MouseEvent): void {
@@ -193,6 +255,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showNotifications = !this.showNotifications;
     this.showProfileMenu = false;
     this.showThemeMenu = false;
+    console.log('🔔 Notificaciones:', this.showNotifications ? 'Abiertas' : 'Cerradas');
   }
 
   toggleThemeMenu(event: MouseEvent): void {
@@ -200,9 +263,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showThemeMenu = !this.showThemeMenu;
     this.showProfileMenu = false;
     this.showNotifications = false;
+    console.log('🎨 Menú temas:', this.showThemeMenu ? 'Abierto' : 'Cerrado');
   }
 
   onOpenCreate(): void {
+    console.log('➕ Abriendo modal crear post');
     this.showCrearPost = true;
   }
 
@@ -210,28 +275,109 @@ export class NavbarComponent implements OnInit, OnDestroy {
     const notification = this.notifications.find(n => n.id === notificationId);
     if (notification) {
       notification.isUnread = false;
+      console.log('✅ Notificación marcada como leída:', notificationId);
     }
   }
 
   markAllAsRead(): void {
     this.notifications.forEach(n => n.isUnread = false);
+    console.log('✅ Todas las notificaciones marcadas como leídas');
   }
 
   deleteNotification(notificationId: number): void {
     this.notifications = this.notifications.filter(n => n.id !== notificationId);
+    console.log('🗑️ Notificación eliminada:', notificationId);
   }
 
   logout(): void {
-    this.isLoggedIn = false;
-    this.showProfileMenu = false;
-    this.showMobileMenu = false;
-    this.showMobileProfileMenu = false;
-    document.body.classList.remove('mobile-menu-open');
-    console.log('Cerrando sesión...');
+    console.log('🚪 Iniciando cierre de sesión...');
+    console.log('👤 Usuario antes de logout:', this.currentUser);
+    
+    this.authService.logout().subscribe({
+      next: () => {
+        console.log('✅ Logout exitoso');
+        console.log('🔀 Redirigiendo a /login');
+        
+        // Cerrar todos los menús
+        this.showProfileMenu = false;
+        this.showMobileMenu = false;
+        this.showMobileProfileMenu = false;
+        this.showNotifications = false;
+        this.showThemeMenu = false;
+        document.body.classList.remove('mobile-menu-open');
+        
+        // Redirigir al login
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('❌ Error en logout:', error);
+        // Aún así limpiar sesión localmente
+        this.authService.limpiarSesion();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
-  login(): void {
-    this.isLoggedIn = true;
-    this.showProfileMenu = false;
+  // ========== MÉTODOS PARA SLIDER DE TEMAS (DESKTOP) ==========
+  
+  scrollThemes(direction: 'left' | 'right'): void {
+    if (!this.themeSlider) return;
+    
+    const scrollAmount = 200;
+    const container = this.themeSlider.nativeElement;
+    
+    if (direction === 'left') {
+      container.scrollLeft -= scrollAmount;
+    } else {
+      container.scrollLeft += scrollAmount;
+    }
+    
+    // Actualizar estado de botones después del scroll
+    setTimeout(() => this.onThemeScroll(), 100);
+  }
+
+  onThemeScroll(): void {
+    if (!this.themeSlider) return;
+    
+    const container = this.themeSlider.nativeElement;
+    this.canScrollLeft = container.scrollLeft > 0;
+    this.canScrollRight = container.scrollLeft < (container.scrollWidth - container.clientWidth - 10);
+  }
+
+  // ========== MÉTODOS PARA SLIDER DE TEMAS (MÓVIL) ==========
+  
+  scrollThemesMobile(direction: 'left' | 'right'): void {
+    if (!this.themeSliderMobile) return;
+    
+    const scrollAmount = 300; // Aumentado para scroll más largo
+    const container = this.themeSliderMobile.nativeElement;
+    
+    if (direction === 'left') {
+      container.scrollLeft -= scrollAmount;
+    } else {
+      container.scrollLeft += scrollAmount;
+    }
+    
+    // Actualizar estado de botones después del scroll
+    setTimeout(() => this.onThemeScrollMobile(), 150);
+  }
+
+  onThemeScrollMobile(): void {
+    if (!this.themeSliderMobile) return;
+    
+    const container = this.themeSliderMobile.nativeElement;
+    const scrollLeft = container.scrollLeft;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    
+    // Dar un margen de 10px para considerar que llegó al final
+    this.canScrollLeftMobile = scrollLeft > 10;
+    this.canScrollRightMobile = scrollLeft < (maxScroll - 10);
+    
+    console.log('📱 Scroll móvil:', {
+      scrollLeft,
+      maxScroll,
+      canLeft: this.canScrollLeftMobile,
+      canRight: this.canScrollRightMobile
+    });
   }
 }

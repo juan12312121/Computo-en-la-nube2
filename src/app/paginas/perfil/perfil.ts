@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { DetallePost } from '../../componentes/detalle-post/detalle-post';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { Theme, ThemeService } from '../../core/servicios/temas';
 
 interface Post {
   id: number;
@@ -32,7 +34,7 @@ interface Photo {
   id: number;
   url: string;
   caption: string;
-  postId: number; // Vinculamos la foto con su post
+  postId: number;
 }
 
 interface Document {
@@ -60,13 +62,14 @@ interface Section {
   templateUrl: './perfil.html',
   styleUrl: './perfil.css'
 })
-export class PerfilComponent {
+export class PerfilComponent implements OnInit, OnDestroy {
   isOwnProfile = false;
   activeTab: 'todo' | 'fotos' | 'documentos' | 'secciones' = 'todo';
   showSectionModal = false;
   selectedSection: Section | null = null;
+  currentTheme: Theme;
+  private themeSubscription?: Subscription;
 
-  // Para el detalle de post
   selectedPost: Post | null = null;
   showPostDetail = false;
 
@@ -201,6 +204,20 @@ export class PerfilComponent {
     { id: 6, name: 'Colaboraciones', icon: 'fa-users', color: 'from-green-400 to-green-600', posts: 15 }
   ];
 
+  constructor(private themeService: ThemeService) {
+    this.currentTheme = this.themeService.getCurrentTheme();
+  }
+
+  ngOnInit() {
+    this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
+      this.currentTheme = theme;
+    });
+  }
+
+  ngOnDestroy() {
+    this.themeSubscription?.unsubscribe();
+  }
+
   toggleProfileMode(): void {
     this.isOwnProfile = !this.isOwnProfile;
   }
@@ -242,7 +259,6 @@ export class PerfilComponent {
     }
   }
 
-  // Métodos para el detalle de post
   closePostDetail(): void {
     this.showPostDetail = false;
     this.selectedPost = null;

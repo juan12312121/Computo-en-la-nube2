@@ -3,20 +3,25 @@
 <!-- Main Feed Container -->
 <div class="max-w-2xl mx-auto px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-4">
   <!-- Post Cards -->
-  <div *ngFor="let post of posts" class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
+  <div *ngFor="let post of posts" 
+       class="border rounded-xl shadow-sm hover:shadow-md transition"
+       [ngClass]="[currentTheme.cardBg || '']">
+    
     <!-- Post Header -->
     <div class="px-4 pt-3 pb-2">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full bg-gradient-to-br {{ post.avatarColor }} flex items-center justify-center text-white font-bold">
+          <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+               [style.background]="post.avatarColor">
             {{ post.avatar }}
           </div>
           <div>
-            <h3 class="font-bold text-gray-900">{{ post.author }}</h3>
-            <p class="text-gray-500 text-xs">{{ post.time }}</p>
+            <h3 class="font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">{{ post.author }}</h3>
+            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>
           </div>
         </div>
-        <button class="text-gray-400 hover:text-gray-600 transition p-2">
+        <button class="transition p-2" 
+                [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']">
           <i class="fas fa-ellipsis-h"></i>
         </button>
       </div>
@@ -24,7 +29,9 @@
 
     <!-- Post Content -->
     <div class="px-4 pb-3">
-      <p class="text-gray-900 leading-relaxed text-sm sm:text-base">{{ post.content }}</p>
+      <p class="leading-relaxed text-sm sm:text-base" [ngClass]="currentTheme.textPrimaryClass || ''">
+        {{ post.content }}
+      </p>
     </div>
 
     <!-- Post Image -->
@@ -36,62 +43,85 @@
 
     <!-- Category Tag -->
     <div class="px-4 pt-3">
-      <span class="inline-block {{ post.categoryColor }} text-white px-3 py-1.5 rounded-full text-xs font-semibold">
+      <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
+            [ngClass]="currentThemeData.accentBg || ''">
         {{ post.category }}
       </span>
     </div>
 
     <!-- Post Stats -->
-    <div class="px-4 py-3 flex items-center justify-between text-sm text-gray-500">
+    <div class="px-4 py-3 flex items-center justify-between text-sm" 
+         [ngClass]="currentTheme.textSecondaryClass || ''">
       <button
         (click)="openPostDetail(post.id)"
-        class="hover:underline font-medium">
+        class="hover:underline font-medium"
+        [ngClass]="currentThemeData.hoverText || ''">
         {{ post.likes }} Me gusta
       </button>
       <button
         (click)="openPostDetail(post.id)"
-        class="hover:underline font-medium text-right">
+        class="hover:underline font-medium text-right"
+        [ngClass]="currentThemeData.hoverText || ''">
         {{ post.comments.length }} comentarios · {{ post.shares }} compartidos
       </button>
     </div>
 
     <!-- Action Buttons -->
-    <div class="border-t border-gray-200 px-2 py-1.5 flex items-center gap-1">
+    <div class="border-t px-2 py-1.5 flex items-center gap-1"
+         [ngClass]="currentTheme.borderColor || ''">
       <button
         (click)="toggleLike(post.id)"
-        [class]="post.liked ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-orange-50 text-orange-500 font-bold transition text-sm' : 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition text-sm'">
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+        [ngClass]="post.liked ? 
+          [currentThemeData.textPrimary || '', 'bg-opacity-10', currentThemeData.accentBg || ''] : 
+          [currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
         <span>Me gusta</span>
       </button>
       <button
         (click)="toggleComments(post.id)"
-        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition text-sm">
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+        [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i class="fas fa-comment"></i>
         <span>Comentar</span>
       </button>
-      <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition text-sm">
+      <button 
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+        [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i class="fas fa-share"></i>
         <span>Compartir</span>
       </button>
     </div>
 
     <!-- Comments Section (Expandable) -->
-    <div *ngIf="post.showComments" class="border-t border-gray-200 bg-gray-50">
+    <div *ngIf="post.showComments" 
+         class="border-t"
+         [ngClass]="[currentTheme.borderColor || '', currentTheme.bodyClass || '']">
+      
       <!-- Existing Comments -->
       <div *ngIf="post.comments.length > 0" class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
         <div *ngFor="let comment of post.comments" class="flex gap-2.5">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br {{ comment.avatarColor }} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+               [style.background]="comment.avatarColor">
             {{ comment.avatar }}
           </div>
           <div class="flex-1 min-w-0">
-            <div class="bg-white rounded-2xl px-4 py-2.5 shadow-sm break-words">
-              <p class="font-bold text-sm text-gray-900">{{ comment.author }}</p>
-              <p class="text-sm text-gray-900 mt-1 leading-relaxed">{{ comment.text }}</p>
+            <div class="rounded-2xl px-4 py-2.5 shadow-sm break-words"
+                 [ngClass]="currentTheme.cardBg || ''">
+              <p class="font-bold text-sm" [ngClass]="currentTheme.textPrimaryClass || ''">
+                {{ comment.author }}
+              </p>
+              <p class="text-sm mt-1 leading-relaxed" [ngClass]="currentTheme.textPrimaryClass || ''">
+                {{ comment.text }}
+              </p>
             </div>
-            <div class="flex items-center gap-3 mt-1.5 px-3 text-xs text-gray-500">
+            <div class="flex items-center gap-3 mt-1.5 px-3 text-xs" 
+                 [ngClass]="currentTheme.textSecondaryClass || ''">
               <span>{{ comment.time }}</span>
-              <button class="hover:underline font-semibold">Me gusta</button>
-              <button class="hover:underline font-semibold hidden sm:inline">Responder</button>
+              <button class="hover:underline font-semibold" 
+                      [ngClass]="currentThemeData.hoverText || ''">Me gusta</button>
+              <button class="hover:underline font-semibold hidden sm:inline"
+                      [ngClass]="currentThemeData.hoverText || ''">Responder</button>
             </div>
           </div>
         </div>
@@ -99,15 +129,17 @@
 
       <!-- No Comments Message -->
       <div *ngIf="post.comments.length === 0" class="px-4 py-12 text-center">
-        <i class="fas fa-comments text-4xl text-gray-300 mb-3"></i>
-        <p class="text-gray-500 text-sm font-medium">No hay comentarios aún</p>
-        <p class="text-gray-400 text-xs mt-1">Sé el primero en comentar</p>
+        <i class="fas fa-comments text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+        <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass || ''">No hay comentarios aún</p>
+        <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">Sé el primero en comentar</p>
       </div>
 
       <!-- Comment Input -->
-      <div class="px-4 py-3 border-t border-gray-200 bg-white">
+      <div class="px-4 py-3 border-t" 
+           [ngClass]="[currentTheme.borderColor || '', currentTheme.cardBg || '']">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+               [ngClass]="currentThemeData.avatarBg || ''">
             TU
           </div>
           <input
@@ -115,11 +147,17 @@
             [(ngModel)]="commentInputs[post.id]"
             (keypress)="onCommentKeyPress($event, post.id)"
             placeholder="Escribe un comentario..."
-            class="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-w-0">
+            class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0"
+            [ngClass]="[currentTheme.bodyClass || '', currentTheme.textPrimaryClass || '']"
+            [class.focus:ring-orange-500]="currentTheme.id === 'default'"
+            [style.--tw-ring-color]="getThemeRingColor()">
           <button
             (click)="addComment(post.id)"
             [disabled]="!commentInputs[post.id]?.trim()"
-            [class]="commentInputs[post.id]?.trim() ? 'text-orange-500 hover:text-orange-600 active:scale-95 transition-all p-2' : 'text-gray-400 cursor-not-allowed p-2'">
+            class="transition-all p-2"
+            [ngClass]="commentInputs[post.id]?.trim() ? 
+              [currentThemeData.textPrimary || '', 'active:scale-95'] : 
+              [currentTheme.textSecondaryClass || '', 'cursor-not-allowed', 'opacity-50']">
             <i class="fas fa-paper-plane text-lg"></i>
           </button>
         </div>

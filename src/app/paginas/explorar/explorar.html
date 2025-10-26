@@ -3,41 +3,40 @@
 <!-- Hero Section -->
 <div class="max-w-7xl mx-auto px-6 py-12">
     <div class="text-center mb-12">
-        <h1 style="font-size: 3.75rem; font-weight: 900; margin-bottom: 1rem; background: linear-gradient(to right, #f97316, #ea580c, #14b8a6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <h1 class="hero-title">
             Explora TrinoFlow
         </h1>
-        <p class="text-xl text-gray-600 font-medium">Descubre temas fascinantes y conecta con tu pasión</p>
+        <p class="hero-subtitle">
+            Descubre temas fascinantes y conecta con tu pasión
+        </p>
     </div>
 
     <!-- Search Bar with Modern Design -->
     <div class="mb-16">
         <div class="relative max-w-3xl mx-auto group">
-            <div style="position: absolute; inset: -0.25rem; background: linear-gradient(to right, #f97316, #2dd4bf); border-radius: 1.5rem; filter: blur(16px); opacity: 0.25; transition: opacity 0.3s;"></div>
+            <div [style.background]="currentTheme.color" 
+                 style="position: absolute; inset: -0.25rem; border-radius: 1.5rem; filter: blur(16px); opacity: 0.25; transition: opacity 0.3s;">
+            </div>
             <div class="relative">
                 <input
                     type="text"
                     [(ngModel)]="searchTerm"
                     (input)="filterTags()"
                     placeholder="¿Qué quieres explorar hoy?"
-                    class="w-full px-8 py-5 pl-16 rounded-3xl border-2 border-gray-200 bg-white focus:border-orange-500 focus:outline-none text-lg shadow-lg transition duration-300 focus:shadow-2xl"
+                    [ngClass]="[currentTheme.cardBg, 'focus:' + currentTheme.accentBorder]"
+                    class="w-full px-8 py-5 pl-16 rounded-3xl border-2 focus:outline-none text-lg shadow-lg transition duration-300 focus:shadow-2xl"
                 >
             </div>
         </div>
     </div>
 
-    <!-- Trending Badge -->
-    <div class="flex items-center justify-center gap-2 mb-8">
-        <div style="background: linear-gradient(to right, #f97316, #ea580c); color: white; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 10px 15px rgba(0,0,0,0.1);">
-            <i class="fas fa-fire"></i>
-            Trending Topics
-        </div>
-    </div>
+   
 
     <!-- Tags Grid with Modern Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="filteredTags.length > 0">
         <div *ngFor="let tag of filteredTags"
-             class="group relative bg-white rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer border-2 border-gray-100 overflow-hidden"
-             [style.border-color]="'var(--hover-border-' + tag.color + ')'"
+             [ngClass]="currentTheme.cardBg"
+             class="group relative rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer border-2 overflow-hidden"
              (mouseenter)="onCardHover($event, tag.color)"
              (mouseleave)="onCardLeave($event)">
             
@@ -52,18 +51,15 @@
                          [style.background-color]="getColor(tag.color)">
                         <i class="fas {{tag.icon}} text-white text-2xl"></i>
                     </div>
-                    <div *ngIf="tag.trending" style="background: linear-gradient(to right, #fb923c, #ef4444); color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">
-                        <i class="fas fa-fire text-xs"></i>
-                        Hot
-                    </div>
+                   
                 </div>
 
-                <h3 class="font-bold text-gray-900 text-xl mb-2 transition-colors">
+                <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xl mb-2 transition-colors">
                     {{tag.name}}
                 </h3>
 
                 <div class="flex items-center justify-between mt-4">
-                    <div class="flex items-center gap-2 text-gray-500">
+                    <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-2">
                         <i class="fas fa-file-alt text-sm"></i>
                         <span class="text-sm font-semibold">{{tag.posts | number}} posts</span>
                     </div>
@@ -83,14 +79,20 @@
 
     <!-- No Results Message -->
     <div *ngIf="filteredTags.length === 0" class="text-center py-20">
-        <div class="inline-block p-8 bg-white rounded-3xl shadow-xl">
-            <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-2xl font-bold text-gray-700 mb-2">No encontramos resultados</h3>
-            <p class="text-gray-500">Intenta con otra búsqueda</p>
+        <div [ngClass]="currentTheme.cardBg" class="inline-block p-8 rounded-3xl shadow-xl">
+            <i [ngClass]="currentTheme.textSecondaryClass" class="fas fa-search text-6xl mb-4 opacity-50"></i>
+            <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-bold mb-2">
+                No encontramos resultados
+            </h3>
+            <p [ngClass]="currentTheme.textSecondaryClass">Intenta con otra búsqueda</p>
         </div>
     </div>
 </div>
 
 <!-- Floating Decorative Elements -->
-<div style="position: fixed; top: 5rem; left: 2.5rem; width: 5rem; height: 5rem; background-color: #fed7aa; border-radius: 9999px; opacity: 0.2; filter: blur(48px); pointer-events: none;"></div>
-<div style="position: fixed; bottom: 5rem; right: 2.5rem; width: 8rem; height: 8rem; background-color: #99f6e4; border-radius: 9999px; opacity: 0.2; filter: blur(48px); pointer-events: none;"></div>
+<div [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' ? '#a855f7' : '#fed7aa'" 
+     style="position: fixed; top: 5rem; left: 2.5rem; width: 5rem; height: 5rem; border-radius: 9999px; opacity: 0.2; filter: blur(48px); pointer-events: none;">
+</div>
+<div [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'toxic' ? '#6366f1' : '#99f6e4'" 
+     style="position: fixed; bottom: 5rem; right: 2.5rem; width: 8rem; height: 8rem; border-radius: 9999px; opacity: 0.2; filter: blur(48px); pointer-events: none;">
+</div>

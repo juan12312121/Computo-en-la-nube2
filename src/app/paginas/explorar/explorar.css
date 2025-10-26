@@ -1,0 +1,200 @@
+/* Título principal con gradiente */
+.hero-title {
+  font-size: 3.75rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  background: linear-gradient(to right, #f97316, #ea580c, #14b8a6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: background 0.3s ease;
+  display: inline-block;
+}
+
+/* Subtítulo */
+.hero-subtitle {
+  font-size: 1.25rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+/* Badge de Trending Topics */
+.trending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.trending-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Animación para el ícono de fuego */
+@keyframes fire-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.trending-badge i {
+  animation: fire-pulse 2s ease-in-out infinite;
+}
+
+/* Temas específicos para el título */
+[data-theme="default"] .hero-title {
+  background: linear-gradient(to right, #f97316, #ea580c, #14b8a6);
+}
+
+[data-theme="midnight"] .hero-title {
+  background: linear-gradient(to right, #6366f1, #8b5cf6, #a855f7);
+}
+
+[data-theme="forest"] .hero-title {
+  background: linear-gradient(to right, #10b981, #059669, #14b8a6);
+}
+
+[data-theme="sunset"] .hero-title {
+  background: linear-gradient(to right, #f59e0b, #ef4444, #dc2626);
+}
+
+[data-theme="ocean"] .hero-title {
+  background: linear-gradient(to right, #0ea5e9, #06b6d4, #0891b2);
+}
+
+[data-theme="rose"] .hero-title {
+  background: linear-gradient(to right, #ec4899, #f472b6, #f9a8d4);
+}
+
+[data-theme="slate"] .hero-title {
+  background: linear-gradient(to right, #64748b, #475569, #334155);
+}
+
+[data-theme="lavender"] .hero-title {
+  background: linear-gradient(to right, #a78bfa, #c084fc, #e879f9);
+}
+
+[data-theme="neon"] .hero-title {
+  background: linear-gradient(to right, #00ffff, #ff00ff, #ffff00);
+}
+
+[data-theme="toxic"] .hero-title {
+  background: linear-gradient(to right, #84cc16, #22c55e, #10b981);
+}
+
+[data-theme="candy"] .hero-title {
+  background: linear-gradient(to right, #fbbf24, #ec4899, #8b5cf6);
+}
+
+[data-theme="chaos"] .hero-title {
+  background: linear-gradient(to right, #ff0000, #00ff00, #0000ff, #ffff00);
+}
+
+/* Temas específicos para el badge de Trending */
+[data-theme="default"] .trending-badge {
+  background: linear-gradient(to right, #f97316, #ea580c);
+}
+
+[data-theme="midnight"] .trending-badge {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+}
+
+[data-theme="forest"] .trending-badge {
+  background: linear-gradient(to right, #10b981, #059669);
+}
+
+[data-theme="sunset"] .trending-badge {
+  background: linear-gradient(to right, #f59e0b, #ef4444);
+}
+
+[data-theme="ocean"] .trending-badge {
+  background: linear-gradient(to right, #0ea5e9, #06b6d4);
+}
+
+[data-theme="rose"] .trending-badge {
+  background: linear-gradient(to right, #ec4899, #f472b6);
+}
+
+[data-theme="slate"] .trending-badge {
+  background: linear-gradient(to right, #64748b, #475569);
+}
+
+[data-theme="lavender"] .trending-badge {
+  background: linear-gradient(to right, #a78bfa, #c084fc);
+}
+
+[data-theme="neon"] .trending-badge {
+  background: linear-gradient(to right, #00ffff, #ff00ff);
+}
+
+[data-theme="toxic"] .trending-badge {
+  background: linear-gradient(to right, #84cc16, #22c55e);
+}
+
+[data-theme="candy"] .trending-badge {
+  background: linear-gradient(to right, #fbbf24, #ec4899, #8b5cf6);
+}
+
+[data-theme="chaos"] .trending-badge {
+  background: linear-gradient(to right, #ff0000, #ffff00, #00ff00);
+}
+
+/* Colores de subtítulo según tema */
+[data-theme="default"] .hero-subtitle {
+  color: #6b7280;
+}
+
+[data-theme="midnight"] .hero-subtitle {
+  color: #94a3b8;
+}
+
+[data-theme="forest"] .hero-subtitle {
+  color: #6b7280;
+}
+
+[data-theme="sunset"] .hero-subtitle {
+  color: #6b7280;
+}
+
+[data-theme="ocean"] .hero-subtitle {
+  color: #6b7280;
+}
+
+[data-theme="rose"] .hero-subtitle {
+  color: #6b7280;
+}
+
+[data-theme="slate"] .hero-subtitle {
+  color: #64748b;
+}
+
+[data-theme="lavender"] .hero-subtitle {
+  color: #6b7280;
+}
+
+[data-theme="neon"] .hero-subtitle {
+  color: #a0aec0;
+}
+
+[data-theme="toxic"] .hero-subtitle {
+  color: #a0aec0;
+}
+
+[data-theme="candy"] .hero-subtitle {
+  color: #db2777;
+}
+
+[data-theme="chaos"] .hero-subtitle {
+  color: #1e40af;
+}

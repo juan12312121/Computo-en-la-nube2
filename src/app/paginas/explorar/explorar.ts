@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { Theme, ThemeService } from '../../core/servicios/temas';
 
 interface Tag {
   name: string;
@@ -18,8 +20,10 @@ interface Tag {
   templateUrl: './explorar.html',
   styleUrl: './explorar.css'
 })
-export class Explorar {
+export class Explorar implements OnInit, OnDestroy {
   searchTerm: string = '';
+  currentTheme: Theme;
+  private themeSubscription?: Subscription;
   
   tags: Tag[] = [
     { name: 'Tecnología', icon: 'fa-laptop-code', color: 'teal', posts: 1247, trending: true },
@@ -56,6 +60,20 @@ export class Explorar {
     'indigo': '#4f46e5',
     'yellow': '#ca8a04'
   };
+
+  constructor(private themeService: ThemeService) {
+    this.currentTheme = this.themeService.getCurrentTheme();
+  }
+
+  ngOnInit() {
+    this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
+      this.currentTheme = theme;
+    });
+  }
+
+  ngOnDestroy() {
+    this.themeSubscription?.unsubscribe();
+  }
   
   filterTags() {
     this.filteredTags = this.tags.filter(tag =>
@@ -88,6 +106,12 @@ export class Explorar {
 
   onCardLeave(event: MouseEvent) {
     const card = event.currentTarget as HTMLElement;
-    card.style.borderColor = '#f3f4f6';
+    // Usar el color del tema actual en lugar de gris fijo
+    const borderColor = this.currentTheme.id === 'midnight' || 
+                        this.currentTheme.id === 'neon' || 
+                        this.currentTheme.id === 'toxic' 
+                        ? '#1e293b' 
+                        : '#f3f4f6';
+    card.style.borderColor = borderColor;
   }
 }

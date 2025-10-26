@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { Theme, ThemeService } from '../../core/servicios/temas';
 
 interface Comment {
   id: number;
@@ -43,7 +45,7 @@ interface User {
   templateUrl: './detalle-post.html',
   styleUrl: './detalle-post.css'
 })
-export class DetallePost {
+export class DetallePost implements OnInit, OnDestroy {
   @Input() post: Post | null = null;
   @Input() isVisible: boolean = false;
   @Output() close = new EventEmitter<void>();
@@ -56,7 +58,13 @@ export class DetallePost {
   selectedTab: 'redes' | 'usuarios' = 'redes';
   linkCopied: boolean = false;
 
-  // Usuarios de ejemplo
+showFullDescription = false;
+showFullDescriptionMobile = false;
+
+  // Theme support
+  currentTheme: Theme;
+  private themeSubscription?: Subscription;
+
   users: User[] = [
     { id: 1, name: 'Juan López', username: '@juanlopez', avatar: 'JL', avatarColor: 'from-orange-400 to-orange-600', isFollowing: true },
     { id: 2, name: 'Ana García', username: '@anagarcia', avatar: 'AG', avatarColor: 'from-purple-400 to-purple-600', isFollowing: true },
@@ -67,6 +75,20 @@ export class DetallePost {
   ];
 
   selectedUsers: number[] = [];
+
+  constructor(private themeService: ThemeService) {
+    this.currentTheme = this.themeService.getCurrentTheme();
+  }
+
+  ngOnInit(): void {
+    this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
+      this.currentTheme = theme;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.themeSubscription?.unsubscribe();
+  }
 
   closeModal(): void {
     this.close.emit();
@@ -194,10 +216,7 @@ export class DetallePost {
   sendToUsers(): void {
     if (this.selectedUsers.length === 0) return;
 
-    // Aquí implementarías la lógica para enviar el post a los usuarios seleccionados
     console.log('Compartiendo con usuarios:', this.selectedUsers);
-
-    // Mostrar mensaje de éxito
     alert(`Publicación compartida con ${this.selectedUsers.length} usuario(s)`);
     this.closeShareModal();
   }

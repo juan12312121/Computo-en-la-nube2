@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { DetallePost } from '../../componentes/detalle-post/detalle-post';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { Theme, ThemeService } from '../../core/servicios/temas';
 
 interface Comment {
   id: number;
@@ -37,10 +39,14 @@ interface Post {
   templateUrl: './principal.html',
   styleUrls: ['./principal.css']
 })
-export class Principal {
+export class Principal implements OnInit, OnDestroy {
   showCreateModal = false;
   showPostDetailModal = false;
   selectedPost: Post | null = null;
+
+  // Tema actual
+  currentTheme!: Theme;
+  private themeSubscription?: Subscription;
 
   posts: Post[] = [
     {
@@ -55,12 +61,12 @@ export class Principal {
       likes: 127,
       liked: true,
       shares: 8,
-      avatarColor: 'from-teal-400 to-teal-600',
+      avatarColor: 'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
       showComments: false,
       comments: [
-        { id: 1, author: 'Juan López', avatar: 'JL', text: '¡Increíble María! Me encantaría ver tu código. ¿Podrías compartir el repositorio de GitHub?', time: '1 h', avatarColor: 'from-teal-400 to-teal-600' },
-        { id: 2, author: 'Ana Pérez', avatar: 'AP', text: '¡Felicidades por tu proyecto! Yo también estoy usando React y me ha costado un poco.', time: '45 min', avatarColor: 'from-pink-400 to-pink-600' },
-        { id: 3, author: 'Carlos Martínez', avatar: 'CM', text: 'Excelente trabajo María. Tu dedicación es inspiradora.', time: '30 min', avatarColor: 'from-indigo-400 to-purple-600' }
+        { id: 1, author: 'Juan López', avatar: 'JL', text: '¡Increíble María! Me encantaría ver tu código. ¿Podrías compartir el repositorio de GitHub?', time: '1 h', avatarColor: 'linear-gradient(to bottom right, #2dd4bf, #0d9488)' },
+        { id: 2, author: 'Ana Pérez', avatar: 'AP', text: '¡Felicidades por tu proyecto! Yo también estoy usando React y me ha costado un poco.', time: '45 min', avatarColor: 'linear-gradient(to bottom right, #ec4899, #db2777)' },
+        { id: 3, author: 'Carlos Martínez', avatar: 'CM', text: 'Excelente trabajo María. Tu dedicación es inspiradora.', time: '30 min', avatarColor: 'linear-gradient(to bottom right, #6366f1, #8b5cf6)' }
       ]
     },
     {
@@ -75,11 +81,11 @@ export class Principal {
       likes: 89,
       liked: false,
       shares: 12,
-      avatarColor: 'from-orange-400 to-orange-600',
+      avatarColor: 'linear-gradient(to bottom right, #f97316, #ea580c)',
       showComments: false,
       comments: [
-        { id: 4, author: 'Laura García', avatar: 'LG', text: 'Gracias por el recordatorio Diego! ¿Sabes cuánto tiempo tenemos para cada presentación?', time: '3 h', avatarColor: 'from-yellow-400 to-orange-500' },
-        { id: 5, author: 'Roberto Fernández', avatar: 'RF', text: 'Mi equipo está muy nervioso pero emocionado. Hemos trabajado mucho en nuestro modelo 🤖', time: '2 h', avatarColor: 'from-teal-400 to-teal-600' }
+        { id: 4, author: 'Laura García', avatar: 'LG', text: 'Gracias por el recordatorio Diego! ¿Sabes cuánto tiempo tenemos para cada presentación?', time: '3 h', avatarColor: 'linear-gradient(to bottom right, #fbbf24, #f59e0b)' },
+        { id: 5, author: 'Roberto Fernández', avatar: 'RF', text: 'Mi equipo está muy nervioso pero emocionado. Hemos trabajado mucho en nuestro modelo 🤖', time: '2 h', avatarColor: 'linear-gradient(to bottom right, #2dd4bf, #0d9488)' }
       ]
     },
     {
@@ -94,16 +100,57 @@ export class Principal {
       likes: 245,
       liked: true,
       shares: 28,
-      avatarColor: 'from-purple-500 to-purple-700',
+      avatarColor: 'linear-gradient(to bottom right, #a855f7, #9333ea)',
       showComments: false,
       comments: [
-        { id: 7, author: 'Pablo Aguilar', avatar: 'PA', text: '¡Felicidades al equipo! Fue increíble ver su robot en acción 👏', time: '20 h', avatarColor: 'from-indigo-400 to-purple-600' },
-        { id: 8, author: 'Mónica Hernández', avatar: 'MH', text: '¡Qué orgullo! Representan a nuestra universidad de la mejor manera 💜', time: '18 h', avatarColor: 'from-pink-400 to-pink-600' }
+        { id: 7, author: 'Pablo Aguilar', avatar: 'PA', text: '¡Felicidades al equipo! Fue increíble ver su robot en acción 👏', time: '20 h', avatarColor: 'linear-gradient(to bottom right, #6366f1, #8b5cf6)' },
+        { id: 8, author: 'Mónica Hernández', avatar: 'MH', text: '¡Qué orgullo! Representan a nuestra universidad de la mejor manera 💜', time: '18 h', avatarColor: 'linear-gradient(to bottom right, #ec4899, #db2777)' }
       ]
     }
   ];
 
   commentInputs: { [key: number]: string } = {};
+
+  constructor(private themeService: ThemeService) {
+    this.currentTheme = this.themeService.getCurrentTheme();
+  }
+
+  ngOnInit(): void {
+    // Suscribirse a cambios de tema
+    this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
+      this.currentTheme = theme;
+      console.log('🎨 Tema actualizado en Principal:', theme.name);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
+
+  get currentThemeData(): Theme {
+    return this.currentTheme;
+  }
+
+  getThemeRingColor(): string {
+    // Extrae el color primario del tema para el ring del input
+    const colorMap: { [key: string]: string } = {
+      'default': '#f97316',
+      'midnight': '#6366f1',
+      'forest': '#10b981',
+      'sunset': '#f59e0b',
+      'ocean': '#0ea5e9',
+      'rose': '#ec4899',
+      'slate': '#64748b',
+      'lavender': '#a78bfa',
+      'neon': '#0ff',
+      'toxic': '#84cc16',
+      'candy': '#ec4899',
+      'chaos': '#ff0000'
+    };
+    return colorMap[this.currentTheme.id] || '#f97316';
+  }
 
   openCreateModal() {
     this.showCreateModal = true;
@@ -152,7 +199,7 @@ export class Principal {
         avatar: 'TU',
         text: text,
         time: 'Ahora',
-        avatarColor: 'from-blue-400 to-blue-600'
+        avatarColor: 'linear-gradient(to bottom right, #3b82f6, #2563eb)'
       });
       this.commentInputs[postId] = '';
     }
@@ -167,7 +214,7 @@ export class Principal {
         avatar: 'TU',
         text: event.comment,
         time: 'Ahora',
-        avatarColor: 'from-blue-400 to-blue-600'
+        avatarColor: 'linear-gradient(to bottom right, #3b82f6, #2563eb)'
       });
     }
   }

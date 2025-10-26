@@ -1,3 +1,5 @@
+/* ==================== navbar.component.css ==================== */
+
 /* ==================== LOGO CON GRADIENTE ==================== */
 
 /* Clase base del logo */
@@ -9,29 +11,65 @@
   -webkit-text-fill-color: transparent !important;
 }
 
-/* Gradientes por tema - Vibrantes y con animación */
+/* Gradientes por tema - Agregando todos los temas del service */
 .logo-gradient-text[data-theme="default"] {
   background: linear-gradient(135deg, #f97316 0%, #fb923c 30%, #2dd4bf 70%, #14b8a6 100%) !important;
   background-size: 200% 200% !important;
 }
 
-.logo-gradient-text[data-theme="deep-ocean"] {
-  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%) !important;
+.logo-gradient-text[data-theme="midnight"] {
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 30%, #8b5cf6 70%, #a78bfa 100%) !important;
   background-size: 200% 200% !important;
 }
 
-.logo-gradient-text[data-theme="neutro"] {
+.logo-gradient-text[data-theme="forest"] {
   background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%) !important;
   background-size: 200% 200% !important;
 }
 
-.logo-gradient-text[data-theme="vibrante"] {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 30%, #fbbf24 70%, #fde047 100%) !important;
+.logo-gradient-text[data-theme="sunset"] {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 30%, #ef4444 70%, #dc2626 100%) !important;
   background-size: 200% 200% !important;
 }
 
-.logo-gradient-text[data-theme="discordia"] {
-  background: linear-gradient(135deg, #ec4899 0%, #f472b6 25%, #a855f7 50%, #c084fc 75%, #6366f1 100%) !important;
+.logo-gradient-text[data-theme="ocean"] {
+  background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #06b6d4 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="rose"] {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 50%, #fb7185 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="slate"] {
+  background: linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #475569 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="lavender"] {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 50%, #c084fc 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+/* Temas experimentales */
+.logo-gradient-text[data-theme="neon"] {
+  background: linear-gradient(135deg, #0ff 0%, #f0f 50%, #ff0 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="toxic"] {
+  background: linear-gradient(135deg, #84cc16 0%, #a3e635 30%, #22c55e 70%, #16a34a 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="candy"] {
+  background: linear-gradient(135deg, #fbbf24 0%, #ec4899 50%, #8b5cf6 100%) !important;
+  background-size: 200% 200% !important;
+}
+
+.logo-gradient-text[data-theme="chaos"] {
+  background: linear-gradient(135deg, #ff0000 0%, #00ff00 33%, #0000ff 66%, #ffff00 100%) !important;
   background-size: 200% 200% !important;
 }
 
@@ -82,23 +120,58 @@
   color: white !important;
 }
 
-.btn-publicar-deep-ocean {
-  background: linear-gradient(to right, #38bdf8, #3b82f6) !important;
+.btn-publicar-midnight {
+  background: linear-gradient(to right, #6366f1, #8b5cf6) !important;
   color: white !important;
 }
 
-.btn-publicar-neutro {
+.btn-publicar-forest {
   background: linear-gradient(to right, #10b981, #059669) !important;
   color: white !important;
 }
 
-.btn-publicar-vibrante {
-  background: linear-gradient(to right, #ef4444, #dc2626) !important;
+.btn-publicar-sunset {
+  background: linear-gradient(to right, #f59e0b, #ef4444) !important;
   color: white !important;
 }
 
-.btn-publicar-discordia {
-  background: linear-gradient(to right, #ec4899, #9333ea) !important;
+.btn-publicar-ocean {
+  background: linear-gradient(to right, #0ea5e9, #06b6d4) !important;
+  color: white !important;
+}
+
+.btn-publicar-rose {
+  background: linear-gradient(to right, #ec4899, #f472b6) !important;
+  color: white !important;
+}
+
+.btn-publicar-slate {
+  background: linear-gradient(to right, #64748b, #475569) !important;
+  color: white !important;
+}
+
+.btn-publicar-lavender {
+  background: linear-gradient(to right, #a78bfa, #c084fc) !important;
+  color: white !important;
+}
+
+.btn-publicar-neon {
+  background: linear-gradient(to right, #0ff, #f0f) !important;
+  color: white !important;
+}
+
+.btn-publicar-toxic {
+  background: linear-gradient(to right, #84cc16, #22c55e) !important;
+  color: white !important;
+}
+
+.btn-publicar-candy {
+  background: linear-gradient(to right, #fbbf24, #ec4899, #8b5cf6) !important;
+  color: white !important;
+}
+
+.btn-publicar-chaos {
+  background: linear-gradient(to right, #ff0000, #00ff00, #0000ff) !important;
   color: white !important;
 }
 
@@ -122,8 +195,8 @@
 }
 
 .theme-dropdown {
-  max-width: 20rem;
-  width: 20rem;
+  width: 350px;
+  max-width: 90vw;
 }
 
 .profile-dropdown {
@@ -135,15 +208,6 @@
   max-width: 22rem;
 }
 
-/* ==================== DROPDOWNS - TEXTO ADAPTABLE ==================== */
-
-/* Permitir que el texto se adapte a los temas */
-.notification-panel,
-.theme-dropdown,
-.profile-dropdown {
-  /* Los colores de texto serán controlados por las clases de tema desde Angular */
-}
-
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -153,6 +217,49 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ==================== SLIDER DE TEMAS ==================== */
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scroll */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Círculos de temas con efecto hover */
+.theme-dropdown button > div[style*="background"],
+button > div[style*="background"] {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-dropdown button > div[style*="background"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.theme-dropdown button:hover > div[style*="background"]::before {
+  opacity: 1;
+}
+
+/* Botones de navegación del slider */
+.theme-dropdown button[class*="chevron"] {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* ==================== ANIMACIONES Y EFECTOS ==================== */
@@ -196,6 +303,22 @@
   transform: rotate(180deg);
 }
 
+/* Animación fadeIn para dropdowns */
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* ==================== RESPONSIVE ==================== */
 
 @media (max-width: 640px) {
@@ -218,6 +341,10 @@
     border-radius: 0 !important;
     top: 56px !important;
   }
+
+  .theme-dropdown {
+    width: 100%;
+  }
 }
 
 /* ==================== ACCESIBILIDAD ==================== */
@@ -233,6 +360,14 @@
   .navbar *, .navbar button, .navbar a, .navbar i {
     transition: none !important;
     animation: none !important;
+  }
+  
+  .logo-gradient-text {
+    animation: none !important;
+  }
+  
+  .scroll-smooth {
+    scroll-behavior: auto;
   }
 }
 
@@ -253,8 +388,84 @@
   scroll-behavior: smooth;
 }
 
+/* Mobile menu open - prevenir scroll del body */
+body.mobile-menu-open {
+  overflow: hidden;
+}
+
 @media print {
   .navbar {
     display: none;
   }
+}
+
+/* ==================== MEJORAS VISUALES SLIDER ==================== */
+
+/* Sombras suaves en los círculos de temas */
+button > div[style*="background"] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button:hover > div[style*="background"] {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Transiciones suaves */
+button > div[style*="background"],
+button > div[style*="background"] > div {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Check icon más visible */
+button > div[style*="background"] > div {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Indicador visual de scroll disponible */
+.theme-dropdown .relative::after,
+.theme-dropdown .relative::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity 0.3s ease;
+}
+
+.theme-dropdown .relative::before {
+  left: 0;
+  background: linear-gradient(to right, currentColor, transparent);
+  opacity: 0;
+}
+
+.theme-dropdown .relative::after {
+  right: 0;
+  background: linear-gradient(to left, currentColor, transparent);
+  opacity: 0.05;
+}
+
+.theme-candy-body {
+  background: linear-gradient(to bottom right, #fef3c7, #fce7f3, #e9d5ff) !important;
+}
+
+/* Tema Chaos - Fondo con gradiente */
+.theme-chaos-body {
+  background: linear-gradient(to bottom right, #fed7aa, #99f6e4, #ddd6fe) !important;
+}
+
+/* Tema Chaos - Navbar con gradiente */
+.theme-chaos-navbar {
+  background: linear-gradient(to right, #fee2e2, #dbeafe) !important;
+}
+
+/* Asegurar que los gradientes se apliquen correctamente */
+body[data-theme="candy"] {
+  background: linear-gradient(to bottom right, #fef3c7, #fce7f3, #e9d5ff) !important;
+}
+
+body[data-theme="chaos"] {
+  background: linear-gradient(to bottom right, #fed7aa, #99f6e4, #ddd6fe) !important;
 }
