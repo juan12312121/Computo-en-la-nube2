@@ -43,6 +43,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   @ViewChild('themeSlider') themeSlider?: ElementRef<HTMLDivElement>;
   @ViewChild('themeSliderMobile') themeSliderMobile?: ElementRef<HTMLDivElement>;
 
+  // ✅ NUEVO: API Base URL
+  private apiBaseUrl: string;
+
   // Usuario autenticado
   currentUser: Usuario | null = null;
   isLoggedIn = false;
@@ -137,8 +140,23 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.currentUser?.nombre_usuario ? `@${this.currentUser.nombre_usuario}` : '@usuario';
   }
 
+  // ✅ CORREGIDO: Obtener avatar con URL completa
   get userAvatar(): string {
-    return this.currentUser?.foto_perfil_url || 'https://i.pravatar.cc/100';
+    if (!this.currentUser?.foto_perfil_url) {
+      console.log('⚠️ No hay foto_perfil_url, usando avatar por defecto');
+      return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200';
+    }
+    
+    // Si la URL ya es completa (comienza con http), devolverla tal cual
+    if (this.currentUser.foto_perfil_url.startsWith('http')) {
+      console.log('🌐 URL completa detectada:', this.currentUser.foto_perfil_url);
+      return this.currentUser.foto_perfil_url;
+    }
+    
+    // Construir URL completa con apiBaseUrl
+    const urlCompleta = `${this.apiBaseUrl}${this.currentUser.foto_perfil_url}`;
+    console.log('🖼️ Avatar navbar construido:', urlCompleta);
+    return urlCompleta;
   }
 
   get userInitials(): string {
@@ -156,6 +174,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private router: Router
   ) {
     console.log('🚀 Navbar inicializado');
+    
+    // ✅ NUEVO: Detectar automáticamente la URL base
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      this.apiBaseUrl = 'http://localhost:3000';
+    } else {
+      this.apiBaseUrl = 'http://13.59.190.199:3000';
+    }
+    
+    console.log('🔧 Navbar - API Base URL configurada:', this.apiBaseUrl);
+    console.log('🌐 Hostname actual:', host);
     
     this.currentTheme = this.themeService.getCurrentTheme();
     this.themes = this.themeService.getThemes();
@@ -195,7 +224,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       console.log('👤 Estado de autenticación actualizado:');
       console.log('   - Usuario:', user ? user.nombre_usuario : 'No autenticado');
       console.log('   - Logueado:', this.isLoggedIn);
-      console.log('   - Datos completos:', user);
+      console.log('   - foto_perfil_url:', user?.foto_perfil_url);
     });
 
     // Log inicial del usuario

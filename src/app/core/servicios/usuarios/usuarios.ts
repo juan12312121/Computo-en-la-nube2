@@ -30,16 +30,32 @@ export interface UsuarioBusqueda {
   providedIn: 'root'
 })
 export class UsuarioService {
-  private apiUrl = 'http://localhost:3000/api/usuarios';
+  private apiUrl: string;
 
   constructor(
     private http: HttpClient,
     private authService: AutenticacionService
-  ) {}
+  ) {
+    // ✅ Detecta automáticamente si estás en local o en producción
+    const host = window.location.hostname;
 
-  // Headers con token
-  private getHeaders(): HttpHeaders {
+    if (host === 'localhost' || host === '127.0.0.1') {
+      this.apiUrl = 'http://localhost:3000/api/usuarios'; // entorno local
+    } else {
+      this.apiUrl = 'http://13.59.190.199:3000/api/usuarios'; // producción
+    }
+  }
+
+  // Headers con token (sin Content-Type para FormData)
+  private getHeaders(includeContentType: boolean = true): HttpHeaders {
     const token = this.authService.getToken();
+    if (includeContentType) {
+      return new HttpHeaders({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      });
+    }
+    // Para FormData, no incluir Content-Type (el browser lo configura automáticamente)
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
@@ -59,10 +75,13 @@ export class UsuarioService {
     });
   }
 
-  // Actualizar mi perfil
-  actualizarPerfil(datos: ActualizarPerfilRequest): Observable<ApiResponse<Usuario>> {
+  // Actualizar mi perfil (acepta tanto objeto como FormData)
+  actualizarPerfil(datos: ActualizarPerfilRequest | FormData): Observable<ApiResponse<Usuario>> {
+    // Si es FormData, no incluir Content-Type (el browser lo maneja automáticamente con boundary)
+    const isFormData = datos instanceof FormData;
+    
     return this.http.put<ApiResponse<Usuario>>(`${this.apiUrl}/me`, datos, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(!isFormData)
     }).pipe(
       tap(response => {
         if (response.success && response.data) {
@@ -91,4 +110,4 @@ export class UsuarioService {
       })
     );
   }
-}
+} 

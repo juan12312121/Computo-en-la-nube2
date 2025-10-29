@@ -56,7 +56,7 @@ export class AutenticacionService {
     if (host === 'localhost' || host === '127.0.0.1') {
       this.apiUrl = 'http://localhost:3000/api/auth'; // entorno local
     } else {
-      this.apiUrl = 'http://3.140.201.220:3000/api/auth'; // entorno de producción
+	 this.apiUrl = 'http://13.59.190.199:3000/api/auth'; 
     }
 
     const storedUser = localStorage.getItem('currentUser');

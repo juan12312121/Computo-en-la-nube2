@@ -1,26 +1,71 @@
 <app-navbar (openCreate)="openCreateModal()"></app-navbar>
 
+<!-- Loading State -->
+<div *ngIf="cargandoPerfil" class="max-w-5xl mx-auto px-4 py-6">
+  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
+         [style.border-color]="currentTheme.color"></div>
+    <p [ngClass]="currentTheme.textSecondaryClass">Cargando perfil...</p>
+  </div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="errorCarga && !cargandoPerfil" class="max-w-5xl mx-auto px-4 py-6">
+  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
+    <i class="fas fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
+    <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">Error al cargar el perfil</h2>
+    <p [ngClass]="currentTheme.textSecondaryClass" class="mb-4">No se pudo obtener la información del usuario</p>
+    <button 
+      (click)="reintentarCarga()"
+      [style.background]="currentTheme.color"
+      class="text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+      <i class="fas fa-redo mr-2"></i>Reintentar
+    </button>
+  </div>
+</div>
+
 <!-- Profile Container -->
-<div class="max-w-5xl mx-auto px-4 py-6">
+<div *ngIf="!cargandoPerfil && !errorCarga && usuario" class="max-w-5xl mx-auto px-4 py-6">
   <!-- Profile Header Card -->
   <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border mb-6 overflow-hidden">
     <!-- Cover Photo -->
-    <div class="profile-cover"></div>
+    <div class="profile-cover relative w-full overflow-hidden">
+      <img *ngIf="getCoverImage()" 
+           [src]="getCoverImage()!" 
+           alt="Portada" 
+           class="w-full h-full object-cover"
+           style="object-position: center;">
+      <button 
+        *ngIf="isOwnProfile"
+        (click)="abrirModalCambiarBanner()"
+        class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition flex items-center gap-2 backdrop-blur-sm z-10 text-xs sm:text-sm">
+        <i class="fas fa-camera"></i>
+        <span class="font-semibold hidden sm:inline">Cambiar portada</span>
+        <span class="font-semibold sm:hidden">Cambiar</span>
+      </button>
+    </div>
 
     <!-- Profile Info -->
-    <div class="px-6 pb-6">
-      <div class="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-4">
-        <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+    <div class="px-4 sm:px-6 pb-4 sm:pb-6">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between -mt-9 sm:-mt-12 md:-mt-14 lg:-mt-16 mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
           <div class="profile-avatar">
-            MR
+            <img *ngIf="getProfileImage()" 
+                 [src]="getProfileImage()!" 
+                 alt="Perfil" 
+                 class="w-full h-full object-cover rounded-full">
+            <span *ngIf="!getProfileImage()">{{ getInitials() }}</span>
           </div>
           <div class="mb-2">
-            <h1 [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-black">María Rodríguez</h1>
-            <p [ngClass]="currentTheme.textSecondaryClass" class="font-medium">@maria_dev</p>
+            <h1 [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">
+              {{ usuario.nombre_completo }}
+            </h1>
+            <p [ngClass]="currentTheme.textSecondaryClass" class="font-medium text-sm sm:text-base">
+              @{{ usuario.nombre_usuario }}
+            </p>
           </div>
         </div>
 
-        <!-- Action Button -->
         <div class="profile-action-container">
           <button
             (click)="toggleProfileMode()"
@@ -34,59 +79,58 @@
 
       <!-- Bio and Info -->
       <div class="space-y-3 mb-4">
-        <p [ngClass]="currentTheme.textPrimaryClass" class="leading-relaxed">
-          💻 Desarrolladora Full Stack | Apasionada por React y Node.js | Siempre aprendiendo algo nuevo ✨
+        <p [ngClass]="currentTheme.textPrimaryClass" class="leading-relaxed text-sm sm:text-base">
+          {{ usuario.biografia || '¡Hola! Aún no he agregado una biografía 👋' }}
         </p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-          <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-2">
-            <i [ngClass]="currentTheme.icon" class="fas fa-graduation-cap"></i>
-            <span class="font-medium">UNAM</span>
-          </div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+          <div *ngIf="usuario.carrera" 
+               [ngClass]="currentTheme.textSecondaryClass" 
+               class="flex items-center gap-2">
             <i [ngClass]="currentTheme.icon" class="fas fa-book"></i>
-            <span class="font-medium">Ing. en Computación</span>
+            <span class="font-medium">{{ usuario.carrera }}</span>
           </div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-2">
+          <div *ngIf="usuario.ubicacion" 
+               [ngClass]="currentTheme.textSecondaryClass" 
+               class="flex items-center gap-2">
             <i [ngClass]="currentTheme.icon" class="fas fa-map-marker-alt"></i>
-            <span class="font-medium">Ciudad de México, México</span>
-          </div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-2">
-            <i [ngClass]="currentTheme.icon" class="fas fa-link"></i>
-            <a href="#" [ngClass]="currentTheme.accentColor" class="font-medium hover:underline">portfolio.mariadev.com</a>
+            <span class="font-medium">{{ usuario.ubicacion }}</span>
           </div>
         </div>
 
         <!-- Social Links -->
         <div class="flex gap-3 pt-2">
-          <a href="#" [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]" 
-             class="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition">
+          <a href="#" 
+             [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]" 
+             class="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition text-sm sm:text-base">
             <i class="fab fa-github"></i>
           </a>
-          <a href="#" [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]"
-             class="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition">
+          <a href="#" 
+             [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]"
+             class="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition text-sm sm:text-base">
             <i class="fab fa-linkedin"></i>
           </a>
-          <a href="#" [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]"
-             class="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition">
+          <a href="#" 
+             [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]"
+             class="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition text-sm sm:text-base">
             <i class="fab fa-twitter"></i>
           </a>
         </div>
       </div>
 
       <!-- Stats -->
-      <div [ngClass]="currentTheme.borderColor" class="flex gap-6 pt-4 border-t">
+      <div [ngClass]="currentTheme.borderColor" class="flex gap-4 sm:gap-6 pt-4 border-t">
         <div class="text-center">
-          <div [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-black">127</div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="text-sm font-medium">Publicaciones</div>
+          <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ publicacionesReales.length }}</div>
+          <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Publicaciones</div>
         </div>
         <div [ngClass]="'hover:' + currentTheme.accentColor" class="text-center cursor-pointer transition">
-          <div [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-black">1,234</div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="text-sm font-medium">Seguidores</div>
+          <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ usuario.total_seguidores || 0 }}</div>
+          <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Seguidores</div>
         </div>
         <div [ngClass]="'hover:' + currentTheme.accentColor" class="text-center cursor-pointer transition">
-          <div [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-black">456</div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="text-sm font-medium">Siguiendo</div>
+          <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ usuario.total_siguiendo || 0 }}</div>
+          <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Siguiendo</div>
         </div>
       </div>
     </div>
@@ -98,28 +142,28 @@
       <button
         (click)="switchTab('todo')"
         [class.active]="activeTab === 'todo'"
-        class="tab-button flex-1 px-6 py-4 text-sm transition border-b-2 border-transparent"
+        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
         [ngClass]="activeTab !== 'todo' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
         <i class="fas fa-th-large mr-2"></i>Todo
       </button>
       <button
         (click)="switchTab('fotos')"
         [class.active]="activeTab === 'fotos'"
-        class="tab-button flex-1 px-6 py-4 text-sm transition border-b-2 border-transparent"
+        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
         [ngClass]="activeTab !== 'fotos' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
         <i class="fas fa-images mr-2"></i>Fotos
       </button>
       <button
         (click)="switchTab('documentos')"
         [class.active]="activeTab === 'documentos'"
-        class="tab-button flex-1 px-6 py-4 text-sm transition border-b-2 border-transparent"
+        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
         [ngClass]="activeTab !== 'documentos' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
         <i class="fas fa-file-alt mr-2"></i>Documentos
       </button>
       <button
         (click)="switchTab('secciones')"
         [class.active]="activeTab === 'secciones'"
-        class="tab-button flex-1 px-6 py-4 text-sm transition border-b-2 border-transparent"
+        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
         [ngClass]="activeTab !== 'secciones' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
         <i class="fas fa-folder mr-2"></i>Secciones
       </button>
@@ -130,67 +174,110 @@
   <div>
     <!-- Todo Tab Content -->
     <div *ngIf="activeTab === 'todo'" class="space-y-4">
+      <!-- Loading posts -->
+      <div *ngIf="cargandoPublicaciones" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
+             [style.border-color]="currentTheme.color"></div>
+        <p [ngClass]="currentTheme.textSecondaryClass">Cargando publicaciones...</p>
+      </div>
+
+      <!-- No posts -->
+      <div *ngIf="!cargandoPublicaciones && posts.length === 0" 
+           [ngClass]="currentTheme.cardBg" 
+           class="rounded-2xl shadow-sm border p-8 text-center">
+        <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+        <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">No hay publicaciones</h3>
+        <p [ngClass]="currentTheme.textSecondaryClass">Aún no has creado ninguna publicación</p>
+      </div>
+
+      <!-- Posts list -->
       <div *ngFor="let post of posts"
            (click)="openPostDetail(post.id)"
            [ngClass]="currentTheme.cardBg"
-           class="border rounded-lg hover:shadow-md transition cursor-pointer">
-        <div class="px-4 pt-3 pb-2">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
-              MR
+           class="border rounded-2xl hover:shadow-lg transition cursor-pointer overflow-hidden">
+        <!-- Post Header -->
+        <div class="p-4 sm:p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div [ngClass]="'bg-gradient-to-br ' + post.avatarColor" 
+                   class="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md">
+                {{ post.avatar }}
+              </div>
+              <div>
+                <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xs sm:text-sm">{{ post.author }}</h3>
+                <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs">{{ post.time }}</p>
+              </div>
             </div>
-            <div>
-              <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-semibold text-sm">María Rodríguez</h3>
-              <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs">{{ post.time }}</p>
-            </div>
+            <span [ngClass]="post.categoryColor" 
+                  class="px-2 sm:px-3 py-1 text-white text-xs font-bold rounded-full">
+              {{ post.category }}
+            </span>
           </div>
+
+          <p [ngClass]="currentTheme.textPrimaryClass" class="leading-relaxed mb-3 text-sm sm:text-base">
+            {{ post.content }}
+          </p>
         </div>
 
-        <div class="px-4 pb-2">
-          <p [ngClass]="currentTheme.textPrimaryClass" class="text-sm leading-snug">{{ post.content }}</p>
-        </div>
+        <!-- Post Image -->
+        <img *ngIf="post.image" 
+             [src]="post.image" 
+             alt="Post" 
+             class="w-full h-64 sm:h-80 object-cover">
 
-        <div *ngIf="post.image" class="mt-2">
-          <img [src]="post.image" [alt]="post.category" class="w-full h-auto">
-        </div>
-
-        <div class="px-4 pt-2">
-          <span class="inline-block bg-teal-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-            {{ post.category }}
-          </span>
-        </div>
-
-        <div [ngClass]="currentTheme.textSecondaryClass" class="px-4 py-2 flex items-center justify-between text-xs">
-          <span>{{ post.likes }} Me gusta</span>
-          <span>{{ post.comments.length }} comentarios</span>
-        </div>
-
-        <div [ngClass]="currentTheme.borderColor" class="border-t px-2 py-1 flex items-center gap-1">
-          <button [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]" 
-                  class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition font-semibold text-sm">
-            <i class="far fa-heart"></i>
-            Me gusta
-          </button>
-          <button [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
-                  class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition font-semibold text-sm">
-            <i class="fas fa-comment"></i>
-            Comentar
-          </button>
-          <button [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
-                  class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition font-semibold text-sm">
+        <!-- Post Actions -->
+        <div [ngClass]="currentTheme.borderColor" class="flex items-center justify-between px-4 sm:px-5 py-3 border-t">
+          <div class="flex gap-4 sm:gap-6">
+            <button [ngClass]="post.liked ? 'text-red-500' : currentTheme.textSecondaryClass" 
+                    class="flex items-center gap-2 hover:text-red-500 transition font-semibold">
+              <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+              <span class="text-xs sm:text-sm">{{ post.likes }}</span>
+            </button>
+            <button [ngClass]="currentTheme.textSecondaryClass" 
+                    class="flex items-center gap-2 hover:opacity-70 transition font-semibold">
+              <i class="far fa-comment"></i>
+              <span class="text-xs sm:text-sm">{{ post.comments.length }}</span>
+            </button>
+          </div>
+          <button [ngClass]="currentTheme.textSecondaryClass" 
+                  class="flex items-center gap-2 hover:opacity-70 transition font-semibold">
             <i class="fas fa-share"></i>
-            Compartir
+            <span class="text-xs sm:text-sm">{{ post.shares }}</span>
           </button>
         </div>
       </div>
     </div>
 
     <!-- Fotos Tab Content -->
-    <div *ngIf="activeTab === 'fotos'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-      <div *ngFor="let photo of photos"
-           (click)="openPhotoDetail(photo.id)"
-           class="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition">
-        <img [src]="photo.url" alt="Foto" class="w-full h-full object-cover">
+    <div *ngIf="activeTab === 'fotos'" class="space-y-4">
+      <!-- Loading photos -->
+      <div *ngIf="cargandoPublicaciones" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
+             [style.border-color]="currentTheme.color"></div>
+        <p [ngClass]="currentTheme.textSecondaryClass">Cargando fotos...</p>
+      </div>
+
+      <!-- No photos -->
+      <div *ngIf="!cargandoPublicaciones && photos.length === 0" 
+           [ngClass]="currentTheme.cardBg" 
+           class="rounded-2xl shadow-sm border p-8 text-center">
+        <i class="fas fa-image text-gray-300 text-5xl mb-4"></i>
+        <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">No hay fotos</h3>
+        <p [ngClass]="currentTheme.textSecondaryClass">Aún no has publicado imágenes</p>
+      </div>
+
+      <!-- Photos grid -->
+      <div *ngIf="!cargandoPublicaciones && photos.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+        <div *ngFor="let photo of photos"
+             (click)="openPhotoDetail(photo.id)"
+             class="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition group relative">
+          <img [src]="photo.url" 
+               [alt]="photo.caption" 
+               class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center">
+            <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition text-xl sm:text-2xl"></i>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -198,21 +285,32 @@
     <div *ngIf="activeTab === 'documentos'" class="space-y-3">
       <div *ngFor="let doc of documents"
            [ngClass]="currentTheme.cardBg"
-           class="border rounded-lg p-4 hover:shadow-md transition cursor-pointer">
-        <div class="flex items-start gap-4">
-          <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <i class="fas {{ doc.icon }} {{ doc.color }} text-2xl"></i>
+           class="border rounded-xl p-4 sm:p-5 hover:shadow-md transition cursor-pointer">
+        <div class="flex items-start gap-3 sm:gap-4">
+          <div class="flex-shrink-0">
+            <i [class]="'fas ' + doc.icon + ' ' + doc.color + ' text-3xl sm:text-4xl'"></i>
           </div>
           <div class="flex-1 min-w-0">
-            <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-sm truncate">{{ doc.name }}</h3>
-            <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mt-1 line-clamp-2">{{ doc.description }}</p>
-            <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-3 mt-2 text-xs opacity-70">
-              <span><i class="fas fa-file mr-1"></i>{{ doc.size }}</span>
-              <span><i class="fas fa-clock mr-1"></i>{{ doc.date }}</span>
+            <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xs sm:text-sm mb-1 truncate">
+              {{ doc.name }}
+            </h3>
+            <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mb-2">
+              {{ doc.description }}
+            </p>
+            <div class="flex items-center gap-3 sm:gap-4 text-xs">
+              <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
+                <i class="fas fa-file"></i>
+                {{ doc.size }}
+              </span>
+              <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
+                <i class="far fa-clock"></i>
+                {{ doc.date }}
+              </span>
             </div>
           </div>
-          <button [ngClass]="'hover:' + currentTheme.accentColor" class="text-gray-400 transition">
-            <i class="fas fa-download"></i>
+          <button [ngClass]="currentTheme.textSecondaryClass" 
+                  class="flex-shrink-0 hover:opacity-70 transition">
+            <i class="fas fa-download text-base sm:text-lg"></i>
           </button>
         </div>
       </div>
@@ -223,20 +321,20 @@
       <div *ngFor="let section of sections"
            (click)="openSectionModal(section.id)"
            [ngClass]="currentTheme.cardBg"
-           class="border rounded-xl p-5 hover:shadow-lg transition cursor-pointer">
-        <div class="flex items-center gap-4 mb-3">
-          <div class="w-14 h-14 bg-gradient-to-br {{ section.color }} rounded-full flex items-center justify-center text-white text-xl flex-shrink-0">
-            <i class="fas {{ section.icon }}"></i>
+           class="border rounded-xl p-5 sm:p-6 hover:shadow-lg transition cursor-pointer group">
+        <div class="flex items-center justify-between mb-4">
+          <div [ngClass]="'bg-gradient-to-br ' + section.color" 
+               class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-white text-xl sm:text-2xl shadow-lg group-hover:scale-110 transition">
+            <i [class]="'fas ' + section.icon"></i>
           </div>
-          <div class="flex-1 min-w-0">
-            <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold truncate">{{ section.name }}</h3>
-            <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm">{{ section.posts }} publicaciones</p>
-          </div>
+          <span [ngClass]="currentTheme.textSecondaryClass" 
+                class="text-xs sm:text-sm font-bold bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
+            {{ section.posts }} posts
+          </span>
         </div>
-        <div class="flex items-center justify-between text-sm">
-          <span [ngClass]="currentTheme.accentColor" class="font-semibold hover:underline">Ver todo</span>
-          <i [ngClass]="currentTheme.textSecondaryClass" class="fas fa-chevron-right"></i>
-        </div>
+        <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-black text-base sm:text-lg group-hover:opacity-70 transition">
+          {{ section.name }}
+        </h3>
       </div>
     </div>
   </div>
@@ -251,73 +349,65 @@
   (commentAdded)="onCommentAdded($event)">
 </app-detalle-post>
 
+<!-- Modal de Editar Perfil -->
+<app-modal-editar-perfil
+  [isVisible]="showEditModal"
+  [usuario]="usuario"
+  [currentTheme]="currentTheme"
+  [guardando]="guardandoPerfil"
+  [errorGuardado]="errorGuardado"
+  [mensajeError]="mensajeError"
+  [apiBaseUrl]="apiBaseUrl"
+  (close)="cerrarModalEdicion()"
+  (guardar)="guardarPerfil($event)">
+</app-modal-editar-perfil>
+
+<!-- Modal de Cambiar Banner -->
+<app-modal-cambiar-banner
+  [isVisible]="showBannerModal"
+  [usuario]="usuario"
+  [currentTheme]="currentTheme"
+  [guardando]="guardandoBanner"
+  [errorBanner]="errorBanner"
+  [apiBaseUrl]="apiBaseUrl"
+  (close)="cerrarModalBanner()"
+  (guardar)="guardarBanner($event)"
+  (eliminar)="eliminarBanner()">
+</app-modal-cambiar-banner>
+
 <!-- Modal para ver sección -->
-<div *ngIf="showSectionModal"
+<div *ngIf="showSectionModal && selectedSection"
      (click)="onModalBackdropClick($event)"
      class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-    <!-- Header -->
-    <div class="section-modal-header">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white text-xl">
-          <i class="fas {{ selectedSection?.icon }}"></i>
+  <div [ngClass]="currentTheme.cardBg" 
+       class="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
+         [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div [ngClass]="'bg-gradient-to-br ' + selectedSection.color" 
+             class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl shadow-lg">
+          <i [class]="'fas ' + selectedSection.icon"></i>
         </div>
         <div>
-          <h2 class="text-white font-bold text-xl">{{ selectedSection?.name }}</h2>
-          <p class="text-white text-sm opacity-90">{{ selectedSection?.posts }} publicaciones</p>
+          <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
+            {{ selectedSection.name }}
+          </h2>
+          <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm">
+            {{ selectedSection.posts }} publicaciones
+          </p>
         </div>
       </div>
-      <button (click)="closeSectionModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition">
-        <i class="fas fa-times text-xl"></i>
+      <button 
+        (click)="closeSectionModal()"
+        [ngClass]="currentTheme.textSecondaryClass"
+        class="hover:opacity-70 transition text-xl sm:text-2xl">
+        <i class="fas fa-times"></i>
       </button>
     </div>
-
-    <!-- Content -->
-    <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-      <div *ngFor="let post of posts"
-           (click)="openPostDetail(post.id)"
-           [ngClass]="currentTheme.cardBg"
-           class="border rounded-lg mb-4 hover:shadow-md transition cursor-pointer">
-        <div class="px-4 pt-3 pb-2">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
-              MR
-            </div>
-            <div>
-              <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-semibold text-sm">María Rodríguez</h3>
-              <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs">{{ post.time }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="px-4 pb-2">
-          <p [ngClass]="currentTheme.textPrimaryClass" class="text-sm leading-snug">{{ post.content }}</p>
-        </div>
-
-        <div *ngIf="post.image" class="mt-2">
-          <img [src]="post.image" [alt]="post.category" class="w-full h-auto rounded-lg">
-        </div>
-
-        <div [ngClass]="currentTheme.textSecondaryClass" class="px-4 py-2 flex items-center justify-between text-xs">
-          <span>{{ post.likes }} Me gusta</span>
-          <span>{{ post.comments.length }} comentarios</span>
-        </div>
-
-        <div [ngClass]="currentTheme.borderColor" class="border-t px-2 py-1 flex items-center gap-1 text-sm font-medium">
-          <button [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
-                  class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition">
-            <i [ngClass]="currentTheme.accentColor" class="far fa-heart"></i> Me gusta
-          </button>
-          <button [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
-                  class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition">
-            <i class="fas fa-comment"></i> Comentar
-          </button>
-          <button [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
-                  class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition">
-            <i class="fas fa-share"></i> Compartir
-          </button>
-        </div>
-      </div>
+    <div class="p-4 sm:p-6">
+      <p [ngClass]="currentTheme.textSecondaryClass" class="text-center py-8 text-sm sm:text-base">
+        Las publicaciones de esta sección aparecerán aquí
+      </p>
     </div>
   </div>
 </div>

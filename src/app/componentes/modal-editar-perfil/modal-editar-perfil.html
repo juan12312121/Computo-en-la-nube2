@@ -1,0 +1,172 @@
+<div *ngIf="isVisible && usuario"
+     (click)="onBackdropClick($event)"
+     class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+    
+    <!-- Header del Modal -->
+    <div class="sticky top-0 z-10" 
+         [style.background]="currentTheme.color"
+         style="padding: 1.25rem 1.5rem;">
+      <div class="flex items-center justify-between">
+        <h2 class="text-white font-bold text-xl">Editar Perfil</h2>
+        <button 
+          (click)="onCerrar()" 
+          class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido del Modal -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+      
+      <!-- Mensaje de Error -->
+      <div *ngIf="errorGuardado" 
+           class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+        <i class="fas fa-exclamation-circle text-red-500 text-xl mt-0.5"></i>
+        <div class="flex-1">
+          <p class="text-red-800 font-semibold">Error al guardar</p>
+          <p class="text-red-600 text-sm">{{ mensajeError }}</p>
+        </div>
+      </div>
+
+      <!-- Foto de Perfil (Preview) -->
+      <div class="mb-6 text-center">
+        <div class="inline-block relative">
+          <div class="w-24 h-24 rounded-full mx-auto mb-3 overflow-hidden"
+               [style.background]="currentTheme.color">
+            <img *ngIf="previsualizacionFoto || getProfileImage()" 
+                 [src]="previsualizacionFoto || getProfileImage()!" 
+                 alt="Perfil" 
+                 class="w-full h-full object-cover">
+            <div *ngIf="!previsualizacionFoto && !getProfileImage()" 
+                 class="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+              {{ getInitials() }}
+            </div>
+          </div>
+          <input 
+            #fileInput
+            type="file" 
+            accept="image/*"
+            (change)="onFileSelected($event)"
+            class="hidden">
+          <button 
+            type="button"
+            (click)="fileInput.click()"
+            [style.background]="currentTheme.color"
+            class="absolute bottom-0 right-0 w-9 h-9 rounded-full text-white flex items-center justify-center shadow-lg hover:opacity-90 transition">
+            <i class="fas fa-camera"></i>
+          </button>
+        </div>
+        <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm">
+          Haz clic en la cámara para cambiar tu foto de perfil
+        </p>
+        <p *ngIf="errorFoto" class="text-red-500 text-xs mt-2">
+          {{ errorFoto }}
+        </p>
+      </div>
+
+      <!-- Formulario -->
+      <form class="space-y-4">
+        
+        <!-- Nombre Completo -->
+        <div>
+          <label [ngClass]="currentTheme.textPrimaryClass" 
+                 class="block text-sm font-semibold mb-2">
+            Nombre Completo *
+          </label>
+          <input 
+            type="text"
+            [(ngModel)]="formulario.nombre_completo"
+            name="nombre_completo"
+            [ngClass]="[currentTheme.cardBg, currentTheme.textPrimaryClass, currentTheme.borderColor]"
+            class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition"
+            [style.focus:ring-color]="currentTheme.color"
+            placeholder="Tu nombre completo"
+            maxlength="100"
+            required>
+        </div>
+
+        <!-- Biografía -->
+        <div>
+          <label [ngClass]="currentTheme.textPrimaryClass" 
+                 class="block text-sm font-semibold mb-2">
+            Biografía
+          </label>
+          <textarea 
+            [(ngModel)]="formulario.biografia"
+            name="biografia"
+            [ngClass]="[currentTheme.cardBg, currentTheme.textPrimaryClass, currentTheme.borderColor]"
+            class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition resize-none"
+            [style.focus:ring-color]="currentTheme.color"
+            placeholder="Cuéntanos sobre ti..."
+            rows="4"
+            maxlength="200"></textarea>
+          <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mt-1 text-right">
+            {{ formulario.biografia.length }}/200
+          </p>
+        </div>
+
+        <!-- Carrera -->
+        <div>
+          <label [ngClass]="currentTheme.textPrimaryClass" 
+                 class="block text-sm font-semibold mb-2">
+            <i class="fas fa-book mr-2"></i>Carrera
+          </label>
+          <input 
+            type="text"
+            [(ngModel)]="formulario.carrera"
+            name="carrera"
+            [ngClass]="[currentTheme.cardBg, currentTheme.textPrimaryClass, currentTheme.borderColor]"
+            class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition"
+            [style.focus:ring-color]="currentTheme.color"
+            placeholder="Tu carrera o programa"
+            maxlength="100">
+        </div>
+
+        <!-- Ubicación -->
+        <div>
+          <label [ngClass]="currentTheme.textPrimaryClass" 
+                 class="block text-sm font-semibold mb-2">
+            <i class="fas fa-map-marker-alt mr-2"></i>Ubicación
+          </label>
+          <input 
+            type="text"
+            [(ngModel)]="formulario.ubicacion"
+            name="ubicacion"
+            [ngClass]="[currentTheme.cardBg, currentTheme.textPrimaryClass, currentTheme.borderColor]"
+            class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-opacity-50 transition"
+            [style.focus:ring-color]="currentTheme.color"
+            placeholder="Ciudad, País"
+            maxlength="100">
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer con Botones -->
+    <div class="sticky bottom-0 z-10" 
+         [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]"
+         style="padding: 1.25rem 1.5rem; border-top-width: 1px;">
+      <div class="flex gap-3 justify-end">
+        <button 
+          (click)="onCerrar()"
+          [disabled]="guardando"
+          [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
+          class="px-6 py-2.5 rounded-lg font-semibold transition disabled:opacity-50">
+          Cancelar
+        </button>
+        <button 
+          (click)="onGuardar()"
+          [disabled]="guardando || !formulario.nombre_completo.trim()"
+          [style.background]="currentTheme.color"
+          class="px-6 py-2.5 rounded-lg text-white font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2">
+          <i *ngIf="guardando" class="fas fa-spinner fa-spin"></i>
+          <i *ngIf="!guardando" class="fas fa-save"></i>
+          {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,7 +1,39 @@
-/* Cover Photo según tema */
+/* Cover Photo según tema - MEJORADO RESPONSIVE */
 .profile-cover {
-  height: 12rem;
-  transition: background 0.3s ease;
+  width: 100%;
+  height: 100px; /* Más pequeño para móviles */
+  background: linear-gradient(135deg, #14b8a6 0%, rgba(20, 184, 166, 0.8) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Asegurar que la imagen dentro del cover se ajuste bien */
+.profile-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Tablets pequeñas */
+@media (min-width: 640px) {
+  .profile-cover {
+    height: 150px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 768px) {
+  .profile-cover {
+    height: 200px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .profile-cover {
+    height: 280px;
+  }
 }
 
 [data-theme="default"] .profile-cover {
@@ -52,20 +84,59 @@
   background: linear-gradient(to bottom right, #ff0000, #00ff00, #0000ff, #ffff00);
 }
 
-/* Avatar según tema */
+/* Avatar según tema - RESPONSIVE */
 .profile-avatar {
-  width: 8rem;
-  height: 8rem;
+  width: 4.5rem; /* Más pequeño para móviles (72px) */
+  height: 4.5rem;
   border-radius: 9999px;
-  border: 4px solid white;
+  border: 3px solid white;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: bold;
-  font-size: 2.25rem;
+  font-size: 1.5rem; /* Texto más pequeño en móvil */
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   transition: background 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Tablets pequeñas */
+@media (min-width: 640px) {
+  .profile-avatar {
+    width: 6rem;
+    height: 6rem;
+    border: 3px solid white;
+    font-size: 1.875rem;
+  }
+}
+
+/* Tablets */
+@media (min-width: 768px) {
+  .profile-avatar {
+    width: 7rem;
+    height: 7rem;
+    border: 4px solid white;
+    font-size: 2rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .profile-avatar {
+    width: 8rem;
+    height: 8rem;
+    font-size: 2.25rem;
+  }
+}
+
+/* Asegurar que la imagen dentro del avatar se ajuste bien */
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 [data-theme="default"] .profile-avatar {
@@ -141,6 +212,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .profile-action-btn {
+    font-size: 1rem;
+  }
 }
 
 .profile-action-btn.edit {
@@ -278,15 +356,9 @@
   50% { transform: scale(1.05); }
 }
 
-.profile-action-btn.follow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-}
-
 /* Tabs según tema */
 .tab-button.active {
   font-weight: bold;
-  font-size: 0.875rem;
   border-bottom: 2px solid;
   transition: all 0.3s ease;
 }
@@ -406,4 +478,41 @@
 
 [data-theme="chaos"] .section-modal-header {
   background: linear-gradient(to right, #ff0000, #00ff00, #0000ff);
+}
+
+/* Animaciones y transiciones suaves */
+.profile-cover,
+.profile-avatar {
+  transition: all 0.3s ease;
+}
+
+/* Mejora visual para hover en elementos interactivos */
+.profile-cover button:hover {
+  transform: translateY(-2px);
+}
+
+.profile-avatar:hover {
+  transform: scale(1.02);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive utilities */
+@media (max-width: 639px) {
+  .profile-action-btn i {
+    font-size: 0.875rem;
+  }
 }

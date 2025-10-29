@@ -86,6 +86,7 @@
         <span>Comentar</span>
       </button>
       <button 
+        (click)="openShareModal(post.id, $event)"
         class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
         [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i class="fas fa-share"></i>
@@ -174,3 +175,185 @@
   (likeToggled)="toggleLike($event)"
   (commentAdded)="handleCommentAdded($event)">
 </app-detalle-post>
+
+<!-- Modal de Compartir -->
+<div *ngIf="showShareModal" 
+     (click)="onShareBackdropClick($event)" 
+     class="share-modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-end lg:items-center justify-center">
+  <div onclick="event.stopPropagation()" 
+       class="rounded-t-3xl lg:rounded-3xl w-full lg:max-w-lg p-6 lg:m-4 max-h-[90vh] overflow-y-auto animate-slide-up"
+       [ngClass]="currentTheme.cardBg">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-bold" [ngClass]="currentTheme.textPrimaryClass">Compartir publicación</h3>
+      <button (click)="closeShareModal()" 
+              class="w-10 h-10 rounded-full flex items-center justify-center transition"
+              [ngClass]="[currentTheme.textSecondaryClass, currentThemeData.hoverBackground]">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6 rounded-xl p-1"
+         [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentThemeData.accentBg : 'bg-gray-100'">
+      <button (click)="switchShareTab('redes')" 
+              class="flex-1 py-2.5 rounded-lg font-bold text-sm shadow-sm transition"
+              [ngClass]="selectedTab === 'redes' ? [currentTheme.cardBg, currentThemeData.textPrimary] : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
+        <i class="fas fa-share-alt mr-2"></i>Redes Sociales
+      </button>
+      <button (click)="switchShareTab('usuarios')" 
+              class="flex-1 py-2.5 rounded-lg font-bold text-sm shadow-sm transition"
+              [ngClass]="selectedTab === 'usuarios' ? [currentTheme.cardBg, currentThemeData.textPrimary] : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
+        <i class="fas fa-users mr-2"></i>Usuarios
+      </button>
+    </div>
+
+    <!-- Redes Sociales Tab -->
+    <div *ngIf="selectedTab === 'redes'">
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <button (click)="shareToSocial('whatsapp')" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fab fa-whatsapp"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">WhatsApp</span>
+        </button>
+
+        <button (click)="shareToSocial('facebook')" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fab fa-facebook-f"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Facebook</span>
+        </button>
+
+        <button (click)="shareToSocial('twitter')" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fab fa-twitter"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Twitter</span>
+        </button>
+
+        <button (click)="shareToSocial('linkedin')" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fab fa-linkedin-in"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">LinkedIn</span>
+        </button>
+
+        <button (click)="shareToSocial('telegram')" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full bg-sky-600 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fab fa-telegram-plane"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Telegram</span>
+        </button>
+
+        <button (click)="shareToSocial('email')" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fas fa-envelope"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Email</span>
+        </button>
+
+        <button (click)="copyLink()" 
+                class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                [ngClass]="currentThemeData.hoverBackground">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
+               [ngClass]="currentThemeData.accentBg">
+            <i class="fas fa-link"></i>
+          </div>
+          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Copiar</span>
+        </button>
+      </div>
+
+      <!-- Copy Link Section -->
+      <div class="border-t pt-4" [ngClass]="currentTheme.borderColor">
+        <div class="flex items-center gap-3 rounded-xl p-3"
+             [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentThemeData.accentBg : 'bg-gray-100'">
+          <i class="fas fa-link" [ngClass]="currentThemeData.textPrimary"></i>
+          <input type="text" 
+                 [value]="'https://redstudent.com/post/' + sharePostId" 
+                 readonly 
+                 class="flex-1 bg-transparent text-sm outline-none"
+                 [ngClass]="currentTheme.textSecondaryClass">
+          <button (click)="copyLink()" 
+                  class="font-semibold text-sm transition"
+                  [ngClass]="linkCopied ? 'text-green-500' : [currentThemeData.textPrimary, 'hover:opacity-80']">
+            {{ linkCopied ? '✓ Copiado' : 'Copiar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usuarios Tab -->
+    <div *ngIf="selectedTab === 'usuarios'">
+      <!-- Search -->
+      <div class="mb-4">
+        <div class="relative">
+          <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2" [ngClass]="currentTheme.textSecondaryClass"></i>
+          <input type="text" 
+                 [(ngModel)]="searchQuery" 
+                 placeholder="Buscar usuarios..." 
+                 class="w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 transition-all"
+                 [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentThemeData.accentBg : 'bg-gray-100']"
+                 [style.--tw-ring-color]="getThemeRingColor()">
+        </div>
+      </div>
+
+      <!-- Users List -->
+      <div class="max-h-96 overflow-y-auto space-y-2">
+        <div *ngFor="let user of filteredUsers" 
+             (click)="toggleUserSelection(user.id)" 
+             class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition"
+             [ngClass]="isUserSelected(user.id) ? ['bg-opacity-10', currentThemeData.accentBg, 'border-' + currentThemeData.textPrimary.replace('text-', '')] : ['border-transparent', currentThemeData.hoverBackground]">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold flex-shrink-0"
+               [ngClass]="user.avatarColor">
+            {{ user.avatar }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass">{{ user.name }}</h4>
+            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ user.username }}</p>
+          </div>
+          <div class="flex-shrink-0">
+            <div *ngIf="isUserSelected(user.id)" 
+                 class="w-6 h-6 rounded-full flex items-center justify-center text-white"
+                 [ngClass]="currentThemeData.accentBg">
+              <i class="fas fa-check text-xs"></i>
+            </div>
+            <div *ngIf="!isUserSelected(user.id)" class="w-6 h-6 rounded-full border-2 border-gray-300"></div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredUsers.length === 0" class="text-center py-12">
+          <i class="fas fa-user-slash text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass"></i>
+          <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass">No se encontraron usuarios</p>
+          <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass">Intenta con otro término de búsqueda</p>
+        </div>
+      </div>
+
+      <!-- Send Button -->
+      <div class="border-t pt-4 mt-4" [ngClass]="currentTheme.borderColor">
+        <button (click)="sendToUsers()" 
+                [disabled]="selectedUsers.length === 0" 
+                class="w-full text-white py-3 rounded-xl font-bold transition transform active:scale-95"
+                [ngClass]="selectedUsers.length > 0 ? [currentThemeData.buttonGradient, 'hover:shadow-lg hover:-translate-y-0.5'] : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+          <i class="fas fa-paper-plane mr-2"></i>
+          {{ selectedUsers.length > 0 ? 'Enviar a ' + selectedUsers.length + ' usuario(s)' : 'Selecciona usuarios' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
