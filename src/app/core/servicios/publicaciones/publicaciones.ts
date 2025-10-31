@@ -18,6 +18,12 @@ export interface Publicacion {
   oculto: number;
 }
 
+export interface Categoria {
+  value: string;
+  label: string;
+  color: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -46,6 +52,11 @@ export class PublicacionesService {
     return {};
   }
 
+  // ✅ NUEVO: Obtener categorías disponibles
+  obtenerCategorias(): Observable<ApiResponse<Categoria[]>> {
+    return this.http.get<ApiResponse<Categoria[]>>(`${this.apiUrl}/categorias`);
+  }
+
   // Crear publicación
   crearPublicacion(publicacion: FormData): Observable<ApiResponse<Publicacion>> {
     return this.http.post<ApiResponse<Publicacion>>(this.apiUrl, publicacion, this.getHeaders());
@@ -61,7 +72,7 @@ export class PublicacionesService {
     return this.http.get<ApiResponse<Publicacion>>(`${this.apiUrl}/${id}`, this.getHeaders());
   }
 
-  // CORREGIDO: Obtener mis publicaciones
+  // Obtener mis publicaciones
   obtenerMisPublicaciones(): Observable<ApiResponse<Publicacion[]>> {
     return this.http.get<ApiResponse<Publicacion[]>>(`${this.apiUrl}/mis-publicaciones`, this.getHeaders());
   }
@@ -81,18 +92,33 @@ export class PublicacionesService {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`, this.getHeaders());
   }
 
-  // Helper: Crear FormData
+  // Helper: Crear FormData (YA NO NECESITAS enviar color_categoria)
   crearFormData(datos: {
     contenido: string;
     categoria?: string;
-    color_categoria?: string;
     imagen?: File;
   }): FormData {
     const formData = new FormData();
     formData.append('contenido', datos.contenido);
     if (datos.categoria) formData.append('categoria', datos.categoria);
-    if (datos.color_categoria) formData.append('color_categoria', datos.color_categoria);
+    // ❌ color_categoria removido - se asigna automáticamente en el backend
     if (datos.imagen) formData.append('imagen', datos.imagen);
     return formData;
+  }
+
+  // ✅ NUEVO: Helper para obtener el color de una categoría
+  obtenerColorCategoria(categoria: string): string {
+    const colores: { [key: string]: string } = {
+      'General': 'bg-orange-500',
+      'Tecnología': 'bg-teal-500',
+      'Ciencias': 'bg-purple-500',
+      'Artes y Cultura': 'bg-pink-500',
+      'Deportes': 'bg-blue-500',
+      'Salud y Bienestar': 'bg-green-500',
+      'Vida Universitaria': 'bg-orange-600',
+      'Opinión': 'bg-indigo-500',
+      'Entrevistas': 'bg-yellow-500'
+    };
+    return colores[categoria] || 'bg-orange-500';
   }
 }

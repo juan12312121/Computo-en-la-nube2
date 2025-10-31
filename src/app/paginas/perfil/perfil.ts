@@ -1,49 +1,28 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { DetallePost } from '../../componentes/detalle-post/detalle-post';
 import { ModalCambiarBanner } from '../../componentes/modal-cambiar-banner/modal-cambiar-banner';
 import { FormularioEditarPerfil, ModalEditarPerfil } from '../../componentes/modal-editar-perfil/modal-editar-perfil';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { PublicacionesPerfil } from '../../componentes/publicaciones-perfil/publicaciones-perfil';
+import { FotosPerfil } from '../../componentes/fotos-perfil/fotos-perfil';
 import { Usuario } from '../../core/servicios/autenticacion/autenticacion';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 import { UsuarioService } from '../../core/servicios/usuarios/usuarios';
 import { PublicacionesService, Publicacion } from '../../core/servicios/publicaciones/publicaciones';
+import { FotosService, FotosData } from '../../core/servicios/fotos/fotos';
 
 interface UsuarioPerfil extends Usuario {
   // La interfaz Usuario ya tiene todos los campos necesarios
 }
 
-interface Post {
-  id: number;
-  author: string;
-  avatar: string;
-  time: string;
-  content: string;
-  image: string | null;
-  category: string;
-  categoryColor: string;
-  likes: number;
-  liked: boolean;
-  shares: number;
-  avatarColor: string;
-  comments: Comment[];
-}
-
-interface Comment {
-  id: number;
-  author: string;
-  avatar: string;
-  text: string;
-  time: string;
-  avatarColor: string;
-}
-
 interface Photo {
-  id: number;
+  id: number | string;
   url: string;
   caption: string;
-  postId: number;
+  postId?: number;
+  tipo: 'perfil' | 'portada' | 'publicacion';
+  fecha?: string | null;
 }
 
 interface Document {
@@ -70,9 +49,10 @@ interface Section {
   imports: [
     CommonModule, 
     NavbarComponent, 
-    DetallePost, 
+    PublicacionesPerfil,
     ModalEditarPerfil,
-    ModalCambiarBanner
+    ModalCambiarBanner,
+    FotosPerfil
   ],
   templateUrl: './perfil.html',
   styleUrl: './perfil.css'
@@ -113,13 +93,10 @@ export class Perfil implements OnInit, OnDestroy {
   currentTheme: Theme;
   private themeSubscription?: Subscription;
 
-  // Detalle de post
-  selectedPost: Post | null = null;
-  showPostDetail = false;
-
-  // Datos convertidos de la API
-  posts: Post[] = [];
+  // Fotos completas del usuario (perfil, portada y publicaciones)
   photos: Photo[] = [];
+  fotosData: FotosData | null = null;
+  cargandoFotos = false;
 
   // Datos mock que permanecen
   documents: Document[] = [
@@ -191,7 +168,8 @@ export class Perfil implements OnInit, OnDestroy {
   constructor(
     private themeService: ThemeService,
     private usuarioService: UsuarioService,
-    private publicacionesService: PublicacionesService
+    private publicacionesService: PublicacionesService,
+    private fotosService: FotosService
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
     
@@ -228,8 +206,9 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = responsePerfil.data;
           this.cargandoPerfil = false;
           
-          // Luego cargar las publicaciones
+          // Luego cargar las publicaciones y fotos
           this.cargarPublicaciones();
+          this.cargarTodasLasFotos();
         } else {
           this.errorCarga = true;
           this.cargandoPerfil = false;
@@ -250,117 +229,123 @@ export class Perfil implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success && response.data) {
           this.publicacionesReales = response.data;
-          this.actualizarPostsDesdeAPI();
         } else {
-          // No hay publicaciones, pero no es un error
           this.publicacionesReales = [];
-          this.posts = [];
-          this.photos = [];
         }
         this.cargandoPublicaciones = false;
       },
       error: (error) => {
         console.error('Error al cargar publicaciones:', error);
-        // No mostrar error de carga general, solo dejar vacío
         this.publicacionesReales = [];
-        this.posts = [];
-        this.photos = [];
         this.cargandoPublicaciones = false;
       }
     });
   }
 
+  // Nueva función para cargar todas las fotos usando el servicio
+  private cargarTodasLasFotos(): void {
+    this.cargandoFotos = true;
+    
+    console.log('DEBUG: Iniciando carga de fotos...'); // Log de inicio
+
+    this.fotosService.getMisFotos().subscribe({
+      next: (data: FotosData) => {
+        console.log('DEBUG: Datos recibidos del servicio de fotos:', data); // Log de los datos crudos
+        this.fotosData = data;
+        this.procesarFotos(data);
+        this.cargandoFotos = false;
+        console.log('DEBUG: Fotos cargadas y procesadas correctamente.'); // Log de éxito
+      },
+      error: (error) => {
+        console.error('Error al cargar fotos:', error);
+        console.log('DEBUG: Error al cargar fotos. Reiniciando photos a un array vacío.'); // Log de error
+        this.photos = [];
+        this.cargandoFotos = false;
+      }
+    });
+  }
+
+  // Procesar las fotos recibidas del servicio
+  private procesarFotos(data: FotosData): void {
+    console.log('DEBUG: Iniciando procesamiento de fotos con datos:', data); // Log de entrada a la función
+    const fotosArray: Photo[] = [];
+
+    // Agregar foto de perfil si existe
+    if (data.fotos.perfil && data.fotos.perfil.url) {
+      const perfilPhoto: Photo = {
+        id: 'perfil',
+        url: this.normalizarUrl(data.fotos.perfil.url),
+        caption: 'Foto de perfil',
+        tipo: 'perfil'
+      };
+      fotosArray.push(perfilPhoto);
+      console.log('DEBUG: Foto de perfil agregada:', perfilPhoto); // Log de foto de perfil
+    } else {
+      console.log('DEBUG: No se encontró foto de perfil o URL.');
+    }
+
+    // Agregar foto de portada si existe
+    if (data.fotos.portada && data.fotos.portada.url) {
+      const portadaPhoto: Photo = {
+        id: 'portada',
+        url: this.normalizarUrl(data.fotos.portada.url),
+        caption: 'Foto de portada',
+        tipo: 'portada'
+      };
+      fotosArray.push(portadaPhoto);
+      console.log('DEBUG: Foto de portada agregada:', portadaPhoto); // Log de foto de portada
+    } else {
+      console.log('DEBUG: No se encontró foto de portada o URL.');
+    }
+
+    // Agregar fotos de publicaciones
+    if (data.fotos.publicaciones && data.fotos.publicaciones.length > 0) {
+      console.log(`DEBUG: Procesando ${data.fotos.publicaciones.length} publicaciones.`);
+      data.fotos.publicaciones.forEach(pub => {
+        if (pub.url) {
+          const publicacionPhoto: Photo = {
+            id: pub.id,
+            url: this.normalizarUrl(pub.url),
+            caption: pub.descripcion ? 
+              (pub.descripcion.substring(0, 50) + (pub.descripcion.length > 50 ? '...' : '')) : 
+              'Publicación',
+            postId: pub.id,
+            tipo: 'publicacion',
+            fecha: pub.fecha
+          };
+          fotosArray.push(publicacionPhoto);
+          console.log('DEBUG: Foto de publicación agregada:', publicacionPhoto); // Log de cada publicación
+        } else {
+          console.log(`DEBUG: Publicación con ID ${pub.id} no tiene URL, omitiendo.`);
+        }
+      });
+    } else {
+      console.log('DEBUG: No se encontraron publicaciones con fotos.');
+    }
+
+    this.photos = fotosArray;
+    console.log('DEBUG: Array final de fotos procesadas (this.photos):', this.photos); // Log del array final
+  }
+
+  // Normalizar URL para asegurar que sea completa
+  private normalizarUrl(url: string): string {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const normalizedUrl = `${this.apiBaseUrl}${url.startsWith('/') ? url : '/' + url}`;
+    console.log(`DEBUG: Normalizando URL: ${url} -> ${normalizedUrl}`); // Log de normalización de URL
+    return normalizedUrl;
+  }
+
   reintentarCarga(): void {
+    console.log('DEBUG: Reintentando carga de perfil...'); // Log de reintento
     this.cargarPerfil();
-  }
-
-  // Convertir publicaciones API a formato Post
-  private actualizarPostsDesdeAPI(): void {
-    this.posts = this.publicacionesReales.map(pub => this.convertirPublicacionAPost(pub));
-    
-    // Actualizar también las fotos desde las publicaciones con imagen
-    this.photos = this.publicacionesReales
-      .filter(pub => pub.imagen_url || pub.imagen_s3)
-      .map((pub, index) => ({
-        id: pub.id,
-        url: this.obtenerUrlImagen(pub)!,
-        caption: pub.contenido.substring(0, 50) + (pub.contenido.length > 50 ? '...' : ''),
-        postId: pub.id
-      }));
-  }
-
-  private convertirPublicacionAPost(pub: Publicacion): Post {
-    return {
-      id: pub.id,
-      author: pub.nombre_completo || pub.nombre_usuario || 'Usuario',
-      avatar: this.obtenerIniciales(pub.nombre_completo || pub.nombre_usuario || 'Usuario'),
-      time: this.calcularTiempoTranscurrido(pub.fecha_creacion),
-      content: pub.contenido,
-      image: this.obtenerUrlImagen(pub),
-      category: pub.categoria || 'General',
-      categoryColor: pub.color_categoria || 'bg-gray-500',
-      likes: 0, // Esto deberías obtenerlo de tu API si tienes likes
-      liked: false,
-      shares: 0,
-      avatarColor: this.generarColorAvatar(pub.usuario_id),
-      comments: []
-    };
-  }
-
-  private obtenerUrlImagen(pub: Publicacion): string | null {
-    if (pub.imagen_s3) {
-      return pub.imagen_s3.startsWith('http') ? pub.imagen_s3 : `${this.apiBaseUrl}${pub.imagen_s3}`;
-    }
-    if (pub.imagen_url) {
-      return pub.imagen_url.startsWith('http') ? pub.imagen_url : `${this.apiBaseUrl}${pub.imagen_url}`;
-    }
-    return null;
-  }
-
-  private obtenerIniciales(nombre: string): string {
-    const palabras = nombre.trim().split(' ');
-    if (palabras.length >= 2) {
-      return (palabras[0][0] + palabras[1][0]).toUpperCase();
-    }
-    return nombre.substring(0, 2).toUpperCase();
-  }
-
-  private calcularTiempoTranscurrido(fecha: string): string {
-    const ahora = new Date();
-    const fechaPublicacion = new Date(fecha);
-    const diferencia = ahora.getTime() - fechaPublicacion.getTime();
-    
-    const minutos = Math.floor(diferencia / 60000);
-    const horas = Math.floor(diferencia / 3600000);
-    const dias = Math.floor(diferencia / 86400000);
-    
-    if (minutos < 1) return 'Ahora';
-    if (minutos < 60) return `Hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
-    if (horas < 24) return `Hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
-    if (dias < 7) return `Hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-    if (dias < 30) return `Hace ${Math.floor(dias / 7)} ${Math.floor(dias / 7) === 1 ? 'semana' : 'semanas'}`;
-    return `Hace ${Math.floor(dias / 30)} ${Math.floor(dias / 30) === 1 ? 'mes' : 'meses'}`;
-  }
-
-  private generarColorAvatar(usuarioId: number): string {
-    const colores = [
-      'from-blue-400 to-blue-600',
-      'from-purple-400 to-purple-600',
-      'from-pink-400 to-pink-600',
-      'from-red-400 to-red-600',
-      'from-orange-400 to-orange-600',
-      'from-yellow-400 to-yellow-600',
-      'from-green-400 to-green-600',
-      'from-teal-400 to-teal-600',
-      'from-indigo-400 to-indigo-600'
-    ];
-    return colores[usuarioId % colores.length];
   }
 
   // ==================== UTILIDADES ====================
   
   getInitials(): string {
-    if (!this.usuario?.nombre_completo) return '??';
+    if (!this.usuario) return '??';
     
     const names = this.usuario.nombre_completo.trim().split(' ');
     if (names.length >= 2) {
@@ -453,6 +438,8 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = { ...this.usuario, ...response.data };
           this.guardandoPerfil = false;
           this.cerrarModalEdicion();
+          // Recargar las fotos después de actualizar el perfil
+          this.cargarTodasLasFotos();
         }
       },
       error: (error) => {
@@ -492,6 +479,8 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = { ...this.usuario, ...response.data };
           this.guardandoBanner = false;
           this.cerrarModalBanner();
+          // Recargar las fotos después de actualizar el banner
+          this.cargarTodasLasFotos();
         }
       },
       error: (error) => {
@@ -515,6 +504,8 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = { ...this.usuario, ...response.data };
           this.guardandoBanner = false;
           this.cerrarModalBanner();
+          // Recargar las fotos después de eliminar el banner
+          this.cargarTodasLasFotos();
         }
       },
       error: (error) => {
@@ -549,53 +540,16 @@ export class Perfil implements OnInit, OnDestroy {
     }
   }
 
-  // ==================== POSTS ====================
+  // ==================== EVENTOS DE PUBLICACIONES ====================
   
-  openPostDetail(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (post) {
-      this.selectedPost = post;
-      this.showPostDetail = true;
-    }
-  }
-
-  closePostDetail(): void {
-    this.showPostDetail = false;
-    this.selectedPost = null;
-  }
-
   onLikeToggled(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (post) {
-      post.liked = !post.liked;
-      post.likes += post.liked ? 1 : -1;
-    }
+    console.log('Like toggled en post:', postId);
+    // Aquí puedes hacer la llamada a la API para dar like
   }
 
   onCommentAdded(data: {postId: number, comment: string}): void {
-    const post = this.posts.find(p => p.id === data.postId);
-    if (post) {
-      const newComment: Comment = {
-        id: post.comments.length + 1,
-        author: this.usuario?.nombre_completo || 'Usuario',
-        avatar: this.getInitials(),
-        text: data.comment,
-        time: 'Ahora',
-        avatarColor: 'from-teal-400 to-teal-600'
-      };
-      post.comments.push(newComment);
-    }
-  }
-
-  openPhotoDetail(photoId: number): void {
-    const photo = this.photos.find(p => p.id === photoId);
-    if (photo) {
-      const post = this.posts.find(p => p.id === photo.postId);
-      if (post) {
-        this.selectedPost = post;
-        this.showPostDetail = true;
-      }
-    }
+    console.log('Comentario agregado:', data);
+    // Aquí puedes hacer la llamada a la API para agregar el comentario
   }
 
   openCreateModal(): void {

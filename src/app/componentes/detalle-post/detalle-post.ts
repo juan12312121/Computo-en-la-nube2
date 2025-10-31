@@ -51,19 +51,18 @@ export class DetallePost implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<void>();
   @Output() likeToggled = new EventEmitter<number>();
   @Output() commentAdded = new EventEmitter<{postId: number, comment: string}>();
+  @Output() shareOpened = new EventEmitter<number>();
 
   commentInput: string = '';
+  showFullDescription = false;
+  showFullDescriptionMobile = false;
+  
+  // Variables del modal de compartir (mantener para compatibilidad con HTML)
   showShareModal: boolean = false;
   searchQuery: string = '';
   selectedTab: 'redes' | 'usuarios' = 'redes';
   linkCopied: boolean = false;
-
-showFullDescription = false;
-showFullDescriptionMobile = false;
-
-  // Theme support
-  currentTheme: Theme;
-  private themeSubscription?: Subscription;
+  selectedUsers: number[] = [];
 
   users: User[] = [
     { id: 1, name: 'Juan López', username: '@juanlopez', avatar: 'JL', avatarColor: 'from-orange-400 to-orange-600', isFollowing: true },
@@ -74,7 +73,9 @@ showFullDescriptionMobile = false;
     { id: 6, name: 'Sofia Torres', username: '@sofiatorres', avatar: 'ST', avatarColor: 'from-teal-400 to-teal-600', isFollowing: true }
   ];
 
-  selectedUsers: number[] = [];
+  // Theme support
+  currentTheme: Theme;
+  private themeSubscription?: Subscription;
 
   constructor(private themeService: ThemeService) {
     this.currentTheme = this.themeService.getCurrentTheme();
@@ -124,11 +125,10 @@ showFullDescriptionMobile = false;
   }
 
   openShareModal(): void {
-    this.showShareModal = true;
-    this.searchQuery = '';
-    this.selectedUsers = [];
-    this.linkCopied = false;
-    document.body.style.overflow = 'hidden';
+    if (this.post) {
+      this.showShareModal = true;
+      document.body.style.overflow = 'hidden';
+    }
   }
 
   closeShareModal(): void {
@@ -200,6 +200,7 @@ showFullDescriptionMobile = false;
 
     if (shareUrl) {
       window.open(shareUrl, '_blank');
+      this.closeShareModal();
     }
   }
 

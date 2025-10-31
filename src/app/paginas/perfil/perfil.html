@@ -172,113 +172,26 @@
 
   <!-- Content Area -->
   <div>
-    <!-- Todo Tab Content -->
-    <div *ngIf="activeTab === 'todo'" class="space-y-4">
-      <!-- Loading posts -->
-      <div *ngIf="cargandoPublicaciones" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
-             [style.border-color]="currentTheme.color"></div>
-        <p [ngClass]="currentTheme.textSecondaryClass">Cargando publicaciones...</p>
-      </div>
-
-      <!-- No posts -->
-      <div *ngIf="!cargandoPublicaciones && posts.length === 0" 
-           [ngClass]="currentTheme.cardBg" 
-           class="rounded-2xl shadow-sm border p-8 text-center">
-        <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
-        <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">No hay publicaciones</h3>
-        <p [ngClass]="currentTheme.textSecondaryClass">Aún no has creado ninguna publicación</p>
-      </div>
-
-      <!-- Posts list -->
-      <div *ngFor="let post of posts"
-           (click)="openPostDetail(post.id)"
-           [ngClass]="currentTheme.cardBg"
-           class="border rounded-2xl hover:shadow-lg transition cursor-pointer overflow-hidden">
-        <!-- Post Header -->
-        <div class="p-4 sm:p-5">
-          <div class="flex items-start justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <div [ngClass]="'bg-gradient-to-br ' + post.avatarColor" 
-                   class="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md">
-                {{ post.avatar }}
-              </div>
-              <div>
-                <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xs sm:text-sm">{{ post.author }}</h3>
-                <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs">{{ post.time }}</p>
-              </div>
-            </div>
-            <span [ngClass]="post.categoryColor" 
-                  class="px-2 sm:px-3 py-1 text-white text-xs font-bold rounded-full">
-              {{ post.category }}
-            </span>
-          </div>
-
-          <p [ngClass]="currentTheme.textPrimaryClass" class="leading-relaxed mb-3 text-sm sm:text-base">
-            {{ post.content }}
-          </p>
-        </div>
-
-        <!-- Post Image -->
-        <img *ngIf="post.image" 
-             [src]="post.image" 
-             alt="Post" 
-             class="w-full h-64 sm:h-80 object-cover">
-
-        <!-- Post Actions -->
-        <div [ngClass]="currentTheme.borderColor" class="flex items-center justify-between px-4 sm:px-5 py-3 border-t">
-          <div class="flex gap-4 sm:gap-6">
-            <button [ngClass]="post.liked ? 'text-red-500' : currentTheme.textSecondaryClass" 
-                    class="flex items-center gap-2 hover:text-red-500 transition font-semibold">
-              <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
-              <span class="text-xs sm:text-sm">{{ post.likes }}</span>
-            </button>
-            <button [ngClass]="currentTheme.textSecondaryClass" 
-                    class="flex items-center gap-2 hover:opacity-70 transition font-semibold">
-              <i class="far fa-comment"></i>
-              <span class="text-xs sm:text-sm">{{ post.comments.length }}</span>
-            </button>
-          </div>
-          <button [ngClass]="currentTheme.textSecondaryClass" 
-                  class="flex items-center gap-2 hover:opacity-70 transition font-semibold">
-            <i class="fas fa-share"></i>
-            <span class="text-xs sm:text-sm">{{ post.shares }}</span>
-          </button>
-        </div>
-      </div>
+    <!-- Todo Tab Content (Usando el nuevo componente) -->
+    <div *ngIf="activeTab === 'todo'">
+      <app-publicaciones-perfil
+        [publicaciones]="publicacionesReales"
+        [cargando]="cargandoPublicaciones"
+        [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
+        [usuarioIniciales]="getInitials()"
+        [apiBaseUrl]="apiBaseUrl"
+        [usuarioFotoPerfil]="getProfileImage()"
+        (likeToggled)="onLikeToggled($event)"
+        (commentAdded)="onCommentAdded($event)">
+      </app-publicaciones-perfil>
     </div>
 
     <!-- Fotos Tab Content -->
-    <div *ngIf="activeTab === 'fotos'" class="space-y-4">
-      <!-- Loading photos -->
-      <div *ngIf="cargandoPublicaciones" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
-             [style.border-color]="currentTheme.color"></div>
-        <p [ngClass]="currentTheme.textSecondaryClass">Cargando fotos...</p>
-      </div>
-
-      <!-- No photos -->
-      <div *ngIf="!cargandoPublicaciones && photos.length === 0" 
-           [ngClass]="currentTheme.cardBg" 
-           class="rounded-2xl shadow-sm border p-8 text-center">
-        <i class="fas fa-image text-gray-300 text-5xl mb-4"></i>
-        <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">No hay fotos</h3>
-        <p [ngClass]="currentTheme.textSecondaryClass">Aún no has publicado imágenes</p>
-      </div>
-
-      <!-- Photos grid -->
-      <div *ngIf="!cargandoPublicaciones && photos.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-        <div *ngFor="let photo of photos"
-             (click)="openPhotoDetail(photo.id)"
-             class="aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition group relative">
-          <img [src]="photo.url" 
-               [alt]="photo.caption" 
-               class="w-full h-full object-cover">
-          <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center">
-            <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition text-xl sm:text-2xl"></i>
-          </div>
-        </div>
-      </div>
+    <div *ngIf="activeTab === 'fotos'">
+      <app-fotos-perfil
+        [photos]="photos"
+        [cargando]="cargandoPublicaciones">
+      </app-fotos-perfil>
     </div>
 
     <!-- Documentos Tab Content -->
@@ -339,15 +252,6 @@
     </div>
   </div>
 </div>
-
-<!-- Componente de Detalle de Post -->
-<app-detalle-post
-  [post]="selectedPost"
-  [isVisible]="showPostDetail"
-  (close)="closePostDetail()"
-  (likeToggled)="onLikeToggled($event)"
-  (commentAdded)="onCommentAdded($event)">
-</app-detalle-post>
 
 <!-- Modal de Editar Perfil -->
 <app-modal-editar-perfil
