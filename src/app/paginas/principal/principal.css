@@ -17,6 +17,32 @@
   }
 }
 
+/* ==================== IMÁGENES ADAPTATIVAS ==================== */
+/* Contenedor de imagen con altura automática */
+.cursor-pointer.hover\:opacity-95 {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: black;
+}
+
+/* Imagen adaptativa que se ajusta al contenido */
+.cursor-pointer img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 600px;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Efecto hover suave en la imagen */
+.cursor-pointer:hover img {
+  opacity: 0.95;
+}
+
+/* ==================== RESTO DE ESTILOS ==================== */
+
 /* Botón de "Me gusta" con efecto especial cuando está activo */
 button[class*="fa-heart"] {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -151,6 +177,11 @@ button[class*="flex-1"]:active::after {
   button[class*="flex-1"] {
     padding: 0.75rem 0.5rem;
   }
+  
+  /* Ajustar altura máxima en móvil */
+  .cursor-pointer img {
+    max-height: 400px;
+  }
 }
 
 /* Tema-specific hover effects */
@@ -177,6 +208,10 @@ img {
 input:focus,
 textarea:focus {
   transition: all 0.3s ease;
+}
+
+.cursor-pointer img {
+  transition: opacity 0.3s ease;
 }
 
 /* Animación del modal de compartir */
@@ -274,4 +309,17 @@ button:hover {
 
 button:active {
   transform: translateY(0);
+}
+
+/* ==================== CARDS CONSISTENTES ==================== */
+/* Asegurar que las cards mantengan su estructura */
+.border.rounded-xl {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Prevenir que las imágenes rompan el layout */
+.border.rounded-xl > * {
+  flex-shrink: 0;
 }

@@ -9,8 +9,9 @@ export const routes: Routes = [
   { path: '', redirectTo: 'principal', pathMatch: 'full' },
   { path: 'principal', component: Principal },
   { path: 'explorar', component: Explorar },
-  { path: 'perfil', component: Perfil },
+  { path: 'perfil', component: Perfil }, // Mi perfil
+  { path: 'perfil/:id', component: Perfil }, // Perfil de otro usuario
   { path: 'login', component: Login },
   { path: 'registro', component: Registro },
-  { path: '**', redirectTo: 'principal' } // ← manejo de rutas no existentes
+  { path: '**', redirectTo: 'principal' }
 ];

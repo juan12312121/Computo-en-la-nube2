@@ -80,11 +80,37 @@
         {{ currentPhotoIndex + 1 }} / {{ photos.length }}
       </div>
 
+      <!-- Badge del tipo de foto -->
+      <div class="absolute top-2 sm:top-4 left-1/2 transform -translate-x-1/2 z-10">
+        <span [ngClass]="getBadgeClass(selectedPhoto.tipo)" 
+              class="text-sm font-bold px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 shadow-lg">
+          <i [class]="getIconClass(selectedPhoto.tipo)"></i>
+          {{ getTipoLabel(selectedPhoto.tipo) }}
+        </span>
+      </div>
+
       <!-- Imagen -->
       <div class="relative flex-1 flex items-center justify-center max-h-[70vh] sm:max-h-[75vh] w-full">
         <img [src]="selectedPhoto.url" 
              [alt]="selectedPhoto.caption"
              class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+      </div>
+
+      <!-- Info de la foto -->
+      <div class="absolute bottom-16 sm:bottom-20 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-xl p-4 text-white">
+        <p class="font-semibold text-base sm:text-lg mb-1">{{ selectedPhoto.caption }}</p>
+        <div class="flex items-center gap-4 text-sm text-white/70">
+          <span *ngIf="selectedPhoto.fecha">
+            <i class="far fa-clock mr-1"></i>
+            {{ formatFecha(selectedPhoto.fecha) }}
+          </span>
+          <button *ngIf="selectedPhoto.postId" 
+                  (click)="goToPost(selectedPhoto.postId)"
+                  class="flex items-center gap-1 hover:text-white transition">
+            <i class="fas fa-external-link-alt"></i>
+            Ver publicación
+          </button>
+        </div>
       </div>
 
       <!-- Navegación - Flechas -->

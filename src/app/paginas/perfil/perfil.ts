@@ -1,20 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { Document, DocumentosLista } from '../../componentes/documentos-lista/documentos-lista';
+import { FotosPerfil } from '../../componentes/fotos-perfil/fotos-perfil';
 import { ModalCambiarBanner } from '../../componentes/modal-cambiar-banner/modal-cambiar-banner';
 import { FormularioEditarPerfil, ModalEditarPerfil } from '../../componentes/modal-editar-perfil/modal-editar-perfil';
+import { ModalSeguidores, TipoModal } from '../../componentes/modal-seguidores/modal-seguidores';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { ProfileErrorComponent } from '../../componentes/profile-error/profile-error';
+import { ProfileHeaderComponent, UsuarioPerfil } from '../../componentes/profile-header/profile-header';
+import { ProfileLoadingComponent } from '../../componentes/profile-loading/profile-loading';
+import { ProfileTabsComponent, TabType } from '../../componentes/profile-tabs/profile-tabs';
 import { PublicacionesPerfil } from '../../componentes/publicaciones-perfil/publicaciones-perfil';
-import { FotosPerfil } from '../../componentes/fotos-perfil/fotos-perfil';
-import { Usuario } from '../../core/servicios/autenticacion/autenticacion';
+import { SeccionesGrid, Section } from '../../componentes/secciones-grid/secciones-grid';
+import { AutenticacionService, Usuario } from '../../core/servicios/autenticacion/autenticacion';
+import { FotosService } from '../../core/servicios/fotos/fotos';
+import { Publicacion, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
+import { SeguidorService } from '../../core/servicios/seguidores/seguidores';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 import { UsuarioService } from '../../core/servicios/usuarios/usuarios';
-import { PublicacionesService, Publicacion } from '../../core/servicios/publicaciones/publicaciones';
-import { FotosService, FotosData } from '../../core/servicios/fotos/fotos';
-
-interface UsuarioPerfil extends Usuario {
-  // La interfaz Usuario ya tiene todos los campos necesarios
-}
 
 interface Photo {
   id: number | string;
@@ -25,80 +30,63 @@ interface Photo {
   fecha?: string | null;
 }
 
-interface Document {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  size: string;
-  date: string;
-}
-
-interface Section {
-  id: number;
-  name: string;
-  icon: string;
-  color: string;
-  posts: number;
-}
-
 @Component({
   selector: 'app-perfil',
   standalone: true,
   imports: [
-    CommonModule, 
-    NavbarComponent, 
+    CommonModule,
+    NavbarComponent,
+    ProfileLoadingComponent,
+    ProfileErrorComponent,
+    ProfileHeaderComponent,
+    ProfileTabsComponent,
     PublicacionesPerfil,
     ModalEditarPerfil,
     ModalCambiarBanner,
-    FotosPerfil
+    FotosPerfil,
+    DocumentosLista,
+    SeccionesGrid,
+    ModalSeguidores,
   ],
   templateUrl: './perfil.html',
   styleUrl: './perfil.css'
 })
 export class Perfil implements OnInit, OnDestroy {
-  // URL base de la API
   public apiBaseUrl: string;
 
-  // Usuario real desde la API
   usuario: UsuarioPerfil | null = null;
+  usuarioActual: Usuario | null = null;
   cargandoPerfil = true;
   errorCarga = false;
   
-  // Publicaciones reales
   publicacionesReales: Publicacion[] = [];
   cargandoPublicaciones = true;
   
-  // Estados del perfil
   isOwnProfile = true;
-  activeTab: 'todo' | 'fotos' | 'documentos' | 'secciones' = 'todo';
+  activeTab: TabType = 'todo';
   
-  // Modal de sección
-  showSectionModal = false;
-  selectedSection: Section | null = null;
-  
-  // Modal de edición de perfil
   showEditModal = false;
   guardandoPerfil = false;
   errorGuardado = false;
   mensajeError = '';
   
-  // Modal de banner
   showBannerModal = false;
   guardandoBanner = false;
   errorBanner = '';
   
-  // Tema
+  showSeguidoresModal = false;
+  tipoModalSeguidores: TipoModal = 'seguidores';
+  
   currentTheme: Theme;
   private themeSubscription?: Subscription;
+  private routeSubscription?: Subscription;
 
-  // Fotos completas del usuario (perfil, portada y publicaciones)
   photos: Photo[] = [];
-  fotosData: FotosData | null = null;
   cargandoFotos = false;
 
-  // Datos mock que permanecen
+  estaSiguiendo = false;
+  cargandoSeguir = false;
+
   documents: Document[] = [
     {
       id: 1,
@@ -169,7 +157,10 @@ export class Perfil implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private usuarioService: UsuarioService,
     private publicacionesService: PublicacionesService,
-    private fotosService: FotosService
+    private fotosService: FotosService,
+    private authService: AutenticacionService,
+    private seguidorService: SeguidorService,
+    private route: ActivatedRoute
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
     
@@ -185,38 +176,84 @@ export class Perfil implements OnInit, OnDestroy {
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
-    this.cargarPerfil();
+
+    this.usuarioActual = this.authService.currentUserValue;
+
+    this.routeSubscription = this.route.params.subscribe(params => {
+      const userId = params['id'];
+      if (userId) {
+        this.cargarPerfilUsuario(Number(userId));
+      } else {
+        this.cargarMiPerfil();
+      }
+    });
   }
 
   ngOnDestroy() {
     this.themeSubscription?.unsubscribe();
+    this.routeSubscription?.unsubscribe();
   }
 
   // ==================== CARGA DE PERFIL ====================
   
-  cargarPerfil(): void {
+  cargarMiPerfil(): void {
     this.cargandoPerfil = true;
     this.cargandoPublicaciones = true;
     this.errorCarga = false;
+    this.isOwnProfile = true;
 
-    // Primero cargar el perfil
     this.usuarioService.obtenerMiPerfil().subscribe({
       next: (responsePerfil) => {
         if (responsePerfil.success && responsePerfil.data) {
           this.usuario = responsePerfil.data;
           this.cargandoPerfil = false;
-          
-          // Luego cargar las publicaciones y fotos
           this.cargarPublicaciones();
-          this.cargarTodasLasFotos();
+          this.cargarMisFotos();
         } else {
           this.errorCarga = true;
           this.cargandoPerfil = false;
           this.cargandoPublicaciones = false;
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar perfil:', error);
+        this.errorCarga = true;
+        this.cargandoPerfil = false;
+        this.cargandoPublicaciones = false;
+      }
+    });
+  }
+
+  cargarPerfilUsuario(userId: number): void {
+    this.cargandoPerfil = true;
+    this.cargandoPublicaciones = true;
+    this.errorCarga = false;
+    this.isOwnProfile = this.usuarioActual?.id === userId;
+
+    this.usuarioService.obtenerPerfil(userId).subscribe({
+      next: (responsePerfil) => {
+        if (responsePerfil.success && responsePerfil.data) {
+          this.usuario = responsePerfil.data;
+          this.cargandoPerfil = false;
+          this.cargarPublicacionesUsuario(userId);
+          
+          if (this.isOwnProfile) {
+            this.cargarMisFotos();
+          } else {
+            this.cargarFotosUsuario(userId);
+          }
+          
+          if (!this.isOwnProfile && this.usuarioActual) {
+            this.verificarSeguimiento();
+          }
+        } else {
+          this.errorCarga = true;
+          this.cargandoPerfil = false;
+          this.cargandoPublicaciones = false;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error al cargar perfil del usuario:', error);
         this.errorCarga = true;
         this.cargandoPerfil = false;
         this.cargandoPublicaciones = false;
@@ -234,7 +271,7 @@ export class Perfil implements OnInit, OnDestroy {
         }
         this.cargandoPublicaciones = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar publicaciones:', error);
         this.publicacionesReales = [];
         this.cargandoPublicaciones = false;
@@ -242,104 +279,149 @@ export class Perfil implements OnInit, OnDestroy {
     });
   }
 
-  // Nueva función para cargar todas las fotos usando el servicio
-  private cargarTodasLasFotos(): void {
+  private cargarPublicacionesUsuario(userId: number): void {
+    this.publicacionesService.obtenerPublicacionesUsuario(userId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.publicacionesReales = response.data;
+        } else {
+          this.publicacionesReales = [];
+        }
+        this.cargandoPublicaciones = false;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar publicaciones del usuario:', error);
+        this.publicacionesReales = [];
+        this.cargandoPublicaciones = false;
+      }
+    });
+  }
+
+  private cargarMisFotos(): void {
     this.cargandoFotos = true;
     
-    console.log('DEBUG: Iniciando carga de fotos...'); // Log de inicio
-
-    this.fotosService.getMisFotos().subscribe({
-      next: (data: FotosData) => {
-        console.log('DEBUG: Datos recibidos del servicio de fotos:', data); // Log de los datos crudos
-        this.fotosData = data;
-        this.procesarFotos(data);
+    this.fotosService.obtenerMisFotos().subscribe({
+      next: (fotos: Photo[]) => {
+        this.photos = fotos;
         this.cargandoFotos = false;
-        console.log('DEBUG: Fotos cargadas y procesadas correctamente.'); // Log de éxito
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar fotos:', error);
-        console.log('DEBUG: Error al cargar fotos. Reiniciando photos a un array vacío.'); // Log de error
         this.photos = [];
         this.cargandoFotos = false;
       }
     });
   }
 
-  // Procesar las fotos recibidas del servicio
-  private procesarFotos(data: FotosData): void {
-    console.log('DEBUG: Iniciando procesamiento de fotos con datos:', data); // Log de entrada a la función
-    const fotosArray: Photo[] = [];
-
-    // Agregar foto de perfil si existe
-    if (data.fotos.perfil && data.fotos.perfil.url) {
-      const perfilPhoto: Photo = {
-        id: 'perfil',
-        url: this.normalizarUrl(data.fotos.perfil.url),
-        caption: 'Foto de perfil',
-        tipo: 'perfil'
-      };
-      fotosArray.push(perfilPhoto);
-      console.log('DEBUG: Foto de perfil agregada:', perfilPhoto); // Log de foto de perfil
-    } else {
-      console.log('DEBUG: No se encontró foto de perfil o URL.');
-    }
-
-    // Agregar foto de portada si existe
-    if (data.fotos.portada && data.fotos.portada.url) {
-      const portadaPhoto: Photo = {
-        id: 'portada',
-        url: this.normalizarUrl(data.fotos.portada.url),
-        caption: 'Foto de portada',
-        tipo: 'portada'
-      };
-      fotosArray.push(portadaPhoto);
-      console.log('DEBUG: Foto de portada agregada:', portadaPhoto); // Log de foto de portada
-    } else {
-      console.log('DEBUG: No se encontró foto de portada o URL.');
-    }
-
-    // Agregar fotos de publicaciones
-    if (data.fotos.publicaciones && data.fotos.publicaciones.length > 0) {
-      console.log(`DEBUG: Procesando ${data.fotos.publicaciones.length} publicaciones.`);
-      data.fotos.publicaciones.forEach(pub => {
-        if (pub.url) {
-          const publicacionPhoto: Photo = {
-            id: pub.id,
-            url: this.normalizarUrl(pub.url),
-            caption: pub.descripcion ? 
-              (pub.descripcion.substring(0, 50) + (pub.descripcion.length > 50 ? '...' : '')) : 
-              'Publicación',
-            postId: pub.id,
-            tipo: 'publicacion',
-            fecha: pub.fecha
-          };
-          fotosArray.push(publicacionPhoto);
-          console.log('DEBUG: Foto de publicación agregada:', publicacionPhoto); // Log de cada publicación
-        } else {
-          console.log(`DEBUG: Publicación con ID ${pub.id} no tiene URL, omitiendo.`);
-        }
-      });
-    } else {
-      console.log('DEBUG: No se encontraron publicaciones con fotos.');
-    }
-
-    this.photos = fotosArray;
-    console.log('DEBUG: Array final de fotos procesadas (this.photos):', this.photos); // Log del array final
-  }
-
-  // Normalizar URL para asegurar que sea completa
-  private normalizarUrl(url: string): string {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    const normalizedUrl = `${this.apiBaseUrl}${url.startsWith('/') ? url : '/' + url}`;
-    console.log(`DEBUG: Normalizando URL: ${url} -> ${normalizedUrl}`); // Log de normalización de URL
-    return normalizedUrl;
+  private cargarFotosUsuario(userId: number): void {
+    this.cargandoFotos = true;
+    
+    this.fotosService.obtenerFotosUsuario(userId).subscribe({
+      next: (fotos: Photo[]) => {
+        this.photos = fotos;
+        this.cargandoFotos = false;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar fotos del usuario:', error);
+        this.photos = [];
+        this.cargandoFotos = false;
+      }
+    });
   }
 
   reintentarCarga(): void {
-    console.log('DEBUG: Reintentando carga de perfil...'); // Log de reintento
-    this.cargarPerfil();
+    const userId = this.route.snapshot.params['id'];
+    if (userId) {
+      this.cargarPerfilUsuario(Number(userId));
+    } else {
+      this.cargarMiPerfil();
+    }
+  }
+
+  // ==================== SEGUIMIENTO ====================
+  
+  private verificarSeguimiento(): void {
+    if (!this.usuarioActual || !this.usuario) {
+      return;
+    }
+
+    this.seguidorService.verificar(this.usuarioActual.id, this.usuario.id).subscribe({
+      next: (response) => {
+        this.estaSiguiendo = response.sigue || false;
+      },
+      error: (error: any) => {
+        console.error('Error al verificar seguimiento:', error);
+      }
+    });
+  }
+
+  toggleSeguir(): void {
+    if (!this.usuarioActual) {
+      alert('Debes iniciar sesión para seguir usuarios');
+      return;
+    }
+
+    if (!this.usuario || this.isOwnProfile || this.cargandoSeguir) {
+      return;
+    }
+
+    this.cargandoSeguir = true;
+
+    this.seguidorService.toggle(this.usuarioActual.id, this.usuario.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          const nuevoEstado = response.following ?? false;
+          this.estaSiguiendo = nuevoEstado;
+          
+          if (this.usuario) {
+            const seguidoresAntes = this.usuario.total_seguidores || 0;
+            if (nuevoEstado) {
+              this.usuario.total_seguidores = seguidoresAntes + 1;
+            } else {
+              this.usuario.total_seguidores = Math.max(0, seguidoresAntes - 1);
+            }
+          }
+        } else {
+          alert('Error al procesar la solicitud');
+        }
+        
+        this.cargandoSeguir = false;
+      },
+      error: (error: any) => {
+        console.error('Error al cambiar seguimiento:', error);
+        
+        let mensajeError = 'Error al procesar la solicitud de seguimiento';
+        if (error.status === 401) {
+          mensajeError = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente';
+        } else if (error.status === 404) {
+          mensajeError = 'Usuario no encontrado';
+        } else if (error.error?.mensaje) {
+          mensajeError = error.error.mensaje;
+        }
+        
+        alert(mensajeError);
+        this.cargandoSeguir = false;
+      }
+    });
+  }
+
+  // ==================== MODAL SEGUIDORES ====================
+  
+  abrirSeguidores(): void {
+    this.tipoModalSeguidores = 'seguidores';
+    this.showSeguidoresModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  abrirSiguiendo(): void {
+    this.tipoModalSeguidores = 'seguidos';
+    this.showSeguidoresModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  cerrarModalSeguidores(): void {
+    this.showSeguidoresModal = false;
+    document.body.style.overflow = 'auto';
   }
 
   // ==================== UTILIDADES ====================
@@ -379,7 +461,23 @@ export class Perfil implements OnInit, OnDestroy {
   toggleProfileMode(): void {
     if (this.isOwnProfile) {
       this.abrirModalEdicion();
+    } else {
+      this.toggleSeguir();
     }
+  }
+
+  getButtonText(): string {
+    if (this.isOwnProfile) {
+      return 'Editar perfil';
+    }
+    return this.cargandoSeguir ? 'Cargando...' : (this.estaSiguiendo ? 'Siguiendo' : 'Seguir');
+  }
+
+  getButtonIcon(): string {
+    if (this.isOwnProfile) {
+      return 'fas fa-edit';
+    }
+    return this.estaSiguiendo ? 'fas fa-user-check' : 'fas fa-user-plus';
   }
 
   abrirModalEdicion(): void {
@@ -438,11 +536,10 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = { ...this.usuario, ...response.data };
           this.guardandoPerfil = false;
           this.cerrarModalEdicion();
-          // Recargar las fotos después de actualizar el perfil
-          this.cargarTodasLasFotos();
+          this.cargarMisFotos();
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al actualizar perfil:', error);
         this.errorGuardado = true;
         this.mensajeError = error.error?.mensaje || 'Error al actualizar el perfil';
@@ -479,11 +576,10 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = { ...this.usuario, ...response.data };
           this.guardandoBanner = false;
           this.cerrarModalBanner();
-          // Recargar las fotos después de actualizar el banner
-          this.cargarTodasLasFotos();
+          this.cargarMisFotos();
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al actualizar banner:', error);
         this.errorBanner = error.error?.mensaje || 'Error al actualizar la portada';
         this.guardandoBanner = false;
@@ -504,11 +600,10 @@ export class Perfil implements OnInit, OnDestroy {
           this.usuario = { ...this.usuario, ...response.data };
           this.guardandoBanner = false;
           this.cerrarModalBanner();
-          // Recargar las fotos después de eliminar el banner
-          this.cargarTodasLasFotos();
+          this.cargarMisFotos();
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al eliminar banner:', error);
         this.errorBanner = error.error?.mensaje || 'Error al eliminar la portada';
         this.guardandoBanner = false;
@@ -518,38 +613,26 @@ export class Perfil implements OnInit, OnDestroy {
 
   // ==================== NAVEGACIÓN ====================
   
-  switchTab(tab: 'todo' | 'fotos' | 'documentos' | 'secciones'): void {
+  switchTab(tab: TabType): void {
     this.activeTab = tab;
   }
 
-  openSectionModal(sectionId: number): void {
-    this.selectedSection = this.sections.find(s => s.id === sectionId) || null;
-    this.showSectionModal = true;
-    document.body.style.overflow = 'hidden';
+  onSectionSelected(sectionId: number): void {
+    console.log('Sección seleccionada:', sectionId);
   }
 
-  closeSectionModal(): void {
-    this.showSectionModal = false;
-    this.selectedSection = null;
-    document.body.style.overflow = 'auto';
-  }
-
-  onModalBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
-      this.closeSectionModal();
-    }
+  onDocumentDownload(docId: number): void {
+    console.log('Descargar documento:', docId);
   }
 
   // ==================== EVENTOS DE PUBLICACIONES ====================
   
   onLikeToggled(postId: number): void {
     console.log('Like toggled en post:', postId);
-    // Aquí puedes hacer la llamada a la API para dar like
   }
 
   onCommentAdded(data: {postId: number, comment: string}): void {
     console.log('Comentario agregado:', data);
-    // Aquí puedes hacer la llamada a la API para agregar el comentario
   }
 
   openCreateModal(): void {

@@ -59,7 +59,7 @@
         {{ post.likes }} Me gusta
       </button>
       <button
-        (click)="openPostDetail(post.id)"
+        (click)="toggleComments(post.id)"
         class="hover:underline font-medium text-right"
         [ngClass]="currentThemeData.hoverText || ''">
         {{ post.comments.length }} comentarios · {{ post.shares }} compartidos
@@ -99,9 +99,19 @@
          class="border-t"
          [ngClass]="[currentTheme.borderColor || '', currentTheme.bodyClass || '']">
       
+      <!-- Loading Comments -->
+      <div *ngIf="post.loadingComments" class="px-4 py-12 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2"
+             [ngClass]="'border-' + currentThemeData.textPrimary.replace('text-', '')"></div>
+        <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
+          Cargando comentarios...
+        </p>
+      </div>
+
       <!-- Existing Comments -->
-      <div *ngIf="post.comments.length > 0" class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
-        <div *ngFor="let comment of post.comments" class="flex gap-2.5">
+      <div *ngIf="!post.loadingComments && post.comments.length > 0" 
+           class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
+        <div *ngFor="let comment of post.comments" class="flex gap-2.5 animate-fade-in">
           <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
                [style.background]="comment.avatarColor">
             {{ comment.avatar }}
@@ -123,16 +133,27 @@
                       [ngClass]="currentThemeData.hoverText || ''">Me gusta</button>
               <button class="hover:underline font-semibold hidden sm:inline"
                       [ngClass]="currentThemeData.hoverText || ''">Responder</button>
+              <!-- Botón eliminar (solo si es el usuario actual) -->
+              <button *ngIf="comment.usuario_id === usuarioActualId"
+                      (click)="eliminarComentario(post.id, comment.id)"
+                      class="hover:underline font-semibold text-red-500 ml-auto">
+                <i class="fas fa-trash-alt"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- No Comments Message -->
-      <div *ngIf="post.comments.length === 0" class="px-4 py-12 text-center">
+      <div *ngIf="!post.loadingComments && post.comments.length === 0" 
+           class="px-4 py-12 text-center">
         <i class="fas fa-comments text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
-        <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass || ''">No hay comentarios aún</p>
-        <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">Sé el primero en comentar</p>
+        <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass || ''">
+          No hay comentarios aún
+        </p>
+        <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+          Sé el primero en comentar
+        </p>
       </div>
 
       <!-- Comment Input -->
@@ -148,16 +169,16 @@
             [(ngModel)]="commentInputs[post.id]"
             (keypress)="onCommentKeyPress($event, post.id)"
             placeholder="Escribe un comentario..."
-            class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0"
+            class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
             [ngClass]="[currentTheme.bodyClass || '', currentTheme.textPrimaryClass || '']"
             [class.focus:ring-orange-500]="currentTheme.id === 'default'"
             [style.--tw-ring-color]="getThemeRingColor()">
           <button
             (click)="addComment(post.id)"
             [disabled]="!commentInputs[post.id]?.trim()"
-            class="transition-all p-2"
+            class="transition-all p-2 rounded-full"
             [ngClass]="commentInputs[post.id]?.trim() ? 
-              [currentThemeData.textPrimary || '', 'active:scale-95'] : 
+              [currentThemeData.textPrimary || '', 'active:scale-95', 'hover:bg-opacity-10', currentThemeData.accentBg] : 
               [currentTheme.textSecondaryClass || '', 'cursor-not-allowed', 'opacity-50']">
             <i class="fas fa-paper-plane text-lg"></i>
           </button>
@@ -357,3 +378,4 @@
 
   </div>
 </div>
+

@@ -1,0 +1,104 @@
+<!-- Backdrop -->
+<div *ngIf="isVisible" 
+     (click)="cerrarModal()"
+     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+  
+  <!-- Modal -->
+  <div (click)="$event.stopPropagation()" 
+       [ngClass]="currentTheme.cardBg"
+       class="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
+    
+    <!-- Header -->
+    <div [ngClass]="currentTheme.borderColor" 
+         class="flex items-center justify-between px-6 py-4 border-b">
+      <h2 [ngClass]="currentTheme.textPrimaryClass" 
+          class="text-xl font-bold">
+        {{ getTitulo() }}
+        <span [ngClass]="currentTheme.textSecondaryClass" 
+              class="text-sm font-normal ml-2">
+          ({{ total }})
+        </span>
+      </h2>
+      <button 
+        (click)="cerrarModal()"
+        [ngClass]="currentTheme.textSecondaryClass"
+        class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-2 transition">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="max-h-[60vh] overflow-y-auto">
+      
+      <!-- Loading State -->
+      <div *ngIf="cargando" class="p-8 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+             [style.border-color]="currentTheme.color"></div>
+        <p [ngClass]="currentTheme.textSecondaryClass">Cargando...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="error && !cargando" class="p-8 text-center">
+        <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-4"></i>
+        <p [ngClass]="currentTheme.textSecondaryClass">{{ error }}</p>
+        <button 
+          (click)="cargarDatos()"
+          [style.background]="currentTheme.color"
+          class="mt-4 text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+          Reintentar
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!cargando && !error && usuarios.length === 0" 
+           class="p-8 text-center">
+        <i [ngClass]="currentTheme.textSecondaryClass" 
+           class="fas fa-users text-5xl mb-4 opacity-50"></i>
+        <p [ngClass]="currentTheme.textSecondaryClass" class="font-medium">
+          {{ tipo === 'seguidores' ? 'Aún no tiene seguidores' : 'Aún no sigue a nadie' }}
+        </p>
+      </div>
+
+      <!-- Users List -->
+      <div *ngIf="!cargando && !error && usuarios.length > 0" 
+           class="divide-y divide-gray-200 dark:divide-gray-700">
+        
+        <div *ngFor="let usuario of usuarios" 
+             (click)="verPerfil(usuario.id)"
+             class="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition">
+          
+          <!-- Avatar -->
+          <div class="flex-shrink-0">
+            <div class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+              <img *ngIf="getProfileImage(usuario)" 
+                   [src]="getProfileImage(usuario)" 
+                   [alt]="usuario.nombre_completo"
+                   class="w-full h-full object-cover">
+              <span *ngIf="!getProfileImage(usuario)">
+                {{ getInitials(usuario) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- User Info -->
+          <div class="flex-1 min-w-0">
+            <p [ngClass]="currentTheme.textPrimaryClass" 
+               class="font-semibold truncate">
+              {{ usuario.nombre_completo }}
+            </p>
+            <p [ngClass]="currentTheme.textSecondaryClass" 
+               class="text-sm truncate">
+              @{{ usuario.nombre_usuario }}
+            </p>
+          </div>
+
+          <!-- Arrow Icon -->
+          <i [ngClass]="currentTheme.textSecondaryClass" 
+             class="fas fa-chevron-right"></i>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

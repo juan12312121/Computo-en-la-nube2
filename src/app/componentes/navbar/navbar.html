@@ -2,15 +2,15 @@
 <nav class="navbar sticky top-0 z-50 shadow-sm"
      [ngClass]="[currentTheme.navbarBg || '', 'border-b', currentTheme.navbarBorder || '']">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center h-14 flex-nowrap w-full">
+    <div class="flex items-center h-14 flex-nowrap w-full gap-4">
 
       <!-- LEFT: LOGO -->
-      <div class="flex items-center gap-3 logo">
+      <div class="flex items-center gap-3 logo flex-shrink-0">
         <a routerLink="/principal" class="flex items-center gap-2" (click)="$event.stopPropagation()">
           <i class="fas fa-paper-plane text-3xl transition-all duration-300"
              [ngClass]="currentThemeData.icon || ''"
              aria-hidden="true"></i>
-          <span class="font-extrabold text-2xl leading-none tracking-tight transition-all duration-300 logo-gradient-text"
+          <span class="font-extrabold text-2xl leading-none tracking-tight transition-all duration-300 logo-gradient-text hidden sm:inline"
                 [attr.data-theme]="currentThemeId"
                 style="letter-spacing: -0.02em;">
             TrinoFlow
@@ -18,8 +18,73 @@
         </a>
       </div>
 
-      <!-- CENTER: NAV LINKS -->
-      <div class="flex-1 hidden md:flex justify-center">
+      <!-- CENTER: SEARCH BAR (Desktop) -->
+      <div *ngIf="isLoggedIn" class="flex-1 hidden md:flex justify-center max-w-md mx-auto">
+        <div class="relative w-full search-container">
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-2/3 -translate-y-1/2" 
+               [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+            <input 
+              type="text" 
+              [(ngModel)]="searchQuery"
+              (input)="onSearchInput(searchQuery)"
+              (focus)="showSearchResults = searchQuery.length > 0 && searchResults.length > 0"
+              placeholder="Buscar usuarios..."
+              class="w-full pl-10 pr-10 py-2 rounded-full border transition-all duration-200 focus:outline-none focus:ring-2"
+              [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '', currentTheme.textPrimaryClass || '']"
+              [style.--tw-ring-color]="currentTheme.color">
+            <button 
+              *ngIf="searchQuery"
+              (click)="limpiarBusqueda()"
+              class="absolute right-3 top-4/5 -translate-y-1/2 hover:opacity-70 transition"
+              [ngClass]="currentTheme.textSecondaryClass || ''">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Search Results Dropdown (Desktop) -->
+          <div *ngIf="showSearchResults" 
+               class="search-results absolute top-full mt-2 w-full border rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+               [ngClass]="[currentTheme.cardBg || '']">
+            <div *ngIf="isSearching" class="px-4 py-8 text-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" 
+                   [style.border-color]="currentTheme.color"></div>
+              <p class="mt-2 text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">Buscando...</p>
+            </div>
+
+            <div *ngIf="!isSearching && searchResults.length === 0 && searchQuery" class="px-4 py-8 text-center">
+              <i class="fas fa-user-slash text-4xl mb-2 opacity-50" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+              <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">No se encontraron usuarios</p>
+            </div>
+
+            <button *ngFor="let usuario of searchResults"
+                    (click)="verPerfil(usuario)"
+                    class="w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 border-b hover:scale-[1.02]"
+                    [ngClass]="[currentTheme.hoverBgLight || '', currentTheme.borderColor || '']">
+              <img [src]="getUsuarioAvatar(usuario)" 
+                   [alt]="usuario.nombre_completo"
+                   (error)="$any($event.target).src='https://ui-avatars.com/api/?name=' + usuario.nombre_completo"
+                   class="w-12 h-12 rounded-full object-cover border-2 flex-shrink-0"
+                   [ngClass]="currentTheme.borderColor || ''">
+              <div class="flex-1 min-w-0 text-left">
+                <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuario.nombre_completo }}
+                </p>
+                <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  @{{ usuario.nombre_usuario }}
+                </p>
+                <p *ngIf="usuario.carrera" class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  {{ usuario.carrera }}
+                </p>
+              </div>
+              <i class="fas fa-chevron-right text-xs" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER: NAV LINKS (cuando no hay búsqueda) -->
+      <div *ngIf="!isLoggedIn" class="flex-1 hidden md:flex justify-center">
         <div class="flex items-center gap-6">
           <a routerLink="/principal"
              class="flex items-center gap-2 font-semibold transition"
@@ -38,7 +103,16 @@
       </div>
 
       <!-- RIGHT: ACTIONS -->
-      <div class="ml-auto flex items-center gap-3 actions">
+      <div class="ml-auto flex items-center gap-3 actions flex-shrink-0">
+
+        <!-- SEARCH BUTTON (móvil) - Solo si está autenticado -->
+        <button *ngIf="isLoggedIn"
+                (click)="toggleMobileSearch()"
+                class="md:hidden p-2 rounded-md transition"
+                [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+                aria-label="Buscar">
+          <i class="fas fa-search text-lg"></i>
+        </button>
 
         <!-- THEME ICON (desktop) -->
         <div class="relative hidden md:block">
@@ -52,7 +126,7 @@
             </span>
           </button>
 
-          <!-- Dropdown Temas (Desktop - Lista tradicional) -->
+          <!-- Dropdown Temas (Desktop) -->
           <div *ngIf="showThemeMenu"
                class="theme-dropdown border rounded-xl shadow-2xl overflow-hidden"
                [ngClass]="[currentTheme.cardBg || '']">
@@ -246,6 +320,67 @@
         </div>
 
       </div> <!-- end actions -->
+    </div>
+  </div>
+
+  <!-- BARRA DE BÚSQUEDA MÓVIL EXPANDIDA -->
+  <div *ngIf="showMobileSearch" class="md:hidden border-t px-4 py-3" [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+    <div class="relative">
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2" 
+         [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery"
+        (input)="onSearchInput(searchQuery)"
+        placeholder="Buscar usuarios..."
+        class="w-full pl-10 pr-10 py-2.5 rounded-full border transition-all duration-200 focus:outline-none focus:ring-2"
+        [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '', currentTheme.textPrimaryClass || '']"
+        [style.--tw-ring-color]="currentTheme.color"
+        autofocus>
+      <button 
+        *ngIf="searchQuery"
+        (click)="limpiarBusqueda()"
+        class="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-70 transition"
+        [ngClass]="currentTheme.textSecondaryClass || ''">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Resultados de Búsqueda Móvil -->
+    <div *ngIf="searchQuery && (isSearching || searchResults.length > 0)" class="mt-3 max-h-80 overflow-y-auto rounded-xl border" [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+      <div *ngIf="isSearching" class="px-4 py-8 text-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" 
+             [style.border-color]="currentTheme.color"></div>
+        <p class="mt-2 text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">Buscando...</p>
+      </div>
+
+      <div *ngIf="!isSearching && searchResults.length === 0 && searchQuery" class="px-4 py-8 text-center">
+        <i class="fas fa-user-slash text-4xl mb-2 opacity-50" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+        <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">No se encontraron usuarios</p>
+      </div>
+
+      <button *ngFor="let usuario of searchResults"
+              (click)="verPerfil(usuario)"
+              class="w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 border-b active:opacity-75"
+              [ngClass]="[currentTheme.hoverBgLight || '', currentTheme.borderColor || '']">
+        <img [src]="getUsuarioAvatar(usuario)" 
+             [alt]="usuario.nombre_completo"
+             (error)="$any($event.target).src='https://ui-avatars.com/api/?name=' + usuario.nombre_completo"
+             class="w-12 h-12 rounded-full object-cover border-2 flex-shrink-0"
+             [ngClass]="currentTheme.borderColor || ''">
+        <div class="flex-1 min-w-0 text-left">
+          <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+            {{ usuario.nombre_completo }}
+          </p>
+          <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+            @{{ usuario.nombre_usuario }}
+          </p>
+          <p *ngIf="usuario.carrera" class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+            {{ usuario.carrera }}
+          </p>
+        </div>
+        <i class="fas fa-chevron-right text-xs" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+      </button>
     </div>
   </div>
 

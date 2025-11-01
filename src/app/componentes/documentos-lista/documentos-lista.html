@@ -1,0 +1,35 @@
+<div class="space-y-3">
+      <div *ngFor="let doc of documents"
+           [ngClass]="currentTheme.cardBg"
+           class="border rounded-xl p-4 sm:p-5 hover:shadow-md transition cursor-pointer">
+        <div class="flex items-start gap-3 sm:gap-4">
+          <div class="flex-shrink-0">
+            <i [class]="'fas ' + doc.icon + ' ' + doc.color + ' text-3xl sm:text-4xl'"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xs sm:text-sm mb-1 truncate">
+              {{ doc.name }}
+            </h3>
+            <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mb-2">
+              {{ doc.description }}
+            </p>
+            <div class="flex items-center gap-3 sm:gap-4 text-xs">
+              <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
+                <i class="fas fa-file"></i>
+                {{ doc.size }}
+              </span>
+              <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
+                <i class="far fa-clock"></i>
+                {{ doc.date }}
+              </span>
+            </div>
+          </div>
+          <button 
+            (click)="onDownloadClick(doc.id, $event)"
+            [ngClass]="currentTheme.textSecondaryClass" 
+            class="flex-shrink-0 hover:opacity-70 transition">
+            <i class="fas fa-download text-base sm:text-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>

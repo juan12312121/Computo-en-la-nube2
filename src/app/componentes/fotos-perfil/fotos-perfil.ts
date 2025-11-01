@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, HostListener, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 
@@ -19,7 +19,7 @@ interface Photo {
   templateUrl: './fotos-perfil.html',
   styleUrl: './fotos-perfil.css'
 })
-export class FotosPerfil implements OnInit, OnDestroy {
+export class FotosPerfil implements OnInit, OnDestroy, OnChanges {
   @Input() photos: Photo[] = [];
   @Input() cargando = false;
 
@@ -37,13 +37,74 @@ export class FotosPerfil implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('========================================');
+    console.log('🖼️ FotosPerfil - ngOnInit');
+    console.log('========================================');
+    console.log('📸 Total fotos recibidas:', this.photos.length);
+    console.log('📋 Fotos completas:', JSON.stringify(this.photos, null, 2));
+    console.log('🔄 Estado cargando:', this.cargando);
+    this.logearFotosPorTipo();
+    
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['photos']) {
+      console.log('========================================');
+      console.log('🔄 FotosPerfil - Cambio en photos detectado');
+      console.log('========================================');
+      console.log('📸 Total fotos ANTERIOR:', changes['photos'].previousValue?.length || 0);
+      console.log('📸 Total fotos NUEVO:', changes['photos'].currentValue?.length || 0);
+      console.log('📋 Fotos nuevas:', JSON.stringify(changes['photos'].currentValue, null, 2));
+      this.logearFotosPorTipo();
+    }
+
+    if (changes['cargando']) {
+      console.log('🔄 Estado cargando cambió:', {
+        anterior: changes['cargando'].previousValue,
+        nuevo: changes['cargando'].currentValue
+      });
+    }
+  }
+
   ngOnDestroy(): void {
     this.themeSubscription?.unsubscribe();
+  }
+
+  // ==================== MÉTODOS DE DEBUG ====================
+
+  private logearFotosPorTipo(): void {
+    console.log('========================================');
+    console.log('📊 RESUMEN DE FOTOS POR TIPO');
+    console.log('========================================');
+    
+    const fotosPerfil = this.photos.filter(p => p.tipo === 'perfil');
+    const fotosPortada = this.photos.filter(p => p.tipo === 'portada');
+    const fotosPublicacion = this.photos.filter(p => p.tipo === 'publicacion');
+    
+    console.log('👤 Fotos de perfil:', fotosPerfil.length);
+    if (fotosPerfil.length > 0) {
+      console.log('   ', fotosPerfil);
+    }
+    
+    console.log('🖼️ Fotos de portada:', fotosPortada.length);
+    if (fotosPortada.length > 0) {
+      console.log('   ', fotosPortada);
+    }
+    
+    console.log('📷 Fotos de publicaciones:', fotosPublicacion.length);
+    if (fotosPublicacion.length > 0) {
+      console.log('   IDs de posts:', fotosPublicacion.map(f => f.postId));
+      fotosPublicacion.forEach((foto, index) => {
+        console.log(`   ${index + 1}. Post ${foto.postId} - ${foto.caption}`);
+      });
+    }
+    
+    console.log('========================================');
+    console.log('📈 TOTAL GENERAL:', this.photos.length);
+    console.log('========================================');
   }
 
   // ==================== MÉTODOS DE UTILIDAD ====================
@@ -94,16 +155,25 @@ export class FotosPerfil implements OnInit, OnDestroy {
   // ==================== GESTIÓN DE FOTOS ====================
 
   openPhoto(photoId: number | string): void {
+    console.log('🖼️ Abriendo foto:', photoId);
+    
     const photoIndex = this.photos.findIndex(p => p.id === photoId);
+    console.log('📍 Índice de la foto:', photoIndex);
+    
     if (photoIndex !== -1) {
       this.currentPhotoIndex = photoIndex;
       this.selectedPhoto = this.photos[photoIndex];
       this.showPhotoModal = true;
       document.body.style.overflow = 'hidden';
+      
+      console.log('✅ Modal de foto abierto:', this.selectedPhoto);
+    } else {
+      console.error('❌ Foto no encontrada con ID:', photoId);
     }
   }
 
   closePhotoModal(): void {
+    console.log('❌ Cerrando modal de foto');
     this.showPhotoModal = false;
     this.selectedPhoto = null;
     document.body.style.overflow = 'auto';
@@ -119,6 +189,7 @@ export class FotosPerfil implements OnInit, OnDestroy {
     if (this.currentPhotoIndex < this.photos.length - 1) {
       this.currentPhotoIndex++;
       this.selectedPhoto = this.photos[this.currentPhotoIndex];
+      console.log('➡️ Siguiente foto:', this.selectedPhoto);
     }
   }
 
@@ -126,11 +197,12 @@ export class FotosPerfil implements OnInit, OnDestroy {
     if (this.currentPhotoIndex > 0) {
       this.currentPhotoIndex--;
       this.selectedPhoto = this.photos[this.currentPhotoIndex];
+      console.log('⬅️ Foto anterior:', this.selectedPhoto);
     }
   }
 
   goToPost(postId: number): void {
-    console.log('Navegar a publicación:', postId);
+    console.log('📍 Navegar a publicación:', postId);
     this.closePhotoModal();
     // Aquí puedes implementar la navegación
     // Por ejemplo: this.router.navigate(['/post', postId]);

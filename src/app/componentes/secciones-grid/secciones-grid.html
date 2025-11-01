@@ -1,0 +1,57 @@
+ <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let section of sections"
+           (click)="onSectionClick(section.id)"
+           [ngClass]="currentTheme.cardBg"
+           class="border rounded-xl p-5 sm:p-6 hover:shadow-lg transition cursor-pointer group">
+        <div class="flex items-center justify-between mb-4">
+          <div [ngClass]="'bg-gradient-to-br ' + section.color" 
+               class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-white text-xl sm:text-2xl shadow-lg group-hover:scale-110 transition">
+            <i [class]="'fas ' + section.icon"></i>
+          </div>
+          <span [ngClass]="currentTheme.textSecondaryClass" 
+                class="text-xs sm:text-sm font-bold bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
+            {{ section.posts }} posts
+          </span>
+        </div>
+        <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-black text-base sm:text-lg group-hover:opacity-70 transition">
+          {{ section.name }}
+        </h3>
+      </div>
+    </div>
+
+    <!-- Modal para ver sección -->
+    <div *ngIf="showModal && selectedSection"
+         (click)="onModalBackdropClick($event)"
+         class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div [ngClass]="currentTheme.cardBg" 
+           class="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
+             [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
+          <div class="flex items-center gap-3 sm:gap-4">
+            <div [ngClass]="'bg-gradient-to-br ' + selectedSection.color" 
+                 class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl shadow-lg">
+              <i [class]="'fas ' + selectedSection.icon"></i>
+            </div>
+            <div>
+              <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
+                {{ selectedSection.name }}
+              </h2>
+              <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm">
+                {{ selectedSection.posts }} publicaciones
+              </p>
+            </div>
+          </div>
+          <button 
+            (click)="closeModal()"
+            [ngClass]="currentTheme.textSecondaryClass"
+            class="hover:opacity-70 transition text-xl sm:text-2xl">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-4 sm:p-6">
+          <p [ngClass]="currentTheme.textSecondaryClass" class="text-center py-8 text-sm sm:text-base">
+            Las publicaciones de esta sección aparecerán aquí
+          </p>
+        </div>
+      </div>
+    </div>

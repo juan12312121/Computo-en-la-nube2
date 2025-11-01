@@ -1,178 +1,50 @@
 <app-navbar (openCreate)="openCreateModal()"></app-navbar>
 
 <!-- Loading State -->
-<div *ngIf="cargandoPerfil" class="max-w-5xl mx-auto px-4 py-6">
-  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
-         [style.border-color]="currentTheme.color"></div>
-    <p [ngClass]="currentTheme.textSecondaryClass">Cargando perfil...</p>
-  </div>
-</div>
+<app-profile-loading 
+  *ngIf="cargandoPerfil"
+  [currentTheme]="currentTheme">
+</app-profile-loading>
 
 <!-- Error State -->
-<div *ngIf="errorCarga && !cargandoPerfil" class="max-w-5xl mx-auto px-4 py-6">
-  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
-    <i class="fas fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
-    <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">Error al cargar el perfil</h2>
-    <p [ngClass]="currentTheme.textSecondaryClass" class="mb-4">No se pudo obtener la información del usuario</p>
-    <button 
-      (click)="reintentarCarga()"
-      [style.background]="currentTheme.color"
-      class="text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-      <i class="fas fa-redo mr-2"></i>Reintentar
-    </button>
-  </div>
-</div>
+<app-profile-error
+  *ngIf="errorCarga && !cargandoPerfil"
+  [currentTheme]="currentTheme"
+  (reintentar)="reintentarCarga()">
+</app-profile-error>
 
 <!-- Profile Container -->
 <div *ngIf="!cargandoPerfil && !errorCarga && usuario" class="max-w-5xl mx-auto px-4 py-6">
+  
   <!-- Profile Header Card -->
-  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border mb-6 overflow-hidden">
-    <!-- Cover Photo -->
-    <div class="profile-cover relative w-full overflow-hidden">
-      <img *ngIf="getCoverImage()" 
-           [src]="getCoverImage()!" 
-           alt="Portada" 
-           class="w-full h-full object-cover"
-           style="object-position: center;">
-      <button 
-        *ngIf="isOwnProfile"
-        (click)="abrirModalCambiarBanner()"
-        class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition flex items-center gap-2 backdrop-blur-sm z-10 text-xs sm:text-sm">
-        <i class="fas fa-camera"></i>
-        <span class="font-semibold hidden sm:inline">Cambiar portada</span>
-        <span class="font-semibold sm:hidden">Cambiar</span>
-      </button>
-    </div>
-
-    <!-- Profile Info -->
-    <div class="px-4 sm:px-6 pb-4 sm:pb-6">
-      <div class="flex flex-col md:flex-row md:items-end md:justify-between -mt-9 sm:-mt-12 md:-mt-14 lg:-mt-16 mb-4">
-        <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-          <div class="profile-avatar">
-            <img *ngIf="getProfileImage()" 
-                 [src]="getProfileImage()!" 
-                 alt="Perfil" 
-                 class="w-full h-full object-cover rounded-full">
-            <span *ngIf="!getProfileImage()">{{ getInitials() }}</span>
-          </div>
-          <div class="mb-2">
-            <h1 [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">
-              {{ usuario.nombre_completo }}
-            </h1>
-            <p [ngClass]="currentTheme.textSecondaryClass" class="font-medium text-sm sm:text-base">
-              @{{ usuario.nombre_usuario }}
-            </p>
-          </div>
-        </div>
-
-        <div class="profile-action-container">
-          <button
-            (click)="toggleProfileMode()"
-            [class]="isOwnProfile ? 'profile-action-btn edit' : 'profile-action-btn follow'"
-            [style.background]="!isOwnProfile ? currentTheme.color : null">
-            <i [class]="isOwnProfile ? 'fas fa-edit' : 'fas fa-user-plus'"></i>
-            {{ isOwnProfile ? 'Editar perfil' : 'Seguir' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Bio and Info -->
-      <div class="space-y-3 mb-4">
-        <p [ngClass]="currentTheme.textPrimaryClass" class="leading-relaxed text-sm sm:text-base">
-          {{ usuario.biografia || '¡Hola! Aún no he agregado una biografía 👋' }}
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
-          <div *ngIf="usuario.carrera" 
-               [ngClass]="currentTheme.textSecondaryClass" 
-               class="flex items-center gap-2">
-            <i [ngClass]="currentTheme.icon" class="fas fa-book"></i>
-            <span class="font-medium">{{ usuario.carrera }}</span>
-          </div>
-          <div *ngIf="usuario.ubicacion" 
-               [ngClass]="currentTheme.textSecondaryClass" 
-               class="flex items-center gap-2">
-            <i [ngClass]="currentTheme.icon" class="fas fa-map-marker-alt"></i>
-            <span class="font-medium">{{ usuario.ubicacion }}</span>
-          </div>
-        </div>
-
-        <!-- Social Links -->
-        <div class="flex gap-3 pt-2">
-          <a href="#" 
-             [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]" 
-             class="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition text-sm sm:text-base">
-            <i class="fab fa-github"></i>
-          </a>
-          <a href="#" 
-             [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]"
-             class="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition text-sm sm:text-base">
-            <i class="fab fa-linkedin"></i>
-          </a>
-          <a href="#" 
-             [ngClass]="[currentTheme.hoverBgLight, 'hover:' + currentTheme.accentColor]"
-             class="w-8 h-8 sm:w-9 sm:h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 transition text-sm sm:text-base">
-            <i class="fab fa-twitter"></i>
-          </a>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div [ngClass]="currentTheme.borderColor" class="flex gap-4 sm:gap-6 pt-4 border-t">
-        <div class="text-center">
-          <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ publicacionesReales.length }}</div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Publicaciones</div>
-        </div>
-        <div [ngClass]="'hover:' + currentTheme.accentColor" class="text-center cursor-pointer transition">
-          <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ usuario.total_seguidores || 0 }}</div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Seguidores</div>
-        </div>
-        <div [ngClass]="'hover:' + currentTheme.accentColor" class="text-center cursor-pointer transition">
-          <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ usuario.total_siguiendo || 0 }}</div>
-          <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Siguiendo</div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-profile-header
+    [usuario]="usuario"
+    [currentTheme]="currentTheme"
+    [isOwnProfile]="isOwnProfile"
+    [estaSiguiendo]="estaSiguiendo"
+    [cargandoAccion]="cargandoSeguir"
+    [profileImage]="getProfileImage()"
+    [coverImage]="getCoverImage()"
+    [iniciales]="getInitials()"
+    [totalPublicaciones]="publicacionesReales.length"
+    [textoBoton]="getButtonText()"
+    [iconoBoton]="getButtonIcon()"
+    (cambiarBanner)="abrirModalCambiarBanner()"
+    (accionBoton)="toggleProfileMode()"
+    (abrirSeguidores)="abrirSeguidores()"
+    (abrirSiguiendo)="abrirSiguiendo()">
+  </app-profile-header>
 
   <!-- Tabs Navigation -->
-  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border mb-6 overflow-x-auto">
-    <div class="flex min-w-max px-2">
-      <button
-        (click)="switchTab('todo')"
-        [class.active]="activeTab === 'todo'"
-        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
-        [ngClass]="activeTab !== 'todo' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
-        <i class="fas fa-th-large mr-2"></i>Todo
-      </button>
-      <button
-        (click)="switchTab('fotos')"
-        [class.active]="activeTab === 'fotos'"
-        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
-        [ngClass]="activeTab !== 'fotos' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
-        <i class="fas fa-images mr-2"></i>Fotos
-      </button>
-      <button
-        (click)="switchTab('documentos')"
-        [class.active]="activeTab === 'documentos'"
-        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
-        [ngClass]="activeTab !== 'documentos' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
-        <i class="fas fa-file-alt mr-2"></i>Documentos
-      </button>
-      <button
-        (click)="switchTab('secciones')"
-        [class.active]="activeTab === 'secciones'"
-        class="tab-button flex-1 px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm transition border-b-2 border-transparent"
-        [ngClass]="activeTab !== 'secciones' ? currentTheme.textSecondaryClass + ' hover:border-gray-300' : ''">
-        <i class="fas fa-folder mr-2"></i>Secciones
-      </button>
-    </div>
-  </div>
+  <app-profile-tabs
+    [activeTab]="activeTab"
+    [currentTheme]="currentTheme"
+    (cambiarTab)="switchTab($event)">
+  </app-profile-tabs>
 
   <!-- Content Area -->
   <div>
-    <!-- Todo Tab Content (Usando el nuevo componente) -->
+    <!-- Todo Tab Content -->
     <div *ngIf="activeTab === 'todo'">
       <app-publicaciones-perfil
         [publicaciones]="publicacionesReales"
@@ -195,68 +67,30 @@
     </div>
 
     <!-- Documentos Tab Content -->
-    <div *ngIf="activeTab === 'documentos'" class="space-y-3">
-      <div *ngFor="let doc of documents"
-           [ngClass]="currentTheme.cardBg"
-           class="border rounded-xl p-4 sm:p-5 hover:shadow-md transition cursor-pointer">
-        <div class="flex items-start gap-3 sm:gap-4">
-          <div class="flex-shrink-0">
-            <i [class]="'fas ' + doc.icon + ' ' + doc.color + ' text-3xl sm:text-4xl'"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xs sm:text-sm mb-1 truncate">
-              {{ doc.name }}
-            </h3>
-            <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mb-2">
-              {{ doc.description }}
-            </p>
-            <div class="flex items-center gap-3 sm:gap-4 text-xs">
-              <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
-                <i class="fas fa-file"></i>
-                {{ doc.size }}
-              </span>
-              <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
-                <i class="far fa-clock"></i>
-                {{ doc.date }}
-              </span>
-            </div>
-          </div>
-          <button [ngClass]="currentTheme.textSecondaryClass" 
-                  class="flex-shrink-0 hover:opacity-70 transition">
-            <i class="fas fa-download text-base sm:text-lg"></i>
-          </button>
-        </div>
-      </div>
+    <div *ngIf="activeTab === 'documentos'">
+      <app-documentos-lista
+        [documents]="documents"
+        [currentTheme]="currentTheme"
+        (downloadDocument)="onDocumentDownload($event)">
+      </app-documentos-lista>
     </div>
 
     <!-- Secciones Tab Content -->
-    <div *ngIf="activeTab === 'secciones'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div *ngFor="let section of sections"
-           (click)="openSectionModal(section.id)"
-           [ngClass]="currentTheme.cardBg"
-           class="border rounded-xl p-5 sm:p-6 hover:shadow-lg transition cursor-pointer group">
-        <div class="flex items-center justify-between mb-4">
-          <div [ngClass]="'bg-gradient-to-br ' + section.color" 
-               class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-white text-xl sm:text-2xl shadow-lg group-hover:scale-110 transition">
-            <i [class]="'fas ' + section.icon"></i>
-          </div>
-          <span [ngClass]="currentTheme.textSecondaryClass" 
-                class="text-xs sm:text-sm font-bold bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
-            {{ section.posts }} posts
-          </span>
-        </div>
-        <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-black text-base sm:text-lg group-hover:opacity-70 transition">
-          {{ section.name }}
-        </h3>
-      </div>
+    <div *ngIf="activeTab === 'secciones'">
+      <app-secciones-grid
+        [sections]="sections"
+        [currentTheme]="currentTheme"
+        (sectionSelected)="onSectionSelected($event)">
+      </app-secciones-grid>
     </div>
   </div>
 </div>
 
-<!-- Modal de Editar Perfil -->
+<!-- Modal de Editar Perfil (solo si es mi perfil) -->
 <app-modal-editar-perfil
+  *ngIf="isOwnProfile"
   [isVisible]="showEditModal"
-  [usuario]="usuario"
+  [usuario]="$any(usuario)"
   [currentTheme]="currentTheme"
   [guardando]="guardandoPerfil"
   [errorGuardado]="errorGuardado"
@@ -266,10 +100,11 @@
   (guardar)="guardarPerfil($event)">
 </app-modal-editar-perfil>
 
-<!-- Modal de Cambiar Banner -->
+<!-- Modal de Cambiar Banner (solo si es mi perfil) -->
 <app-modal-cambiar-banner
+  *ngIf="isOwnProfile"
   [isVisible]="showBannerModal"
-  [usuario]="usuario"
+  [usuario]="$any(usuario)"
   [currentTheme]="currentTheme"
   [guardando]="guardandoBanner"
   [errorBanner]="errorBanner"
@@ -279,39 +114,12 @@
   (eliminar)="eliminarBanner()">
 </app-modal-cambiar-banner>
 
-<!-- Modal para ver sección -->
-<div *ngIf="showSectionModal && selectedSection"
-     (click)="onModalBackdropClick($event)"
-     class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-  <div [ngClass]="currentTheme.cardBg" 
-       class="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-    <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
-         [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
-      <div class="flex items-center gap-3 sm:gap-4">
-        <div [ngClass]="'bg-gradient-to-br ' + selectedSection.color" 
-             class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl shadow-lg">
-          <i [class]="'fas ' + selectedSection.icon"></i>
-        </div>
-        <div>
-          <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
-            {{ selectedSection.name }}
-          </h2>
-          <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm">
-            {{ selectedSection.posts }} publicaciones
-          </p>
-        </div>
-      </div>
-      <button 
-        (click)="closeSectionModal()"
-        [ngClass]="currentTheme.textSecondaryClass"
-        class="hover:opacity-70 transition text-xl sm:text-2xl">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="p-4 sm:p-6">
-      <p [ngClass]="currentTheme.textSecondaryClass" class="text-center py-8 text-sm sm:text-base">
-        Las publicaciones de esta sección aparecerán aquí
-      </p>
-    </div>
-  </div>
-</div>
+<!-- Modal de Seguidores/Siguiendo -->
+<app-modal-seguidores
+  [isVisible]="showSeguidoresModal"
+  [tipo]="tipoModalSeguidores"
+  [usuarioId]="usuario?.id || null"
+  [currentTheme]="currentTheme"
+  [apiBaseUrl]="apiBaseUrl"
+  (close)="cerrarModalSeguidores()">
+</app-modal-seguidores>
