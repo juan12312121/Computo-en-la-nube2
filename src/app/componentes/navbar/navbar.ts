@@ -1,4 +1,3 @@
-// ==================== navbar.component.ts ====================
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -9,24 +8,14 @@ import { AutenticacionService, Usuario } from '../../core/servicios/autenticacio
 import { Theme, ThemeService } from '../../core/servicios/temas';
 import { UsuarioBusqueda, UsuarioService } from '../../core/servicios/usuarios/usuarios';
 import { BotonCrearPost } from '../boton-crear-post/boton-crear-post';
-
-interface Notification {
-  id: number;
-  user: string;
-  initials: string;
-  action: string;
-  time: string;
-  avatarColor: string;
-  isUnread: boolean;
-}
+import { NotificacionesComponent } from '../notificaciones/notificaciones';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, BotonCrearPost],
+  imports: [CommonModule, RouterModule, FormsModule, BotonCrearPost, NotificacionesComponent],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.css'],
- 
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   @Output() openCreate = new EventEmitter<void>();
@@ -36,18 +25,20 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   private apiBaseUrl: string;
 
+  // ========== ESTADO AUTENTICACIÓN ==========
   currentUser: Usuario | null = null;
   isLoggedIn = false;
   
+  // ========== UI STATE ==========
   showCrearPost = false;
   showMobileMenu = false;
   showMobileProfileMenu = false;
   showProfileMenu = false;
-  showNotifications = false;
   showThemeMenu = false;
   showSearchResults = false;
   showMobileSearch = false;
 
+  // ========== TEMAS ==========
   currentTheme!: Theme;
   themes: Theme[] = [];
   
@@ -56,67 +47,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
   canScrollLeftMobile = false;
   canScrollRightMobile = true;
   
+  // ========== SUBSCRIPCIONES ==========
   private themeSubscription?: Subscription;
   private authSubscription?: Subscription;
   private searchSubscription?: Subscription;
 
-  // Búsqueda
+  // ========== BÚSQUEDA ==========
   searchQuery = '';
   searchResults: UsuarioBusqueda[] = [];
   isSearching = false;
   private searchSubject = new Subject<string>();
-
-  notifications: Notification[] = [
-    {
-      id: 1,
-      user: 'Juan López',
-      initials: 'JL',
-      action: 'comentó en tu publicación',
-      time: 'Hace 30 minutos',
-      avatarColor: 'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
-      isUnread: true
-    },
-    {
-      id: 2,
-      user: 'María García',
-      initials: 'MG',
-      action: 'le gustó tu publicación',
-      time: 'Hace 1 hora',
-      avatarColor: 'linear-gradient(to bottom right, #a855f7, #9333ea)',
-      isUnread: true
-    },
-    {
-      id: 3,
-      user: 'Carlos Pérez',
-      initials: 'CP',
-      action: 'comenzó a seguirte',
-      time: 'Hace 2 horas',
-      avatarColor: 'linear-gradient(to bottom right, #3b82f6, #2563eb)',
-      isUnread: true
-    },
-    {
-      id: 4,
-      user: 'Ana Martínez',
-      initials: 'AM',
-      action: 'compartió tu publicación',
-      time: 'Hace 3 horas',
-      avatarColor: 'linear-gradient(to bottom right, #ec4899, #db2777)',
-      isUnread: false
-    },
-    {
-      id: 5,
-      user: 'Luis Rodríguez',
-      initials: 'LR',
-      action: 'comentó: "¡Excelente trabajo!"',
-      time: 'Hace 5 horas',
-      avatarColor: 'linear-gradient(to bottom right, #f97316, #ea580c)',
-      isUnread: false
-    }
-  ];
-
-  get notificationsCount(): number {
-    return this.notifications.filter(n => n.isUnread).length;
-  }
 
   get currentThemeData(): Theme {
     return this.currentTheme;
@@ -136,14 +76,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   get userAvatar(): string {
     if (!this.currentUser?.foto_perfil_url) {
-      return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200';
+      const fallbackUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200';
+      return fallbackUrl;
     }
     
     if (this.currentUser.foto_perfil_url.startsWith('http')) {
       return this.currentUser.foto_perfil_url;
     }
     
-    return `${this.apiBaseUrl}${this.currentUser.foto_perfil_url}`;
+    const path = this.currentUser.foto_perfil_url.startsWith('/') 
+      ? this.currentUser.foto_perfil_url 
+      : `/${this.currentUser.foto_perfil_url}`;
+    
+    return `${this.apiBaseUrl}${path}`;
   }
 
   get userInitials(): string {
@@ -165,7 +110,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (host === 'localhost' || host === '127.0.0.1') {
       this.apiBaseUrl = 'http://localhost:3000';
     } else {
-      this.apiBaseUrl = 'http://13.59.190.199:3000';
+      this.apiBaseUrl = 'http://3.146.83.30:3000';
     }
     
     this.currentTheme = this.themeService.getCurrentTheme();
@@ -176,8 +121,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       if (
         target.closest('.profile-toggle') ||
         target.closest('.profile-dropdown') ||
-        target.closest('.notification-toggle') ||
-        target.closest('.notification-panel') ||
         target.closest('.theme-toggle') ||
         target.closest('.theme-dropdown') ||
         target.closest('.search-container') ||
@@ -185,7 +128,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       ) return;
 
       this.showProfileMenu = false;
-      this.showNotifications = false;
       this.showThemeMenu = false;
       this.showSearchResults = false;
     });
@@ -222,7 +164,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     document.body.classList.remove('mobile-menu-open');
   }
 
-  // ==================== BÚSQUEDA ====================
+  // ========== BÚSQUEDA ==========
 
   onSearchInput(query: string): void {
     this.searchQuery = query;
@@ -261,7 +203,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
       return usuario.foto_perfil_url;
     }
     
-    return `${this.apiBaseUrl}${usuario.foto_perfil_url}`;
+    const path = usuario.foto_perfil_url.startsWith('/') 
+      ? usuario.foto_perfil_url 
+      : `/${usuario.foto_perfil_url}`;
+    
+    return `${this.apiBaseUrl}${path}`;
   }
 
   verPerfil(usuario: UsuarioBusqueda): void {
@@ -286,92 +232,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ==================== RESTO DE MÉTODOS ====================
+  // ========== TEMAS ==========
 
   applyTheme(themeId: string): void {
     this.themeService.setTheme(themeId);
     this.showThemeMenu = false;
   }
 
-  toggleMobileMenu(): void {
-    this.showMobileMenu = !this.showMobileMenu;
-    this.showProfileMenu = false;
-    this.showNotifications = false;
-    this.showThemeMenu = false;
-    this.showMobileProfileMenu = false;
-    this.showMobileSearch = false;
-    
-    if (this.showMobileMenu) {
-      document.body.classList.add('mobile-menu-open');
-    } else {
-      document.body.classList.remove('mobile-menu-open');
-    }
-  }
-
-  toggleMobileProfileMenu(): void {
-    this.showMobileProfileMenu = !this.showMobileProfileMenu;
-  }
-
-  toggleProfileMenu(event: MouseEvent): void {
-    event.stopPropagation();
-    this.showProfileMenu = !this.showProfileMenu;
-    this.showNotifications = false;
-    this.showThemeMenu = false;
-    this.showSearchResults = false;
-  }
-
-  toggleNotifications(event: MouseEvent): void {
-    event.stopPropagation();
-    this.showNotifications = !this.showNotifications;
-    this.showProfileMenu = false;
-    this.showThemeMenu = false;
-    this.showSearchResults = false;
-  }
-
   toggleThemeMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.showThemeMenu = !this.showThemeMenu;
     this.showProfileMenu = false;
-    this.showNotifications = false;
     this.showSearchResults = false;
-  }
-
-  onOpenCreate(): void {
-    this.showCrearPost = true;
-  }
-
-  markAsRead(notificationId: number): void {
-    const notification = this.notifications.find(n => n.id === notificationId);
-    if (notification) {
-      notification.isUnread = false;
-    }
-  }
-
-  markAllAsRead(): void {
-    this.notifications.forEach(n => n.isUnread = false);
-  }
-
-  deleteNotification(notificationId: number): void {
-    this.notifications = this.notifications.filter(n => n.id !== notificationId);
-  }
-
-  logout(): void {
-    this.authService.logout().subscribe({
-      next: () => {
-        this.showProfileMenu = false;
-        this.showMobileMenu = false;
-        this.showMobileProfileMenu = false;
-        this.showNotifications = false;
-        this.showThemeMenu = false;
-        document.body.classList.remove('mobile-menu-open');
-        this.router.navigate(['/login']);
-      },
-      error: (error) => {
-        console.error('Error en logout:', error);
-        this.authService.limpiarSesion();
-        this.router.navigate(['/login']);
-      }
-    });
   }
 
   scrollThemes(direction: 'left' | 'right'): void {
@@ -421,5 +293,58 @@ export class NavbarComponent implements OnInit, OnDestroy {
     
     this.canScrollLeftMobile = scrollLeft > 10;
     this.canScrollRightMobile = scrollLeft < (maxScroll - 10);
+  }
+
+  // ========== MENÚ MÓVIL ==========
+
+  toggleMobileMenu(): void {
+    this.showMobileMenu = !this.showMobileMenu;
+    this.showProfileMenu = false;
+    this.showThemeMenu = false;
+    this.showMobileProfileMenu = false;
+    this.showMobileSearch = false;
+    
+    if (this.showMobileMenu) {
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.classList.remove('mobile-menu-open');
+    }
+  }
+
+  toggleMobileProfileMenu(): void {
+    this.showMobileProfileMenu = !this.showMobileProfileMenu;
+  }
+
+  // ========== PERFIL ==========
+
+  toggleProfileMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.showProfileMenu = !this.showProfileMenu;
+    this.showThemeMenu = false;
+    this.showSearchResults = false;
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.showProfileMenu = false;
+        this.showMobileMenu = false;
+        this.showMobileProfileMenu = false;
+        this.showThemeMenu = false;
+        document.body.classList.remove('mobile-menu-open');
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('Error en logout:', error);
+        this.authService.limpiarSesion();
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  // ========== CREAR POST ==========
+
+  onOpenCreate(): void {
+    this.showCrearPost = true;
   }
 }

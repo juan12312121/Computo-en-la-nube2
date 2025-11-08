@@ -42,7 +42,7 @@ export class UsuarioService {
     if (host === 'localhost' || host === '127.0.0.1') {
       this.apiUrl = 'http://localhost:3000/api/usuarios'; // entorno local
     } else {
-      this.apiUrl = 'http://13.59.190.199:3000/api/usuarios'; // producción
+      this.apiUrl = 'http://3.146.83.30:3000/api/usuarios'; // producción
     }
   }
 

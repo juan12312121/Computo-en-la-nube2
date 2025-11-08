@@ -1,10 +1,10 @@
-import { Component, EventEmitter, OnInit, OnDestroy, Output, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, Renderer2 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { PublicacionesService, Categoria } from '../../core/servicios/publicaciones/publicaciones';
 import { AutenticacionService, Usuario } from '../../core/servicios/autenticacion/autenticacion';
-import { ThemeService, Theme } from '../../core/servicios/temas';
+import { Categoria, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
+import { Theme, ThemeService } from '../../core/servicios/temas';
 
 @Component({
   selector: 'app-boton-crear-post',
@@ -53,7 +53,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     const host = window.location.hostname;
     this.apiBaseUrl = (host === 'localhost' || host === '127.0.0.1')
       ? 'http://localhost:3000'
-      : 'http://13.59.190.199:3000';
+      : 'http://3.146.83.30:3000';
 
     this.currentTheme = this.themeService.getCurrentTheme();
   }

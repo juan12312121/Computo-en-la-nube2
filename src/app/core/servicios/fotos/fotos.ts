@@ -64,7 +64,7 @@ interface BackendResponse {
   providedIn: 'root'
 })
 export class FotosService {
-  private apiUrl = 'http://13.59.190.199:3000/api/fotos';
+  private apiUrl = 'http://3.146.83.30:3000/api/fotos';
 
   constructor(private http: HttpClient) { }
 

@@ -58,7 +58,7 @@
             <span>{{ post.likes }}</span>
           </button>
           <span class="font-medium" [ngClass]="currentTheme.textSecondaryClass">
-            {{ post.comments.length }} {{ post.comments.length === 1 ? 'comentario' : 'comentarios' }}
+            {{ comentariosFormateados.length }} {{ comentariosFormateados.length === 1 ? 'comentario' : 'comentarios' }}
           </span>
         </div>
 
@@ -84,7 +84,7 @@
           Comentarios
         </h4>
         <div class="space-y-4 mb-4">
-          <div *ngFor="let comment of post.comments" class="flex gap-3">
+          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3">
             <div class="w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                  [ngClass]="comment.avatarColor">
               {{ comment.avatar }}
@@ -104,7 +104,7 @@
               </div>
             </div>
           </div>
-          <div *ngIf="post.comments.length === 0" class="text-center py-12">
+          <div *ngIf="comentariosFormateados.length === 0" class="text-center py-12">
             <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
                  [ngClass]="'bg-opacity-10 ' + currentTheme.accentBg">
               <i class="fas fa-comments text-2xl" [ngClass]="currentTheme.accentColor"></i>
@@ -191,7 +191,6 @@
         </div>
       </div>
 
-      <!-- SECCIÓN MODIFICADA: Botones compactos -->
       <div class="px-4 py-2 border-b flex items-center justify-between" [ngClass]="currentTheme.navbarBorder">
         <div class="flex items-center gap-2">
           <button (click)="toggleLike()" 
@@ -210,7 +209,7 @@
         </div>
         
         <span class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass">
-          {{ post.comments.length }} comentario{{ post.comments.length === 1 ? '' : 's' }}
+          {{ comentariosFormateados.length }} comentario{{ comentariosFormateados.length === 1 ? '' : 's' }}
         </span>
       </div>
 
@@ -221,7 +220,7 @@
         </h4>
         
         <div class="space-y-4">
-          <div *ngFor="let comment of post.comments" class="flex gap-3">
+          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3">
             <div class="w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                  [ngClass]="comment.avatarColor">
               {{ comment.avatar }}
@@ -242,7 +241,7 @@
             </div>
           </div>
           
-          <div *ngIf="post.comments.length === 0" class="text-center py-12">
+          <div *ngIf="comentariosFormateados.length === 0" class="text-center py-12">
             <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
                  [ngClass]="'bg-opacity-10 ' + currentTheme.accentBg">
               <i class="fas fa-comments text-2xl" [ngClass]="currentTheme.accentColor"></i>
@@ -261,7 +260,7 @@
                  placeholder="Añade un comentario..." 
                  class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
                  [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100', 'focus:ring-' + currentTheme.accentColor.replace('text-', '')]">
-          <button (click)="addComment()" 
+            <button (click)="addComment()" 
                   [disabled]="!commentInput.trim()" 
                   class="active:scale-95 transition-all p-2"
                   [ngClass]="commentInput.trim() ? [currentTheme.accentColor, 'hover:opacity-80'] : 'text-gray-400 cursor-not-allowed'">
@@ -273,7 +272,7 @@
   </div>
 </div>
 
-<!-- Modal de Compartir -->
+<!-- Modal de Compartir - Solo Redes Sociales -->
 <div *ngIf="showShareModal" 
      (click)="onShareBackdropClick($event)" 
      class="share-modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-end lg:items-center justify-center">
@@ -290,147 +289,78 @@
       </button>
     </div>
 
-    <div class="flex gap-2 mb-6 rounded-xl p-1"
-         [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
-      <button (click)="switchShareTab('redes')" 
-              class="flex-1 py-2.5 rounded-lg font-bold text-sm shadow-sm transition"
-              [ngClass]="selectedTab === 'redes' ? [currentTheme.cardBg, currentTheme.accentColor] : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
-        <i class="fas fa-share-alt mr-2"></i>Redes Sociales
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <button (click)="shareToSocial('whatsapp')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-whatsapp"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">WhatsApp</span>
       </button>
-      <button (click)="switchShareTab('usuarios')" 
-              class="flex-1 py-2.5 rounded-lg font-bold text-sm shadow-sm transition"
-              [ngClass]="selectedTab === 'usuarios' ? [currentTheme.cardBg, currentTheme.accentColor] : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
-        <i class="fas fa-users mr-2"></i>Usuarios
+
+      <button (click)="shareToSocial('facebook')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-facebook-f"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Facebook</span>
+      </button>
+
+      <button (click)="shareToSocial('twitter')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-twitter"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Twitter</span>
+      </button>
+
+      <button (click)="shareToSocial('linkedin')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-linkedin-in"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">LinkedIn</span>
+      </button>
+
+      <button (click)="shareToSocial('telegram')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-sky-600 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-telegram-plane"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Telegram</span>
+      </button>
+
+      <button (click)="shareToSocial('email')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Email</span>
+      </button>
+
+      <button (click)="copyLink()" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
+             [ngClass]="currentTheme.accentBg">
+          <i class="fas fa-link"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Copiar</span>
       </button>
     </div>
 
-    <div *ngIf="selectedTab === 'redes'">
-      <div class="grid grid-cols-4 gap-4 mb-6">
-        <button (click)="shareToSocial('whatsapp')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg">
-            <i class="fab fa-whatsapp"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">WhatsApp</span>
-        </button>
-
-        <button (click)="shareToSocial('facebook')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl shadow-lg">
-            <i class="fab fa-facebook-f"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Facebook</span>
-        </button>
-
-        <button (click)="shareToSocial('twitter')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl shadow-lg">
-            <i class="fab fa-twitter"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Twitter</span>
-        </button>
-
-        <button (click)="shareToSocial('linkedin')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center text-white text-2xl shadow-lg">
-            <i class="fab fa-linkedin-in"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">LinkedIn</span>
-        </button>
-
-        <button (click)="shareToSocial('telegram')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full bg-sky-600 flex items-center justify-center text-white text-2xl shadow-lg">
-            <i class="fab fa-telegram-plane"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Telegram</span>
-        </button>
-
-        <button (click)="shareToSocial('email')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl shadow-lg">
-            <i class="fas fa-envelope"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Email</span>
-        </button>
-
-        <button (click)="copyLink()" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
-                [ngClass]="currentTheme.hoverBgLight">
-          <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
-               [ngClass]="currentTheme.accentBg">
-            <i class="fas fa-link"></i>
-          </div>
-          <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Copiar</span>
-        </button>
-      </div>
-
-      <div class="border-t pt-4" [ngClass]="currentTheme.navbarBorder">
-        <div class="flex items-center gap-3 rounded-xl p-3"
-             [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
-          <i class="fas fa-link" [ngClass]="currentTheme.accentColor"></i>
-          <input type="text" 
-                 [value]="'https://redstudent.com/post/' + post?.id" 
-                 readonly 
-                 class="flex-1 bg-transparent text-sm outline-none"
-                 [ngClass]="currentTheme.textSecondaryClass">
-          <button (click)="copyLink()" 
-                  class="font-semibold text-sm transition"
-                  [ngClass]="linkCopied ? 'text-green-500' : [currentTheme.accentColor, 'hover:opacity-80']">
-            {{ linkCopied ? '✓ Copiado' : 'Copiar' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div *ngIf="selectedTab === 'usuarios'">
-      <div class="mb-4">
-        <div class="relative">
-          <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2" [ngClass]="currentTheme.textSecondaryClass"></i>
-          <input type="text" 
-                 [(ngModel)]="searchQuery" 
-                 placeholder="Buscar usuarios..." 
-                 class="w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 transition-all"
-                 [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100', 'focus:ring-' + currentTheme.accentColor.replace('text-', '')]">
-        </div>
-      </div>
-
-      <div class="max-h-96 overflow-y-auto space-y-2">
-        <div *ngFor="let user of filteredUsers" 
-             (click)="toggleUserSelection(user.id)" 
-             class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition"
-             [ngClass]="isUserSelected(user.id) ? ['bg-opacity-10', currentTheme.accentBg, currentTheme.accentBorder] : ['border-transparent', currentTheme.hoverBgLight]">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold flex-shrink-0"
-               [ngClass]="user.avatarColor">
-            {{ user.avatar }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <h4 class="font-bold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass">{{ user.name }}</h4>
-            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ user.username }}</p>
-          </div>
-          <div class="flex-shrink-0">
-            <div *ngIf="isUserSelected(user.id)" 
-                 class="w-6 h-6 rounded-full flex items-center justify-center text-white"
-                 [ngClass]="currentTheme.accentBg">
-              <i class="fas fa-check text-xs"></i>
-            </div>
-            <div *ngIf="!isUserSelected(user.id)" class="w-6 h-6 rounded-full border-2 border-gray-300"></div>
-          </div>
-        </div>
-
-        <div *ngIf="filteredUsers.length === 0" class="text-center py-12">
-          <i class="fas fa-user-slash text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass"></i>
-          <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass">No se encontraron usuarios</p>
-          <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass">Intenta con otro término de búsqueda</p>
-        </div>
-      </div>
-
-      <div class="border-t pt-4 mt-4" [ngClass]="currentTheme.navbarBorder">
-        <button (click)="sendToUsers()" 
-                [disabled]="selectedUsers.length === 0" 
-                class="w-full text-white py-3 rounded-xl font-bold transition transform active:scale-95"
-                [ngClass]="selectedUsers.length > 0 ? [currentTheme.buttonGradient, 'hover:shadow-lg hover:-translate-y-0.5'] : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
-          <i class="fas fa-paper-plane mr-2"></i>
-          {{ selectedUsers.length > 0 ? 'Enviar a ' + selectedUsers.length + ' usuario(s)' : 'Selecciona usuarios' }}
+    <div class="border-t pt-4" [ngClass]="currentTheme.navbarBorder">
+      <div class="flex items-center gap-3 rounded-xl p-3"
+           [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
+        <i class="fas fa-link" [ngClass]="currentTheme.accentColor"></i>
+        <input type="text" 
+               [value]="'https://redstudent.com/post/' + post?.id" 
+               readonly 
+               class="flex-1 bg-transparent text-sm outline-none"
+               [ngClass]="currentTheme.textSecondaryClass">
+        <button (click)="copyLink()" 
+                class="font-semibold text-sm transition"
+                [ngClass]="linkCopied ? 'text-green-500' : [currentTheme.accentColor, 'hover:opacity-80']">
+          {{ linkCopied ? '✓ Copiado' : 'Copiar' }}
         </button>
       </div>
     </div>

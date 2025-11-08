@@ -32,6 +32,8 @@ export class ProfileHeaderComponent {
   @Input() coverImage: string | null = null;
   @Input() iniciales: string = '??';
   @Input() totalPublicaciones: number = 0;
+  @Input() totalSeguidores: number = 0;
+  @Input() totalSiguiendo: number = 0;
   @Input() textoBoton: string = '';
   @Input() iconoBoton: string = '';
 

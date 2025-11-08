@@ -1,10 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
+import { LikesService } from '../../core/servicios/likes/likes';
+import { Publicacion, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 
+// ========== INTERFACES ==========
 interface Tag {
   name: string;
   icon: string;
@@ -12,6 +17,38 @@ interface Tag {
   posts: number;
   trending: boolean;
 }
+
+interface Post {
+  id: number;
+  author: string;
+  avatar: string;
+  time: string;
+  content: string;
+  image: string | null;
+  category: string;
+  categoryColor: string;
+  likes: number;
+  liked: boolean;
+  shares: number;
+  avatarColor: string;
+  comments: any[];
+  usuarioId?: number;
+  totalComments?: number;
+  likeLoading?: boolean;
+  [key: string]: any; // Para propiedades dinámicas como isTooLong
+}
+
+// ========== CONSTANTES ==========
+const AVATAR_COLORS = [
+  'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
+  'linear-gradient(to bottom right, #f97316, #ea580c)',
+  'linear-gradient(to bottom right, #a855f7, #9333ea)',
+  'linear-gradient(to bottom right, #ec4899, #db2777)',
+  'linear-gradient(to bottom right, #6366f1, #8b5cf6)',
+  'linear-gradient(to bottom right, #3b82f6, #2563eb)',
+  'linear-gradient(to bottom right, #10b981, #059669)',
+  'linear-gradient(to bottom right, #fbbf24, #f59e0b)'
+];
 
 @Component({
   selector: 'app-explorar',
@@ -21,9 +58,17 @@ interface Tag {
   styleUrl: './explorar.css'
 })
 export class Explorar implements OnInit, OnDestroy {
+  // ========== ESTADO ==========
   searchTerm: string = '';
   currentTheme: Theme;
+  posts: Post[] = [];
+  selectedCategory: string | null = null;
+  isLoading = false;
+  
   private themeSubscription?: Subscription;
+  public readonly apiBaseUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'http://3.146.83.30:3000';
   
   tags: Tag[] = [
     { name: 'Tecnología', icon: 'fa-laptop-code', color: 'teal', posts: 1247, trending: true },
@@ -61,7 +106,13 @@ export class Explorar implements OnInit, OnDestroy {
     'yellow': '#ca8a04'
   };
 
-  constructor(private themeService: ThemeService) {
+  constructor(
+    private themeService: ThemeService,
+    private publicacionesService: PublicacionesService,
+    private likesService: LikesService,
+    private autenticacionService: AutenticacionService,
+    private router: Router
+  ) {
     this.currentTheme = this.themeService.getCurrentTheme();
   }
 
@@ -69,20 +120,164 @@ export class Explorar implements OnInit, OnDestroy {
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
+
+    // Cargar publicaciones al iniciar
+    this.cargarPublicaciones();
   }
 
   ngOnDestroy() {
     this.themeSubscription?.unsubscribe();
   }
-  
+
+  // ========== CARGA DE DATOS ==========
+  private cargarPublicaciones(): void {
+    this.isLoading = true;
+    this.publicacionesService.obtenerPublicaciones().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.posts = this.convertirPublicacionesAPosts(res.data);
+          this.actualizarContadorTags();
+        }
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar publicaciones:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private convertirPublicacionesAPosts(pubs: Publicacion[]): Post[] {
+    return pubs.map(p => {
+      const pubAny = p as any;
+      return {
+        id: p.id,
+        author: p.nombre_completo || p.nombre_usuario || 'Usuario',
+        avatar: this.obtenerIniciales(p.nombre_completo || p.nombre_usuario || 'U'),
+        time: this.formatearTiempo(p.fecha_creacion),
+        content: p.contenido,
+        image: this.normalizarUrlImagen(p.imagen_s3 || p.imagen_url || ''),
+        category: p.categoria || 'General',
+        categoryColor: p.color_categoria || this.publicacionesService.obtenerColorCategoria(p.categoria || 'General'),
+        likes: pubAny.total_likes || 0,
+        liked: false,
+        shares: pubAny.total_compartidos || 0,
+        avatarColor: this.generarColorAvatar(p.usuario_id),
+        comments: [],
+        usuarioId: p.usuario_id,
+        totalComments: pubAny.total_comentarios || 0,
+        likeLoading: false,
+        isTooLong: false,
+        aspectRatio: 0
+      };
+    });
+  }
+
+  // ========== FILTRADO Y BÚSQUEDA ==========
   filterTags() {
     this.filteredTags = this.tags.filter(tag =>
       tag.name.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
-  
+
+  seleccionarCategoria(tagName: string): void {
+    // Si es la misma categoría, deseleccionar
+    this.selectedCategory = this.selectedCategory === tagName ? null : tagName;
+  }
+
+  get postsFilttrados(): Post[] {
+    if (!this.selectedCategory) return this.posts;
+    
+    return this.posts.filter(post =>
+      post.category.toLowerCase() === this.selectedCategory?.toLowerCase()
+    );
+  }
+
+  private actualizarContadorTags(): void {
+    this.tags = this.tags.map(tag => {
+      const cantidad = this.posts.filter(p =>
+        p.category.toLowerCase() === tag.name.toLowerCase()
+      ).length;
+      return { ...tag, posts: cantidad };
+    });
+    this.filteredTags = [...this.tags];
+  }
+
+  // ========== LIKES ==========
+  toggleLike(postId: number): void {
+    if (!this.autenticacionService.isAuthenticated()) {
+      alert('Debes iniciar sesión para dar like');
+      return;
+    }
+
+    const post = this.posts.find(p => p.id === postId);
+    if (!post || post.likeLoading) return;
+
+    const likeAnterior = post.liked;
+    const likesAnterior = post.likes;
+
+    post.liked = !post.liked;
+    post.likes += post.liked ? 1 : -1;
+    post.likeLoading = true;
+
+    this.likesService.toggleLike(postId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('✅ Like actualizado');
+        }
+        post.likeLoading = false;
+      },
+      error: (error) => {
+        post.liked = likeAnterior;
+        post.likes = likesAnterior;
+        post.likeLoading = false;
+        alert('Error al actualizar like');
+      }
+    });
+  }
+
+  // ========== DETECCIÓN DE IMÁGENES LARGAS ==========
+  /**
+   * Detectar si la imagen es muy larga basándose en su relación de aspecto
+   */
+  isImageTooLong(post: Post): boolean {
+    const maxAspectRatio = 1.5;
+    if (!post.image) return false;
+    return post['isTooLong'] || false;
+  }
+
+  /**
+   * Cuando una imagen carga, verificar su tamaño
+   */
+  onImageLoad(event: any, post: Post): void {
+    const img = event.target as HTMLImageElement;
+    const aspectRatio = img.naturalHeight / img.naturalWidth;
+    
+    // Si la relación es mayor a 1.5, marcarla como muy larga
+    post['aspectRatio'] = aspectRatio;
+    post['isTooLong'] = aspectRatio > 1.5;
+  }
+
+  // ========== UTILIDADES ==========
+  filterTagsBySearch(searchTerm: string): Tag[] {
+    return this.tags.filter(tag =>
+      tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
   openCreateModal() {
-    console.log('Abrir modal de creación');
+    // No abrir modal en Explorar
+    return;
+  }
+
+  openPostDetail(postId: number) {
+    // No abrir modal de detalle en Explorar
+    return;
+  }
+
+  openShareModal(postId: number, event?: Event) {
+    // No abrir modal de compartir en Explorar
+    return;
   }
 
   getColor(color: string): string {
@@ -106,12 +301,47 @@ export class Explorar implements OnInit, OnDestroy {
 
   onCardLeave(event: MouseEvent) {
     const card = event.currentTarget as HTMLElement;
-    // Usar el color del tema actual en lugar de gris fijo
     const borderColor = this.currentTheme.id === 'midnight' || 
                         this.currentTheme.id === 'neon' || 
                         this.currentTheme.id === 'toxic' 
                         ? '#1e293b' 
                         : '#f3f4f6';
     card.style.borderColor = borderColor;
+  }
+
+  private obtenerIniciales(nombre: string): string {
+    if (!nombre) return 'U';
+    const palabras = nombre.trim().split(' ');
+    return palabras.length >= 2
+      ? (palabras[0][0] + palabras[1][0]).toUpperCase()
+      : nombre.substring(0, 2).toUpperCase();
+  }
+
+  private formatearTiempo(fecha: string): string {
+    const diff = Date.now() - new Date(fecha).getTime();
+    const min = Math.floor(diff / 60000);
+    const hrs = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (min < 1) return 'Ahora';
+    if (min < 60) return `Hace ${min} min`;
+    if (hrs < 24) return `Hace ${hrs} h`;
+    if (days < 7) return `Hace ${days} d`;
+
+    return new Date(fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
+
+  private normalizarUrlImagen(url: string): string | null {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${this.apiBaseUrl}${url.startsWith('/') ? url : '/' + url}`;
+  }
+
+  private generarColorAvatar(id: number): string {
+    return AVATAR_COLORS[id % AVATAR_COLORS.length];
+  }
+
+  trackByPostId(index: number, post: Post): number {
+    return post.id;
   }
 }

@@ -58,7 +58,7 @@ export class ComentariosService {
     if (host === 'localhost' || host === '127.0.0.1') {
       this.apiUrl = 'http://localhost:3000/api/comentarios';
     } else {
-      this.apiUrl = 'http://13.59.190.199:3000/api/comentarios';
+      this.apiUrl = 'http://3.146.83.30:3000/api/comentarios';
     }
   }
 

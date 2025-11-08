@@ -27,6 +27,8 @@
     [coverImage]="getCoverImage()"
     [iniciales]="getInitials()"
     [totalPublicaciones]="publicacionesReales.length"
+    [totalSeguidores]="usuario.total_seguidores || 0"
+    [totalSiguiendo]="usuario.total_siguiendo || 0"
     [textoBoton]="getButtonText()"
     [iconoBoton]="getButtonIcon()"
     (cambiarBanner)="abrirModalCambiarBanner()"
@@ -54,7 +56,7 @@
         [apiBaseUrl]="apiBaseUrl"
         [usuarioFotoPerfil]="getProfileImage()"
         (likeToggled)="onLikeToggled($event)"
-        (commentAdded)="onCommentAdded($event)">
+        >
       </app-publicaciones-perfil>
     </div>
 
@@ -80,7 +82,8 @@
       <app-secciones-grid
         [sections]="sections"
         [currentTheme]="currentTheme"
-        (sectionSelected)="onSectionSelected($event)">
+        (sectionSelected)="onSectionSelected($event)"
+        (sectionCreated)="recargarSecciones()">
       </app-secciones-grid>
     </div>
   </div>

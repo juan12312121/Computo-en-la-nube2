@@ -1,13 +1,30 @@
+<!-- NAVBAR -->
 <app-navbar (openCreate)="openCreateModal()"></app-navbar>
 
-<!-- Main Feed Container -->
+<!-- MAIN FEED CONTAINER -->
 <div class="max-w-2xl mx-auto px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-4">
-  <!-- Post Cards -->
-  <div *ngFor="let post of posts" 
+
+  <!-- LOADING STATE -->
+  <div *ngIf="isLoading" class="text-center py-12">
+    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2"
+         [ngClass]="'border-' + currentThemeData.textPrimary?.replace('text-', '')"></div>
+    <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
+      Cargando publicaciones...
+    </p>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div *ngIf="!isLoading && errorMessage" 
+       class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+    <i class="fas fa-exclamation-circle mr-2"></i>{{ errorMessage }}
+  </div>
+
+  <!-- POSTS -->
+  <div *ngFor="let post of posts; trackBy: trackByPostId"
        class="border rounded-xl shadow-sm hover:shadow-md transition"
-       [ngClass]="[currentTheme.cardBg || '']">
-    
-    <!-- Post Header -->
+       [ngClass]="currentTheme.cardBg || ''">
+
+    <!-- POST HEADER -->
     <div class="px-4 pt-3 pb-2">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -20,28 +37,25 @@
             <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>
           </div>
         </div>
-        <button class="transition p-2" 
-                [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']">
+        <button class="transition p-2" [ngClass]="currentTheme.textSecondaryClass || ''">
           <i class="fas fa-ellipsis-h"></i>
         </button>
       </div>
     </div>
 
-    <!-- Post Content -->
+    <!-- POST CONTENT -->
     <div class="px-4 pb-3">
       <p class="leading-relaxed text-sm sm:text-base" [ngClass]="currentTheme.textPrimaryClass || ''">
         {{ post.content }}
       </p>
     </div>
 
-    <!-- Post Image -->
-    <div *ngIf="post.image"
-         (click)="openPostDetail(post.id)"
-         class="cursor-pointer hover:opacity-95 transition">
+    <!-- POST IMAGE -->
+    <div *ngIf="post.image" (click)="openPostDetail(post.id)" class="cursor-pointer hover:opacity-95 transition">
       <img [src]="post.image" [alt]="post.category" class="w-full h-auto">
     </div>
 
-    <!-- Category Tag -->
+    <!-- CATEGORY TAG -->
     <div class="px-4 pt-3">
       <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
             [ngClass]="currentThemeData.accentBg || ''">
@@ -49,76 +63,66 @@
       </span>
     </div>
 
-    <!-- Post Stats -->
-    <div class="px-4 py-3 flex items-center justify-between text-sm" 
-         [ngClass]="currentTheme.textSecondaryClass || ''">
-      <button
-        (click)="openPostDetail(post.id)"
-        class="hover:underline font-medium"
-        [ngClass]="currentThemeData.hoverText || ''">
+    <!-- POST STATS -->
+    <div class="px-4 py-3 flex items-center justify-between text-sm border-t"
+         [ngClass]="[currentTheme.borderColor || '', currentTheme.textSecondaryClass || '']">
+      <button (click)="openPostDetail(post.id)" class="hover:underline font-medium">
         {{ post.likes }} Me gusta
       </button>
-      <button
-        (click)="toggleComments(post.id)"
-        class="hover:underline font-medium text-right"
-        [ngClass]="currentThemeData.hoverText || ''">
-        {{ post.comments.length }} comentarios · {{ post.shares }} compartidos
+      <button (click)="toggleComments(post.id)" class="hover:underline font-medium">
+        {{ post.totalComments || 0 }} comentarios · {{ post.shares }} compartidos
       </button>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="border-t px-2 py-1.5 flex items-center gap-1"
-         [ngClass]="currentTheme.borderColor || ''">
-      <button
-        (click)="toggleLike(post.id)"
-        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-        [ngClass]="post.liked ? 
-          [currentThemeData.textPrimary || '', 'bg-opacity-10', currentThemeData.accentBg || ''] : 
-          [currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
+    <!-- ACTION BUTTONS -->
+    <div class="border-t px-2 py-1.5 flex items-center gap-1" [ngClass]="currentTheme.borderColor || ''">
+      <button (click)="toggleLike(post.id)"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+              [ngClass]="post.liked
+                ? [currentThemeData.textPrimary || '', 'bg-opacity-10', currentThemeData.accentBg || '']
+                : [currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
         <span>Me gusta</span>
       </button>
-      <button
-        (click)="toggleComments(post.id)"
-        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-        [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
+
+      <button (click)="toggleComments(post.id)"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+              [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i class="fas fa-comment"></i>
         <span>Comentar</span>
       </button>
-      <button 
-        (click)="openShareModal(post.id, $event)"
-        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-        [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
+
+      <button (click)="openShareModal(post.id, $event)"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+              [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
         <i class="fas fa-share"></i>
         <span>Compartir</span>
       </button>
     </div>
 
-    <!-- Comments Section (Expandable) -->
-    <div *ngIf="post.showComments" 
-         class="border-t"
-         [ngClass]="[currentTheme.borderColor || '', currentTheme.bodyClass || '']">
-      
-      <!-- Loading Comments -->
+    <!-- COMMENTS SECTION (EXPANDABLE) -->
+    <div *ngIf="post.showComments" class="border-t" [ngClass]="currentTheme.borderColor || ''">
+
+      <!-- LOADING COMMENTS -->
       <div *ngIf="post.loadingComments" class="px-4 py-12 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2"
-             [ngClass]="'border-' + currentThemeData.textPrimary.replace('text-', '')"></div>
+             [ngClass]="'border-' + currentThemeData.textPrimary?.replace('text-', '')"></div>
         <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
           Cargando comentarios...
         </p>
       </div>
 
-      <!-- Existing Comments -->
-      <div *ngIf="!post.loadingComments && post.comments.length > 0" 
+      <!-- COMMENTS LIST -->
+      <div *ngIf="!post.loadingComments && post.comments.length > 0"
            class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
-        <div *ngFor="let comment of post.comments" class="flex gap-2.5 animate-fade-in">
+        <div *ngFor="let comment of post.comments; trackBy: trackByCommentId"
+             class="flex gap-2.5 animate-fade-in">
           <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
                [style.background]="comment.avatarColor">
             {{ comment.avatar }}
           </div>
           <div class="flex-1 min-w-0">
-            <div class="rounded-2xl px-4 py-2.5 shadow-sm break-words"
-                 [ngClass]="currentTheme.cardBg || ''">
+            <div class="rounded-2xl px-4 py-2.5 shadow-sm break-words" [ngClass]="currentTheme.cardBg || ''">
               <p class="font-bold text-sm" [ngClass]="currentTheme.textPrimaryClass || ''">
                 {{ comment.author }}
               </p>
@@ -126,14 +130,10 @@
                 {{ comment.text }}
               </p>
             </div>
-            <div class="flex items-center gap-3 mt-1.5 px-3 text-xs" 
-                 [ngClass]="currentTheme.textSecondaryClass || ''">
+            <div class="flex items-center gap-3 mt-1.5 px-3 text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
               <span>{{ comment.time }}</span>
-              <button class="hover:underline font-semibold" 
-                      [ngClass]="currentThemeData.hoverText || ''">Me gusta</button>
-              <button class="hover:underline font-semibold hidden sm:inline"
-                      [ngClass]="currentThemeData.hoverText || ''">Responder</button>
-              <!-- Botón eliminar (solo si es el usuario actual) -->
+              <button class="hover:underline font-semibold">Me gusta</button>
+              <button class="hover:underline font-semibold hidden sm:inline">Responder</button>
               <button *ngIf="comment.usuario_id === usuarioActualId"
                       (click)="eliminarComentario(post.id, comment.id)"
                       class="hover:underline font-semibold text-red-500 ml-auto">
@@ -144,9 +144,8 @@
         </div>
       </div>
 
-      <!-- No Comments Message -->
-      <div *ngIf="!post.loadingComments && post.comments.length === 0" 
-           class="px-4 py-12 text-center">
+      <!-- NO COMMENTS MESSAGE -->
+      <div *ngIf="!post.loadingComments && post.comments.length === 0" class="px-4 py-12 text-center">
         <i class="fas fa-comments text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
         <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass || ''">
           No hay comentarios aún
@@ -156,84 +155,90 @@
         </p>
       </div>
 
-      <!-- Comment Input -->
-      <div class="px-4 py-3 border-t" 
-           [ngClass]="[currentTheme.borderColor || '', currentTheme.cardBg || '']">
+      <!-- COMMENT INPUT -->
+      <div class="px-4 py-3 border-t" [ngClass]="[currentTheme.borderColor || '', currentTheme.cardBg || '']">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
                [ngClass]="currentThemeData.avatarBg || ''">
             TU
           </div>
-          <input
-            type="text"
-            [(ngModel)]="commentInputs[post.id]"
-            (keypress)="onCommentKeyPress($event, post.id)"
-            placeholder="Escribe un comentario..."
-            class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
-            [ngClass]="[currentTheme.bodyClass || '', currentTheme.textPrimaryClass || '']"
-            [class.focus:ring-orange-500]="currentTheme.id === 'default'"
-            [style.--tw-ring-color]="getThemeRingColor()">
-          <button
-            (click)="addComment(post.id)"
-            [disabled]="!commentInputs[post.id]?.trim()"
-            class="transition-all p-2 rounded-full"
-            [ngClass]="commentInputs[post.id]?.trim() ? 
-              [currentThemeData.textPrimary || '', 'active:scale-95', 'hover:bg-opacity-10', currentThemeData.accentBg] : 
-              [currentTheme.textSecondaryClass || '', 'cursor-not-allowed', 'opacity-50']">
+          <input type="text"
+                 [(ngModel)]="commentInputs[post.id]"
+                 (keypress)="onCommentKeyPress($event, post.id)"
+                 placeholder="Escribe un comentario..."
+                 class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
+                 [ngClass]="[currentTheme.bodyClass || '', currentTheme.textPrimaryClass || '']"
+                 [style.--tw-ring-color]="getThemeRingColor()">
+          <button (click)="addComment(post.id)"
+                  [disabled]="!commentInputs[post.id]?.trim()"
+                  class="transition-all p-2 rounded-full"
+                  [ngClass]="commentInputs[post.id]?.trim()
+                    ? [currentThemeData.textPrimary || '', 'active:scale-95', 'hover:bg-opacity-10', currentThemeData.accentBg]
+                    : [currentTheme.textSecondaryClass || '', 'cursor-not-allowed', 'opacity-50']">
             <i class="fas fa-paper-plane text-lg"></i>
           </button>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- EMPTY STATE -->
+  <div *ngIf="!isLoading && posts.length === 0" class="text-center py-12">
+    <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+    <p class="text-gray-600 font-medium">No hay publicaciones</p>
+  </div>
 </div>
 
-<!-- Modal de Detalle del Post -->
-<app-detalle-post
-  [post]="selectedPost"
-  [isVisible]="showPostDetailModal"
-  (close)="closePostDetail()"
-  (likeToggled)="toggleLike($event)"
-  (commentAdded)="handleCommentAdded($event)">
+<!-- DETALLE POST MODAL -->
+<app-detalle-post [post]="selectedPost"
+                  [isVisible]="showPostDetailModal"
+                  (close)="closePostDetail()"
+                  (likeToggled)="toggleLike($event)">
 </app-detalle-post>
 
-<!-- Modal de Compartir -->
-<div *ngIf="showShareModal" 
-     (click)="onShareBackdropClick($event)" 
+<!-- SHARE MODAL -->
+<div *ngIf="showShareModal"
+     (click)="onShareBackdropClick($event)"
      class="share-modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-end lg:items-center justify-center">
-  <div onclick="event.stopPropagation()" 
+  <div onclick="event.stopPropagation()"
        class="rounded-t-3xl lg:rounded-3xl w-full lg:max-w-lg p-6 lg:m-4 max-h-[90vh] overflow-y-auto animate-slide-up"
        [ngClass]="currentTheme.cardBg">
 
-    <!-- Header -->
+    <!-- HEADER -->
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-xl font-bold" [ngClass]="currentTheme.textPrimaryClass">Compartir publicación</h3>
-      <button (click)="closeShareModal()" 
+      <button (click)="closeShareModal()"
               class="w-10 h-10 rounded-full flex items-center justify-center transition"
               [ngClass]="[currentTheme.textSecondaryClass, currentThemeData.hoverBackground]">
         <i class="fas fa-times"></i>
       </button>
     </div>
 
-    <!-- Tabs -->
+    <!-- TABS -->
     <div class="flex gap-2 mb-6 rounded-xl p-1"
-         [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentThemeData.accentBg : 'bg-gray-100'">
-      <button (click)="switchShareTab('redes')" 
+         [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic'
+           ? 'bg-opacity-10 ' + currentThemeData.accentBg
+           : 'bg-gray-100'">
+      <button (click)="switchShareTab('redes')"
               class="flex-1 py-2.5 rounded-lg font-bold text-sm shadow-sm transition"
-              [ngClass]="selectedTab === 'redes' ? [currentTheme.cardBg, currentThemeData.textPrimary] : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
+              [ngClass]="selectedTab === 'redes'
+                ? [currentTheme.cardBg, currentThemeData.textPrimary]
+                : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
         <i class="fas fa-share-alt mr-2"></i>Redes Sociales
       </button>
-      <button (click)="switchShareTab('usuarios')" 
+      <button (click)="switchShareTab('usuarios')"
               class="flex-1 py-2.5 rounded-lg font-bold text-sm shadow-sm transition"
-              [ngClass]="selectedTab === 'usuarios' ? [currentTheme.cardBg, currentThemeData.textPrimary] : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
+              [ngClass]="selectedTab === 'usuarios'
+                ? [currentTheme.cardBg, currentThemeData.textPrimary]
+                : [currentTheme.textSecondaryClass, 'hover:opacity-80']">
         <i class="fas fa-users mr-2"></i>Usuarios
       </button>
     </div>
 
-    <!-- Redes Sociales Tab -->
+    <!-- REDES SOCIALES TAB -->
     <div *ngIf="selectedTab === 'redes'">
       <div class="grid grid-cols-4 gap-4 mb-6">
-        <button (click)="shareToSocial('whatsapp')" 
+        <button (click)="shareToSocial('whatsapp')"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg">
@@ -242,7 +247,7 @@
           <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">WhatsApp</span>
         </button>
 
-        <button (click)="shareToSocial('facebook')" 
+        <button (click)="shareToSocial('facebook')"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl shadow-lg">
@@ -251,7 +256,7 @@
           <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Facebook</span>
         </button>
 
-        <button (click)="shareToSocial('twitter')" 
+        <button (click)="shareToSocial('twitter')"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl shadow-lg">
@@ -260,7 +265,7 @@
           <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Twitter</span>
         </button>
 
-        <button (click)="shareToSocial('linkedin')" 
+        <button (click)="shareToSocial('linkedin')"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center text-white text-2xl shadow-lg">
@@ -269,7 +274,7 @@
           <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">LinkedIn</span>
         </button>
 
-        <button (click)="shareToSocial('telegram')" 
+        <button (click)="shareToSocial('telegram')"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full bg-sky-600 flex items-center justify-center text-white text-2xl shadow-lg">
@@ -278,7 +283,7 @@
           <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Telegram</span>
         </button>
 
-        <button (click)="shareToSocial('email')" 
+        <button (click)="shareToSocial('email')"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl shadow-lg">
@@ -287,7 +292,7 @@
           <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Email</span>
         </button>
 
-        <button (click)="copyLink()" 
+        <button (click)="copyLink()"
                 class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
                 [ngClass]="currentThemeData.hoverBackground">
           <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
@@ -298,17 +303,19 @@
         </button>
       </div>
 
-      <!-- Copy Link Section -->
+      <!-- COPY LINK SECTION -->
       <div class="border-t pt-4" [ngClass]="currentTheme.borderColor">
         <div class="flex items-center gap-3 rounded-xl p-3"
-             [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentThemeData.accentBg : 'bg-gray-100'">
+             [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic'
+               ? 'bg-opacity-10 ' + currentThemeData.accentBg
+               : 'bg-gray-100'">
           <i class="fas fa-link" [ngClass]="currentThemeData.textPrimary"></i>
-          <input type="text" 
-                 [value]="'https://redstudent.com/post/' + sharePostId" 
-                 readonly 
+          <input type="text"
+                 [value]="'https://redstudent.com/post/' + sharePostId"
+                 readonly
                  class="flex-1 bg-transparent text-sm outline-none"
                  [ngClass]="currentTheme.textSecondaryClass">
-          <button (click)="copyLink()" 
+          <button (click)="copyLink()"
                   class="font-semibold text-sm transition"
                   [ngClass]="linkCopied ? 'text-green-500' : [currentThemeData.textPrimary, 'hover:opacity-80']">
             {{ linkCopied ? '✓ Copiado' : 'Copiar' }}
@@ -317,27 +324,32 @@
       </div>
     </div>
 
-    <!-- Usuarios Tab -->
+    <!-- USUARIOS TAB -->
     <div *ngIf="selectedTab === 'usuarios'">
-      <!-- Search -->
+      <!-- SEARCH -->
       <div class="mb-4">
         <div class="relative">
-          <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2" [ngClass]="currentTheme.textSecondaryClass"></i>
-          <input type="text" 
-                 [(ngModel)]="searchQuery" 
-                 placeholder="Buscar usuarios..." 
+          <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2"
+             [ngClass]="currentTheme.textSecondaryClass"></i>
+          <input type="text"
+                 [(ngModel)]="searchQuery"
+                 placeholder="Buscar usuarios..."
                  class="w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 transition-all"
-                 [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentThemeData.accentBg : 'bg-gray-100']"
+                 [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic'
+                   ? 'bg-opacity-10 ' + currentThemeData.accentBg
+                   : 'bg-gray-100']"
                  [style.--tw-ring-color]="getThemeRingColor()">
         </div>
       </div>
 
-      <!-- Users List -->
+      <!-- USERS LIST -->
       <div class="max-h-96 overflow-y-auto space-y-2">
-        <div *ngFor="let user of filteredUsers" 
-             (click)="toggleUserSelection(user.id)" 
+        <div *ngFor="let user of filteredUsers"
+             (click)="toggleUserSelection(user.id)"
              class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition"
-             [ngClass]="isUserSelected(user.id) ? ['bg-opacity-10', currentThemeData.accentBg, 'border-' + currentThemeData.textPrimary.replace('text-', '')] : ['border-transparent', currentThemeData.hoverBackground]">
+             [ngClass]="isUserSelected(user.id)
+               ? ['bg-opacity-10', currentThemeData.accentBg, 'border-' + currentThemeData.textPrimary?.replace('text-', '')]
+               : ['border-transparent', currentThemeData.hoverBackground]">
           <div class="w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold flex-shrink-0"
                [ngClass]="user.avatarColor">
             {{ user.avatar }}
@@ -347,7 +359,7 @@
             <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ user.username }}</p>
           </div>
           <div class="flex-shrink-0">
-            <div *ngIf="isUserSelected(user.id)" 
+            <div *ngIf="isUserSelected(user.id)"
                  class="w-6 h-6 rounded-full flex items-center justify-center text-white"
                  [ngClass]="currentThemeData.accentBg">
               <i class="fas fa-check text-xs"></i>
@@ -356,7 +368,7 @@
           </div>
         </div>
 
-        <!-- Empty State -->
+        <!-- EMPTY STATE -->
         <div *ngIf="filteredUsers.length === 0" class="text-center py-12">
           <i class="fas fa-user-slash text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass"></i>
           <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass">No se encontraron usuarios</p>
@@ -364,18 +376,18 @@
         </div>
       </div>
 
-      <!-- Send Button -->
+      <!-- SEND BUTTON -->
       <div class="border-t pt-4 mt-4" [ngClass]="currentTheme.borderColor">
-        <button (click)="sendToUsers()" 
-                [disabled]="selectedUsers.length === 0" 
+        <button (click)="sendToUsers()"
+                [disabled]="selectedUsers.length === 0"
                 class="w-full text-white py-3 rounded-xl font-bold transition transform active:scale-95"
-                [ngClass]="selectedUsers.length > 0 ? [currentThemeData.buttonGradient, 'hover:shadow-lg hover:-translate-y-0.5'] : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+                [ngClass]="selectedUsers.length > 0
+                  ? [currentThemeData.buttonGradient, 'hover:shadow-lg hover:-translate-y-0.5']
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
           <i class="fas fa-paper-plane mr-2"></i>
           {{ selectedUsers.length > 0 ? 'Enviar a ' + selectedUsers.length + ' usuario(s)' : 'Selecciona usuarios' }}
         </button>
       </div>
     </div>
-
   </div>
 </div>
-

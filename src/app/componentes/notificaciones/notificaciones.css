@@ -1,0 +1,215 @@
+/* ==================== notificaciones.component.css ==================== */
+
+.notification-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar adaptado por tema */
+.notification-panel .overflow-y-auto {
+  scrollbar-width: thin;
+}
+
+.notification-panel .overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-panel .overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Scrollbar para temas CLAROS (default, forest, sunset, ocean, rose, slate, lavender, candy, chaos) */
+[data-theme="default"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="forest"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="sunset"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="ocean"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="rose"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="slate"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="lavender"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="candy"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="chaos"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 20px;
+}
+
+[data-theme="default"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="forest"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="sunset"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="ocean"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="rose"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="slate"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="lavender"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="candy"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="chaos"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+/* Scrollbar para temas OSCUROS (midnight, neon, toxic) */
+[data-theme="midnight"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="neon"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb,
+[data-theme="toxic"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.6);
+  border-radius: 20px;
+}
+
+[data-theme="midnight"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="neon"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+[data-theme="toxic"] .notification-panel .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.8);
+}
+
+/* Scrollbar específico para cada tema - versión avanzada */
+[data-theme="default"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(249, 115, 22, 0.3) transparent;
+}
+
+[data-theme="midnight"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
+}
+
+[data-theme="forest"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(16, 185, 129, 0.3) transparent;
+}
+
+[data-theme="sunset"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(245, 158, 11, 0.3) transparent;
+}
+
+[data-theme="ocean"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(14, 165, 233, 0.3) transparent;
+}
+
+[data-theme="rose"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(236, 72, 153, 0.3) transparent;
+}
+
+[data-theme="slate"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+}
+
+[data-theme="lavender"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(167, 139, 250, 0.3) transparent;
+}
+
+[data-theme="neon"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(6, 182, 212, 0.5) transparent;
+}
+
+[data-theme="toxic"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(132, 204, 22, 0.4) transparent;
+}
+
+[data-theme="candy"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(236, 72, 153, 0.4) transparent;
+}
+
+[data-theme="chaos"] .notification-panel .overflow-y-auto {
+  scrollbar-color: rgba(239, 68, 68, 0.4) transparent;
+}
+
+/* Animación del badge de contador */
+.notification-toggle span {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .8;
+  }
+}
+
+/* Transición suave para el hover de las notificaciones */
+.notification-panel a {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Efecto de deslizamiento para móvil */
+@media (max-width: 768px) {
+  .notification-panel {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Mejora visual del botón de eliminar */
+.notification-panel button[aria-label="Eliminar notificación"],
+.notification-panel button .fa-trash {
+  transition: all 0.2s ease;
+}
+
+.notification-panel button:hover .fa-times,
+.notification-panel button:hover .fa-trash {
+  transform: scale(1.1);
+}
+
+/* Ajuste del indicador de no leído según el tema */
+[data-theme="default"] .notification-panel .bg-orange-500 {
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+}
+
+[data-theme="midnight"] .notification-panel .bg-indigo-500 {
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+[data-theme="forest"] .notification-panel .bg-emerald-500 {
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+[data-theme="sunset"] .notification-panel .bg-amber-500 {
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+[data-theme="ocean"] .notification-panel .bg-sky-500 {
+  box-shadow: 0 0 8px rgba(14, 165, 233, 0.5);
+}
+
+[data-theme="rose"] .notification-panel .bg-pink-500 {
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
+}
+
+[data-theme="slate"] .notification-panel .bg-slate-600 {
+  box-shadow: 0 0 8px rgba(100, 116, 139, 0.5);
+}
+
+[data-theme="lavender"] .notification-panel .bg-violet-500 {
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+}
+
+[data-theme="neon"] .notification-panel .bg-fuchsia-500 {
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.8);
+}
+
+[data-theme="toxic"] .notification-panel .bg-lime-500 {
+  box-shadow: 0 0 12px rgba(132, 204, 22, 0.6);
+}
+
+[data-theme="candy"] .notification-panel .bg-pink-500 {
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.6);
+}
+
+[data-theme="chaos"] .notification-panel .bg-red-500 {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}

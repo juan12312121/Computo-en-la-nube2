@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { Document, DocumentosLista } from '../../componentes/documentos-lista/documentos-lista';
 import { FotosPerfil } from '../../componentes/fotos-perfil/fotos-perfil';
 import { ModalCambiarBanner } from '../../componentes/modal-cambiar-banner/modal-cambiar-banner';
@@ -17,6 +17,7 @@ import { SeccionesGrid, Section } from '../../componentes/secciones-grid/seccion
 import { AutenticacionService, Usuario } from '../../core/servicios/autenticacion/autenticacion';
 import { FotosService } from '../../core/servicios/fotos/fotos';
 import { Publicacion, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
+import { SeccionesService, Section as ServiceSection } from '../../core/servicios/secciones/secciones';
 import { SeguidorService } from '../../core/servicios/seguidores/seguidores';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 import { UsuarioService } from '../../core/servicios/usuarios/usuarios';
@@ -52,106 +53,51 @@ interface Photo {
   styleUrl: './perfil.css'
 })
 export class Perfil implements OnInit, OnDestroy {
-  public apiBaseUrl: string;
+  public apiBaseUrl = this.getApiBaseUrl();
 
   usuario: UsuarioPerfil | null = null;
   usuarioActual: Usuario | null = null;
+  currentTheme: Theme;
+  
+  // Estados de carga
   cargandoPerfil = true;
-  errorCarga = false;
-  
-  publicacionesReales: Publicacion[] = [];
   cargandoPublicaciones = true;
-  
-  isOwnProfile = true;
-  activeTab: TabType = 'todo';
-  
-  showEditModal = false;
+  cargandoFotos = false;
+  cargandoSeguir = false;
+  cargandoSecciones = false;
   guardandoPerfil = false;
+  guardandoBanner = false;
+
+  // Estados de error
+  errorCarga = false;
   errorGuardado = false;
+  errorBanner = '';
   mensajeError = '';
   
+  // UI
+  isOwnProfile = true;
+  activeTab: TabType = 'todo';
+  showEditModal = false;
   showBannerModal = false;
-  guardandoBanner = false;
-  errorBanner = '';
-  
   showSeguidoresModal = false;
   tipoModalSeguidores: TipoModal = 'seguidores';
-  
-  currentTheme: Theme;
-  private themeSubscription?: Subscription;
-  private routeSubscription?: Subscription;
-
-  photos: Photo[] = [];
-  cargandoFotos = false;
-
   estaSiguiendo = false;
-  cargandoSeguir = false;
-
-  documents: Document[] = [
-    {
-      id: 1,
-      name: 'Apuntes de Algoritmos.pdf',
-      description: 'Notas completas del curso de Estructuras de Datos y Algoritmos',
-      icon: 'fa-file-pdf',
-      color: 'text-red-500',
-      size: '2.4 MB',
-      date: 'Hace 3 días'
-    },
-    {
-      id: 2,
-      name: 'Proyecto Final - Desarrollo Web.zip',
-      description: 'Código fuente completo del proyecto de fin de semestre',
-      icon: 'fa-file-archive',
-      color: 'text-yellow-500',
-      size: '15.8 MB',
-      date: 'Hace 1 semana'
-    },
-    {
-      id: 3,
-      name: 'Presentación Machine Learning.pptx',
-      description: 'Slides de la presentación del modelo de clasificación',
-      icon: 'fa-file-powerpoint',
-      color: 'text-orange-500',
-      size: '8.2 MB',
-      date: 'Hace 2 semanas'
-    },
-    {
-      id: 4,
-      name: 'Resumen Bases de Datos.docx',
-      description: 'Resumen de SQL, NoSQL y optimización de queries',
-      icon: 'fa-file-word',
-      color: 'text-blue-500',
-      size: '1.1 MB',
-      date: 'Hace 1 mes'
-    },
-    {
-      id: 5,
-      name: 'Guía de React Hooks.pdf',
-      description: 'Tutorial completo sobre useState, useEffect y hooks personalizados',
-      icon: 'fa-file-pdf',
-      color: 'text-red-500',
-      size: '3.7 MB',
-      date: 'Hace 1 mes'
-    },
-    {
-      id: 6,
-      name: 'Dataset - Análisis de Datos.csv',
-      description: 'Dataset para el proyecto de análisis estadístico',
-      icon: 'fa-file-csv',
-      color: 'text-green-500',
-      size: '5.3 MB',
-      date: 'Hace 2 meses'
-    }
+  
+  // Datos
+  publicacionesReales: Publicacion[] = [];
+  photos: Photo[] = [];
+  sections: Section[] = [];
+  
+  readonly documents: Document[] = [
+    { id: 1, name: 'Apuntes de Algoritmos.pdf', description: 'Notas completas del curso de Estructuras de Datos y Algoritmos', icon: 'fa-file-pdf', color: 'text-red-500', size: '2.4 MB', date: 'Hace 3 días' },
+    { id: 2, name: 'Proyecto Final - Desarrollo Web.zip', description: 'Código fuente completo del proyecto de fin de semestre', icon: 'fa-file-archive', color: 'text-yellow-500', size: '15.8 MB', date: 'Hace 1 semana' },
+    { id: 3, name: 'Presentación Machine Learning.pptx', description: 'Slides de la presentación del modelo de clasificación', icon: 'fa-file-powerpoint', color: 'text-orange-500', size: '8.2 MB', date: 'Hace 2 semanas' },
+    { id: 4, name: 'Resumen Bases de Datos.docx', description: 'Resumen de SQL, NoSQL y optimización de queries', icon: 'fa-file-word', color: 'text-blue-500', size: '1.1 MB', date: 'Hace 1 mes' },
+    { id: 5, name: 'Guía de React Hooks.pdf', description: 'Tutorial completo sobre useState, useEffect y hooks personalizados', icon: 'fa-file-pdf', color: 'text-red-500', size: '3.7 MB', date: 'Hace 1 mes' },
+    { id: 6, name: 'Dataset - Análisis de Datos.csv', description: 'Dataset para el proyecto de análisis estadístico', icon: 'fa-file-csv', color: 'text-green-500', size: '5.3 MB', date: 'Hace 2 meses' }
   ];
 
-  sections: Section[] = [
-    { id: 1, name: 'Proyectos de IA', icon: 'fa-brain', color: 'from-purple-500 to-purple-700', posts: 12 },
-    { id: 2, name: 'Desarrollo Web', icon: 'fa-code', color: 'from-blue-500 to-blue-700', posts: 28 },
-    { id: 3, name: 'Mobile Apps', icon: 'fa-mobile-alt', color: 'from-teal-500 to-teal-700', posts: 8 },
-    { id: 4, name: 'Bases de Datos', icon: 'fa-database', color: 'from-green-500 to-green-700', posts: 15 },
-    { id: 5, name: 'DevOps', icon: 'fa-server', color: 'from-orange-500 to-orange-700', posts: 6 },
-    { id: 6, name: 'Diseño UI/UX', icon: 'fa-paint-brush', color: 'from-pink-500 to-pink-700', posts: 10 }
-  ];
+  private destroy$ = new Subject<void>();
 
   constructor(
     private themeService: ThemeService,
@@ -160,199 +106,223 @@ export class Perfil implements OnInit, OnDestroy {
     private fotosService: FotosService,
     private authService: AutenticacionService,
     private seguidorService: SeguidorService,
+    private seccionesService: SeccionesService,
     private route: ActivatedRoute
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
-    
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      this.apiBaseUrl = 'http://localhost:3000';
-    } else {
-      this.apiBaseUrl = 'http://13.59.190.199:3000';
-    }
   }
 
   ngOnInit() {
-    this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
-      this.currentTheme = theme;
-    });
+    this.themeService.currentTheme$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(theme => this.currentTheme = theme);
 
     this.usuarioActual = this.authService.currentUserValue;
 
-    this.routeSubscription = this.route.params.subscribe(params => {
-      const userId = params['id'];
-      if (userId) {
-        this.cargarPerfilUsuario(Number(userId));
-      } else {
-        this.cargarMiPerfil();
-      }
-    });
+    this.route.params
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const userId = params['id'];
+        userId ? this.cargarPerfilUsuario(Number(userId)) : this.cargarMiPerfil();
+      });
   }
 
   ngOnDestroy() {
-    this.themeSubscription?.unsubscribe();
-    this.routeSubscription?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  // ==================== CARGA DE PERFIL ====================
-  
-  cargarMiPerfil(): void {
+  private getApiBaseUrl(): string {
+    const host = window.location.hostname;
+    return (host === 'localhost' || host === '127.0.0.1') 
+      ? 'http://localhost:3000' 
+      : 'http://3.146.83.30:3000';
+  }
+
+  private resetEstados(): void {
     this.cargandoPerfil = true;
     this.cargandoPublicaciones = true;
     this.errorCarga = false;
+  }
+
+  cargarMiPerfil(): void {
+    this.resetEstados();
     this.isOwnProfile = true;
 
-    this.usuarioService.obtenerMiPerfil().subscribe({
-      next: (responsePerfil) => {
-        if (responsePerfil.success && responsePerfil.data) {
-          this.usuario = responsePerfil.data;
-          this.cargandoPerfil = false;
-          this.cargarPublicaciones();
-          this.cargarMisFotos();
-        } else {
-          this.errorCarga = true;
-          this.cargandoPerfil = false;
-          this.cargandoPublicaciones = false;
-        }
-      },
-      error: (error: any) => {
-        console.error('Error al cargar perfil:', error);
-        this.errorCarga = true;
-        this.cargandoPerfil = false;
-        this.cargandoPublicaciones = false;
-      }
-    });
+    this.usuarioService.obtenerMiPerfil()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (responsePerfil) => {
+          if (responsePerfil.success && responsePerfil.data) {
+            this.usuario = responsePerfil.data;
+            if (this.usuario && this.usuarioActual) {
+              this.cargarContadores(this.usuarioActual.id);
+            }
+            this.cargandoPerfil = false;
+            this.cargarPublicaciones();
+            this.cargarMisFotos();
+            this.cargarSecciones(); // 🆕 Cargar secciones
+          } else {
+            this.handleError();
+          }
+        },
+        error: () => this.handleError()
+      });
   }
 
   cargarPerfilUsuario(userId: number): void {
-    this.cargandoPerfil = true;
-    this.cargandoPublicaciones = true;
-    this.errorCarga = false;
+    this.resetEstados();
     this.isOwnProfile = this.usuarioActual?.id === userId;
 
-    this.usuarioService.obtenerPerfil(userId).subscribe({
-      next: (responsePerfil) => {
-        if (responsePerfil.success && responsePerfil.data) {
-          this.usuario = responsePerfil.data;
-          this.cargandoPerfil = false;
-          this.cargarPublicacionesUsuario(userId);
-          
-          if (this.isOwnProfile) {
-            this.cargarMisFotos();
+    this.usuarioService.obtenerPerfil(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (responsePerfil) => {
+          if (responsePerfil.success && responsePerfil.data) {
+            this.usuario = responsePerfil.data;
+            this.cargarContadores(userId);
+            this.cargandoPerfil = false;
+            
+            this.isOwnProfile ? this.cargarMisFotos() : this.cargarFotosUsuario(userId);
+            this.cargarPublicacionesUsuario(userId);
+            this.cargarSecciones(); // 🆕 Cargar secciones
+            
+            if (!this.isOwnProfile && this.usuarioActual) {
+              this.verificarSeguimiento();
+            }
           } else {
-            this.cargarFotosUsuario(userId);
+            this.handleError();
           }
-          
-          if (!this.isOwnProfile && this.usuarioActual) {
-            this.verificarSeguimiento();
-          }
-        } else {
-          this.errorCarga = true;
-          this.cargandoPerfil = false;
-          this.cargandoPublicaciones = false;
+        },
+        error: () => this.handleError()
+      });
+  }
+
+  // 🆕 Método para cargar secciones
+  private cargarSecciones(): void {
+    this.cargandoSecciones = true;
+    this.seccionesService.obtenerSecciones()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (secciones: ServiceSection[]) => {
+          console.log('✅ Secciones cargadas:', secciones);
+          // Mapear de ServiceSection a Section (interfaz local)
+          this.sections = secciones.map(s => ({
+            id: s.id,
+            name: s.nombre,
+            icon: s.icono,
+            color: s.color,
+            posts: s.total_posts
+          }));
+          this.cargandoSecciones = false;
+        },
+        error: (error) => {
+          console.error('❌ Error al cargar secciones:', error);
+          this.sections = [];
+          this.cargandoSecciones = false;
         }
-      },
-      error: (error: any) => {
-        console.error('Error al cargar perfil del usuario:', error);
-        this.errorCarga = true;
-        this.cargandoPerfil = false;
-        this.cargandoPublicaciones = false;
-      }
-    });
+      });
+  }
+
+  // 🆕 Método para recargar secciones después de crear una nueva
+  recargarSecciones(): void {
+    console.log('🔄 Recargando secciones...');
+    this.cargarSecciones();
+  }
+
+  private handleError(): void {
+    this.errorCarga = true;
+    this.cargandoPerfil = false;
+    this.cargandoPublicaciones = false;
   }
 
   private cargarPublicaciones(): void {
-    this.publicacionesService.obtenerMisPublicaciones().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.publicacionesReales = response.data;
-        } else {
-          this.publicacionesReales = [];
-        }
-        this.cargandoPublicaciones = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar publicaciones:', error);
-        this.publicacionesReales = [];
-        this.cargandoPublicaciones = false;
-      }
-    });
+    this.publicacionesService.obtenerMisPublicaciones()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => this.procesarPublicaciones(response),
+        error: () => this.procesarPublicacionesError()
+      });
   }
 
   private cargarPublicacionesUsuario(userId: number): void {
-    this.publicacionesService.obtenerPublicacionesUsuario(userId).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.publicacionesReales = response.data;
-        } else {
-          this.publicacionesReales = [];
-        }
-        this.cargandoPublicaciones = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar publicaciones del usuario:', error);
-        this.publicacionesReales = [];
-        this.cargandoPublicaciones = false;
-      }
-    });
+    this.publicacionesService.obtenerPublicacionesUsuario(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => this.procesarPublicaciones(response),
+        error: () => this.procesarPublicacionesError()
+      });
+  }
+
+  private procesarPublicaciones(response: any): void {
+    this.publicacionesReales = response.success && response.data ? response.data : [];
+    this.cargandoPublicaciones = false;
+  }
+
+  private procesarPublicacionesError(): void {
+    console.error('Error al cargar publicaciones');
+    this.publicacionesReales = [];
+    this.cargandoPublicaciones = false;
   }
 
   private cargarMisFotos(): void {
     this.cargandoFotos = true;
-    
-    this.fotosService.obtenerMisFotos().subscribe({
-      next: (fotos: Photo[]) => {
-        this.photos = fotos;
-        this.cargandoFotos = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar fotos:', error);
-        this.photos = [];
-        this.cargandoFotos = false;
-      }
-    });
+    this.fotosService.obtenerMisFotos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (fotos) => { this.photos = fotos; this.cargandoFotos = false; },
+        error: () => { console.error('Error al cargar fotos'); this.photos = []; this.cargandoFotos = false; }
+      });
   }
 
   private cargarFotosUsuario(userId: number): void {
     this.cargandoFotos = true;
-    
-    this.fotosService.obtenerFotosUsuario(userId).subscribe({
-      next: (fotos: Photo[]) => {
-        this.photos = fotos;
-        this.cargandoFotos = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar fotos del usuario:', error);
-        this.photos = [];
-        this.cargandoFotos = false;
-      }
-    });
+    this.fotosService.obtenerFotosUsuario(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (fotos) => { this.photos = fotos; this.cargandoFotos = false; },
+        error: () => { console.error('Error al cargar fotos'); this.photos = []; this.cargandoFotos = false; }
+      });
   }
 
   reintentarCarga(): void {
     const userId = this.route.snapshot.params['id'];
-    if (userId) {
-      this.cargarPerfilUsuario(Number(userId));
-    } else {
-      this.cargarMiPerfil();
-    }
+    userId ? this.cargarPerfilUsuario(Number(userId)) : this.cargarMiPerfil();
   }
 
-  // ==================== SEGUIMIENTO ====================
-  
-  private verificarSeguimiento(): void {
-    if (!this.usuarioActual || !this.usuario) {
-      return;
-    }
+  private cargarContadores(userId: number): void {
+    this.seguidorService.listarSeguidores(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (this.usuario) this.usuario.total_seguidores = response.total || response.seguidores?.length || 0;
+        },
+        error: () => {
+          if (this.usuario && !this.usuario.total_seguidores) this.usuario.total_seguidores = 0;
+        }
+      });
 
-    this.seguidorService.verificar(this.usuarioActual.id, this.usuario.id).subscribe({
-      next: (response) => {
-        this.estaSiguiendo = response.sigue || false;
-      },
-      error: (error: any) => {
-        console.error('Error al verificar seguimiento:', error);
-      }
-    });
+    this.seguidorService.listarSeguidos(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (this.usuario) this.usuario.total_siguiendo = response.total || response.seguidos?.length || 0;
+        },
+        error: () => {
+          if (this.usuario && !this.usuario.total_siguiendo) this.usuario.total_siguiendo = 0;
+        }
+      });
+  }
+
+  private verificarSeguimiento(): void {
+    if (!this.usuarioActual || !this.usuario) return;
+
+    this.seguidorService.verificar(this.usuarioActual.id, this.usuario.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => this.estaSiguiendo = response.sigue || false,
+        error: (error) => console.error('Error al verificar seguimiento:', error)
+      });
   }
 
   toggleSeguir(): void {
@@ -361,129 +331,100 @@ export class Perfil implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.usuario || this.isOwnProfile || this.cargandoSeguir) {
-      return;
-    }
+    if (!this.usuario || this.isOwnProfile || this.cargandoSeguir) return;
 
     this.cargandoSeguir = true;
 
-    this.seguidorService.toggle(this.usuarioActual.id, this.usuario.id).subscribe({
-      next: (response) => {
-        if (response.success) {
-          const nuevoEstado = response.following ?? false;
-          this.estaSiguiendo = nuevoEstado;
-          
-          if (this.usuario) {
-            const seguidoresAntes = this.usuario.total_seguidores || 0;
-            if (nuevoEstado) {
-              this.usuario.total_seguidores = seguidoresAntes + 1;
-            } else {
-              this.usuario.total_seguidores = Math.max(0, seguidoresAntes - 1);
+    this.seguidorService.toggle(this.usuarioActual.id, this.usuario.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            const nuevoEstado = response.following ?? false;
+            this.estaSiguiendo = nuevoEstado;
+            if (this.usuario) {
+              this.usuario.total_seguidores = (this.usuario.total_seguidores || 0) + (nuevoEstado ? 1 : -1);
+              this.usuario.total_seguidores = Math.max(0, this.usuario.total_seguidores);
             }
+          } else {
+            alert('Error al procesar la solicitud');
           }
-        } else {
-          alert('Error al procesar la solicitud');
+          this.cargandoSeguir = false;
+        },
+        error: (error) => {
+          const mensajeError = this.getMensajeError(error);
+          alert(mensajeError);
+          this.cargandoSeguir = false;
         }
-        
-        this.cargandoSeguir = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cambiar seguimiento:', error);
-        
-        let mensajeError = 'Error al procesar la solicitud de seguimiento';
-        if (error.status === 401) {
-          mensajeError = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente';
-        } else if (error.status === 404) {
-          mensajeError = 'Usuario no encontrado';
-        } else if (error.error?.mensaje) {
-          mensajeError = error.error.mensaje;
-        }
-        
-        alert(mensajeError);
-        this.cargandoSeguir = false;
-      }
-    });
+      });
   }
 
-  // ==================== MODAL SEGUIDORES ====================
-  
+  private getMensajeError(error: any): string {
+    if (error.status === 401) return 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente';
+    if (error.status === 404) return 'Usuario no encontrado';
+    return error.error?.mensaje || 'Error al procesar la solicitud de seguimiento';
+  }
+
   abrirSeguidores(): void {
     this.tipoModalSeguidores = 'seguidores';
+    this.toggleBodyOverflow(true);
     this.showSeguidoresModal = true;
-    document.body.style.overflow = 'hidden';
   }
 
   abrirSiguiendo(): void {
     this.tipoModalSeguidores = 'seguidos';
+    this.toggleBodyOverflow(true);
     this.showSeguidoresModal = true;
-    document.body.style.overflow = 'hidden';
   }
 
   cerrarModalSeguidores(): void {
     this.showSeguidoresModal = false;
-    document.body.style.overflow = 'auto';
+    this.toggleBodyOverflow(false);
   }
 
-  // ==================== UTILIDADES ====================
-  
+  private toggleBodyOverflow(hidden: boolean): void {
+    document.body.style.overflow = hidden ? 'hidden' : 'auto';
+  }
+
   getInitials(): string {
     if (!this.usuario) return '??';
-    
     const names = this.usuario.nombre_completo.trim().split(' ');
-    if (names.length >= 2) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return names[0].substring(0, 2).toUpperCase();
+    return names.length >= 2 
+      ? (names[0][0] + names[1][0]).toUpperCase()
+      : names[0].substring(0, 2).toUpperCase();
+  }
+
+  private formatImageUrl(url: string | undefined | null): string | null {
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${this.apiBaseUrl}${url}`;
   }
 
   getProfileImage(): string | null {
-    if (!this.usuario?.foto_perfil_url) return null;
-    
-    if (this.usuario.foto_perfil_url.startsWith('http')) {
-      return this.usuario.foto_perfil_url;
-    }
-    
-    return `${this.apiBaseUrl}${this.usuario.foto_perfil_url}`;
+    return this.formatImageUrl(this.usuario?.foto_perfil_url);
   }
 
   getCoverImage(): string | null {
-    if (!this.usuario?.foto_portada_url) return null;
-    
-    if (this.usuario.foto_portada_url.startsWith('http')) {
-      return this.usuario.foto_portada_url;
-    }
-    
-    return `${this.apiBaseUrl}${this.usuario.foto_portada_url}`;
+    return this.formatImageUrl(this.usuario?.foto_portada_url);
   }
 
-  // ==================== EDICIÓN DE PERFIL ====================
-  
   toggleProfileMode(): void {
-    if (this.isOwnProfile) {
-      this.abrirModalEdicion();
-    } else {
-      this.toggleSeguir();
-    }
+    this.isOwnProfile ? this.abrirModalEdicion() : this.toggleSeguir();
   }
 
   getButtonText(): string {
-    if (this.isOwnProfile) {
-      return 'Editar perfil';
-    }
+    if (this.isOwnProfile) return 'Editar perfil';
     return this.cargandoSeguir ? 'Cargando...' : (this.estaSiguiendo ? 'Siguiendo' : 'Seguir');
   }
 
   getButtonIcon(): string {
-    if (this.isOwnProfile) {
-      return 'fas fa-edit';
-    }
+    if (this.isOwnProfile) return 'fas fa-edit';
     return this.estaSiguiendo ? 'fas fa-user-check' : 'fas fa-user-plus';
   }
 
   abrirModalEdicion(): void {
     this.showEditModal = true;
     this.errorGuardado = false;
-    document.body.style.overflow = 'hidden';
+    this.toggleBodyOverflow(true);
   }
 
   cerrarModalEdicion(): void {
@@ -491,128 +432,107 @@ export class Perfil implements OnInit, OnDestroy {
     this.guardandoPerfil = false;
     this.errorGuardado = false;
     this.mensajeError = '';
-    document.body.style.overflow = 'auto';
+    this.toggleBodyOverflow(false);
   }
 
   guardarPerfil(data: {formulario: FormularioEditarPerfil, archivo: File | null}): void {
     if (!this.usuario) return;
-    
+
     this.guardandoPerfil = true;
     this.errorGuardado = false;
+
+    const formData = this.construirFormData(data);
     
-    const formData = new FormData();
-    let hayCambios = false;
-    
-    if (data.formulario.nombre_completo !== this.usuario.nombre_completo) {
-      formData.append('nombre_completo', data.formulario.nombre_completo);
-      hayCambios = true;
-    }
-    if (data.formulario.biografia !== (this.usuario.biografia || '')) {
-      formData.append('biografia', data.formulario.biografia);
-      hayCambios = true;
-    }
-    if (data.formulario.ubicacion !== (this.usuario.ubicacion || '')) {
-      formData.append('ubicacion', data.formulario.ubicacion);
-      hayCambios = true;
-    }
-    if (data.formulario.carrera !== (this.usuario.carrera || '')) {
-      formData.append('carrera', data.formulario.carrera);
-      hayCambios = true;
-    }
-    
-    if (data.archivo) {
-      formData.append('foto_perfil', data.archivo);
-      hayCambios = true;
-    }
-    
-    if (!hayCambios) {
+    if (!formData.has('nombre_completo') && !formData.has('biografia') && !formData.has('ubicacion') && !formData.has('carrera') && !formData.has('foto_perfil')) {
       this.cerrarModalEdicion();
       return;
     }
-    
-    this.usuarioService.actualizarPerfil(formData).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.usuario = { ...this.usuario, ...response.data };
+
+    this.usuarioService.actualizarPerfil(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.usuario = { ...this.usuario, ...response.data };
+            this.guardandoPerfil = false;
+            this.cerrarModalEdicion();
+            this.cargarMisFotos();
+          }
+        },
+        error: (error) => {
+          console.error('Error al actualizar perfil:', error);
+          this.errorGuardado = true;
+          this.mensajeError = error.error?.mensaje || 'Error al actualizar el perfil';
           this.guardandoPerfil = false;
-          this.cerrarModalEdicion();
-          this.cargarMisFotos();
         }
-      },
-      error: (error: any) => {
-        console.error('Error al actualizar perfil:', error);
-        this.errorGuardado = true;
-        this.mensajeError = error.error?.mensaje || 'Error al actualizar el perfil';
-        this.guardandoPerfil = false;
-      }
-    });
+      });
   }
 
-  // ==================== BANNER ====================
-  
+  private construirFormData(data: {formulario: FormularioEditarPerfil, archivo: File | null}): FormData {
+    const formData = new FormData();
+    const campos = ['nombre_completo', 'biografia', 'ubicacion', 'carrera'] as const;
+
+    campos.forEach(campo => {
+      if (data.formulario[campo] !== (this.usuario?.[campo] || '')) {
+        formData.append(campo, data.formulario[campo]);
+      }
+    });
+
+    if (data.archivo) formData.append('foto_perfil', data.archivo);
+    return formData;
+  }
+
   abrirModalCambiarBanner(): void {
     this.showBannerModal = true;
     this.errorBanner = '';
-    document.body.style.overflow = 'hidden';
+    this.toggleBodyOverflow(true);
   }
 
   cerrarModalBanner(): void {
     this.showBannerModal = false;
     this.guardandoBanner = false;
     this.errorBanner = '';
-    document.body.style.overflow = 'auto';
+    this.toggleBodyOverflow(false);
   }
 
   guardarBanner(archivo: File): void {
-    this.guardandoBanner = true;
-    this.errorBanner = '';
-    
-    const formData = new FormData();
-    formData.append('foto_portada', archivo);
-    
-    this.usuarioService.actualizarPerfil(formData).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.usuario = { ...this.usuario, ...response.data };
-          this.guardandoBanner = false;
-          this.cerrarModalBanner();
-          this.cargarMisFotos();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error al actualizar banner:', error);
-        this.errorBanner = error.error?.mensaje || 'Error al actualizar la portada';
-        this.guardandoBanner = false;
-      }
-    });
+    this.actualizarBanner(archivo);
   }
 
   eliminarBanner(): void {
-    this.guardandoBanner = true;
-    this.errorBanner = '';
-    
     const formData = new FormData();
     formData.append('foto_portada', '');
-    
-    this.usuarioService.actualizarPerfil(formData).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.usuario = { ...this.usuario, ...response.data };
-          this.guardandoBanner = false;
-          this.cerrarModalBanner();
-          this.cargarMisFotos();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error al eliminar banner:', error);
-        this.errorBanner = error.error?.mensaje || 'Error al eliminar la portada';
-        this.guardandoBanner = false;
-      }
-    });
+    this.actualizarBanner(formData);
   }
 
-  // ==================== NAVEGACIÓN ====================
-  
+  private actualizarBanner(archivoOFormData: File | FormData): void {
+    this.guardandoBanner = true;
+    this.errorBanner = '';
+
+    const formData = archivoOFormData instanceof FormData ? archivoOFormData : new FormData();
+    if (archivoOFormData instanceof File) {
+      formData.append('foto_portada', archivoOFormData);
+    }
+
+    this.usuarioService.actualizarPerfil(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.usuario = { ...this.usuario, ...response.data };
+            this.guardandoBanner = false;
+            this.cerrarModalBanner();
+            this.cargarMisFotos();
+          }
+        },
+        error: (error) => {
+          console.error('Error al actualizar banner:', error);
+          this.errorBanner = error.error?.mensaje || 'Error al actualizar la portada';
+          this.guardandoBanner = false;
+        }
+      });
+  }
+
   switchTab(tab: TabType): void {
     this.activeTab = tab;
   }
@@ -625,14 +545,20 @@ export class Perfil implements OnInit, OnDestroy {
     console.log('Descargar documento:', docId);
   }
 
-  // ==================== EVENTOS DE PUBLICACIONES ====================
-  
   onLikeToggled(postId: number): void {
     console.log('Like toggled en post:', postId);
   }
 
   onCommentAdded(data: {postId: number, comment: string}): void {
-    console.log('Comentario agregado:', data);
+    this.mostrarNotificacion('Comentario publicado correctamente', 'success');
+  }
+
+  onPostShared(data: {postId: number, platform: string}): void {
+    this.mostrarNotificacion(`Publicación compartida en ${data.platform}`, 'success');
+  }
+
+  private mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'info' = 'info'): void {
+    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
   }
 
   openCreateModal(): void {

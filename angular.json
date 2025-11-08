@@ -52,12 +52,18 @@
           },
           "defaultConfiguration": "production"
         },
-        "serve": {
-          "builder": "@angular/build:dev-server",
-            "options": {
-    	"host": "0.0.0.0",
-   	 "port": 4200
-          },
+
+"serve": {
+  "builder": "@angular/build:dev-server",
+  "options": {
+    "host": "0.0.0.0",
+    "port": 4200,
+    "allowedHosts": [
+      "mi-load-balancer-1124532082.us-east-2.elb.amazonaws.com",
+      ".elb.amazonaws.com"
+    ]
+  },
+
           "configurations": {
             "production": {
               "buildTarget": "frontend-trinoflow:build:production"

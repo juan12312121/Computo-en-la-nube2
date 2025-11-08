@@ -41,7 +41,7 @@ export class PublicacionesService {
     const host = window.location.hostname;
     this.apiUrl = host === 'localhost' || host === '127.0.0.1'
       ? 'http://localhost:3000/api/publicaciones'
-      : 'http://13.59.190.199:3000/api/publicaciones';
+      : 'http://3.146.83.30:3000/api/publicaciones';
     
     console.log('🔧 PublicacionesService inicializado');
     console.log('📍 API URL:', this.apiUrl);

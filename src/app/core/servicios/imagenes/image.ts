@@ -24,7 +24,7 @@ export class ImageService {
     if (host === 'localhost' || host === '127.0.0.1') {
       return 'http://localhost:3000';
     } else {
-      return 'http://13.59.190.199:3000';
+      return 'http://3.146.83.30:3000';
     }
   }
 
