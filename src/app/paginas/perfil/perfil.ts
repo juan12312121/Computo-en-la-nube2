@@ -53,7 +53,9 @@ interface Photo {
   styleUrl: './perfil.css'
 })
 export class Perfil implements OnInit, OnDestroy {
-  public apiBaseUrl = this.getApiBaseUrl();
+  // 🆕 URLs base para API y S3
+  private readonly apiBaseUrl = this.getBaseUrl('api');
+  private readonly s3BaseUrl = this.getBaseUrl('s3');
 
   usuario: UsuarioPerfil | null = null;
   usuarioActual: Usuario | null = null;
@@ -132,11 +134,66 @@ export class Perfil implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private getApiBaseUrl(): string {
+  // 🆕 Método mejorado para obtener URLs base
+  private getBaseUrl(tipo: 'api' | 's3' = 'api'): string {
     const host = window.location.hostname;
-    return (host === 'localhost' || host === '127.0.0.1') 
-      ? 'http://localhost:3000' 
+    const apiBase = (host === 'localhost' || host === '127.0.0.1')
+      ? 'http://localhost:3000'
       : 'http://3.146.83.30:3000';
+    const s3Base = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
+    return tipo === 's3' ? s3Base : apiBase;
+  }
+
+  // 🆕 Método público para formatear URLs de imágenes desde S3
+ public formatImageUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  
+  // Si la URL ya apunta a S3, devolverla tal como está (sin modificar)
+  if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+    return url; // ✅ Devolver sin cambios
+  }
+  
+  // Si es una URL del servidor API, extraer solo la ruta
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    const match = url.match(/\/uploads\/.+$/);
+    if (match) {
+      // Construir URL de S3 sin duplicar /uploads/
+      const rutaLimpia = match[0].replace('/uploads/', '');
+      return `${this.s3BaseUrl}/${rutaLimpia}`;
+    }
+  }
+  
+  // Si es solo un nombre de archivo (sin ruta), determinar el tipo y construir la ruta
+  if (!url.includes('/') && !url.startsWith('uploads')) {
+    let carpeta = 'publicaciones'; // Por defecto
+    
+    if (url.startsWith('foto_perfil-') || url.includes('perfil')) {
+      carpeta = 'perfiles'; // ✅ Usar 'perfiles' (con s)
+    } else if (url.startsWith('foto_portada-') || url.includes('portada')) {
+      carpeta = 'portadas';
+    }
+    
+    return `${this.s3BaseUrl}/${carpeta}/${url}`;
+  }
+  
+  // Si es una ruta relativa, construir URL completa con S3
+  const cleanPath = url.replace(/^\/+/, '');
+  return `${this.s3BaseUrl}/${cleanPath}`;
+}
+  
+  // 🆕 Método público para obtener la URL base de S3 (para pasar a componentes hijos)
+  public getS3BaseUrl(): string {
+    return this.s3BaseUrl;
+  }
+
+  // 🆕 Método público para obtener imagen de perfil
+  getProfileImage(): string | null {
+    return this.formatImageUrl(this.usuario?.foto_perfil_url);
+  }
+
+  // 🆕 Método público para obtener imagen de portada
+  getCoverImage(): string | null {
+    return this.formatImageUrl(this.usuario?.foto_portada_url);
   }
 
   private resetEstados(): void {
@@ -161,7 +218,7 @@ export class Perfil implements OnInit, OnDestroy {
             this.cargandoPerfil = false;
             this.cargarPublicaciones();
             this.cargarMisFotos();
-            this.cargarSecciones(); // 🆕 Cargar secciones
+            this.cargarSecciones();
           } else {
             this.handleError();
           }
@@ -185,7 +242,7 @@ export class Perfil implements OnInit, OnDestroy {
             
             this.isOwnProfile ? this.cargarMisFotos() : this.cargarFotosUsuario(userId);
             this.cargarPublicacionesUsuario(userId);
-            this.cargarSecciones(); // 🆕 Cargar secciones
+            this.cargarSecciones();
             
             if (!this.isOwnProfile && this.usuarioActual) {
               this.verificarSeguimiento();
@@ -198,7 +255,6 @@ export class Perfil implements OnInit, OnDestroy {
       });
   }
 
-  // 🆕 Método para cargar secciones
   private cargarSecciones(): void {
     this.cargandoSecciones = true;
     this.seccionesService.obtenerSecciones()
@@ -206,7 +262,6 @@ export class Perfil implements OnInit, OnDestroy {
       .subscribe({
         next: (secciones: ServiceSection[]) => {
           console.log('✅ Secciones cargadas:', secciones);
-          // Mapear de ServiceSection a Section (interfaz local)
           this.sections = secciones.map(s => ({
             id: s.id,
             name: s.nombre,
@@ -224,7 +279,6 @@ export class Perfil implements OnInit, OnDestroy {
       });
   }
 
-  // 🆕 Método para recargar secciones después de crear una nueva
   recargarSecciones(): void {
     console.log('🔄 Recargando secciones...');
     this.cargarSecciones();
@@ -265,13 +319,47 @@ export class Perfil implements OnInit, OnDestroy {
     this.cargandoPublicaciones = false;
   }
 
+  // 🆕 Métodos mejorados para cargar fotos desde S3
   private cargarMisFotos(): void {
     this.cargandoFotos = true;
     this.fotosService.obtenerMisFotos()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (fotos) => { this.photos = fotos; this.cargandoFotos = false; },
-        error: () => { console.error('Error al cargar fotos'); this.photos = []; this.cargandoFotos = false; }
+        next: (fotos) => { 
+          // Procesar URLs de fotos para S3
+          this.photos = fotos.map(foto => {
+            // Determinar el tipo de foto basado en el nombre del archivo
+            let tipo: 'perfil' | 'portada' | 'publicacion' = foto.tipo || 'publicacion';
+            
+            if (typeof foto.url === 'string') {
+              if (foto.url.includes('foto_perfil') || foto.url.includes('perfil')) {
+                tipo = 'perfil';
+              } else if (foto.url.includes('foto_portada') || foto.url.includes('portada')) {
+                tipo = 'portada';
+              }
+            }
+            
+            const urlProcesada = this.formatImageUrl(foto.url);
+            console.log('🔄 Procesando foto:', {
+              tipo,
+              original: foto.url,
+              procesada: urlProcesada
+            });
+            
+            return {
+              ...foto,
+              tipo,
+              url: urlProcesada || foto.url
+            };
+          });
+          this.cargandoFotos = false;
+          console.log('📸 Fotos cargadas desde S3:', this.photos);
+        },
+        error: () => { 
+          console.error('Error al cargar fotos'); 
+          this.photos = []; 
+          this.cargandoFotos = false; 
+        }
       });
   }
 
@@ -280,8 +368,41 @@ export class Perfil implements OnInit, OnDestroy {
     this.fotosService.obtenerFotosUsuario(userId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (fotos) => { this.photos = fotos; this.cargandoFotos = false; },
-        error: () => { console.error('Error al cargar fotos'); this.photos = []; this.cargandoFotos = false; }
+        next: (fotos) => { 
+          // Procesar URLs de fotos para S3
+          this.photos = fotos.map(foto => {
+            // Determinar el tipo de foto basado en el nombre del archivo
+            let tipo: 'perfil' | 'portada' | 'publicacion' = foto.tipo || 'publicacion';
+            
+            if (typeof foto.url === 'string') {
+              if (foto.url.includes('foto_perfil') || foto.url.includes('perfil')) {
+                tipo = 'perfil';
+              } else if (foto.url.includes('foto_portada') || foto.url.includes('portada')) {
+                tipo = 'portada';
+              }
+            }
+            
+            const urlProcesada = this.formatImageUrl(foto.url);
+            console.log('🔄 Procesando foto de usuario:', {
+              tipo,
+              original: foto.url,
+              procesada: urlProcesada
+            });
+            
+            return {
+              ...foto,
+              tipo,
+              url: urlProcesada || foto.url
+            };
+          });
+          this.cargandoFotos = false;
+          console.log('📸 Fotos de usuario cargadas desde S3:', this.photos);
+        },
+        error: () => { 
+          console.error('Error al cargar fotos'); 
+          this.photos = []; 
+          this.cargandoFotos = false; 
+        }
       });
   }
 
@@ -295,10 +416,17 @@ export class Perfil implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (this.usuario) this.usuario.total_seguidores = response.total || response.seguidores?.length || 0;
+          console.log('📊 Respuesta seguidores para contador:', response);
+          if (this.usuario && response.success && response.data) {
+            this.usuario.total_seguidores = response.data.total || 0;
+            console.log('✅ Total seguidores actualizado:', this.usuario.total_seguidores);
+          }
         },
-        error: () => {
-          if (this.usuario && !this.usuario.total_seguidores) this.usuario.total_seguidores = 0;
+        error: (error) => {
+          console.error('❌ Error al cargar seguidores:', error);
+          if (this.usuario && !this.usuario.total_seguidores) {
+            this.usuario.total_seguidores = 0;
+          }
         }
       });
 
@@ -306,22 +434,43 @@ export class Perfil implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (this.usuario) this.usuario.total_siguiendo = response.total || response.seguidos?.length || 0;
+          console.log('📊 Respuesta seguidos para contador:', response);
+          if (this.usuario && response.success && response.data) {
+            this.usuario.total_siguiendo = response.data.total || 0;
+            console.log('✅ Total seguidos actualizado:', this.usuario.total_siguiendo);
+          }
         },
-        error: () => {
-          if (this.usuario && !this.usuario.total_siguiendo) this.usuario.total_siguiendo = 0;
+        error: (error) => {
+          console.error('❌ Error al cargar seguidos:', error);
+          if (this.usuario && !this.usuario.total_siguiendo) {
+            this.usuario.total_siguiendo = 0;
+          }
         }
       });
   }
 
   private verificarSeguimiento(): void {
-    if (!this.usuarioActual || !this.usuario) return;
+    if (!this.usuarioActual || !this.usuario) {
+      console.log('⚠️ No se puede verificar seguimiento: falta usuario actual o perfil');
+      return;
+    }
 
-    this.seguidorService.verificar(this.usuarioActual.id, this.usuario.id)
+    console.log('🔍 Verificando si sigo al usuario:', this.usuario.id);
+
+    this.seguidorService.verificar(this.usuario.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => this.estaSiguiendo = response.sigue || false,
-        error: (error) => console.error('Error al verificar seguimiento:', error)
+        next: (response) => {
+          console.log('📦 Respuesta verificación:', response);
+          if (response.success && response.data) {
+            this.estaSiguiendo = response.data.following || false;
+            console.log('✅ Estado de seguimiento:', this.estaSiguiendo);
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error al verificar seguimiento:', error);
+          this.estaSiguiendo = false;
+        }
       });
   }
 
@@ -331,27 +480,46 @@ export class Perfil implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.usuario || this.isOwnProfile || this.cargandoSeguir) return;
+    if (!this.usuario || this.isOwnProfile || this.cargandoSeguir) {
+      console.log('⚠️ No se puede seguir:', {
+        tieneUsuario: !!this.usuario,
+        esPropiosPerfil: this.isOwnProfile,
+        cargando: this.cargandoSeguir
+      });
+      return;
+    }
 
     this.cargandoSeguir = true;
+    console.log('🔄 Toggle seguir usuario:', this.usuario.id);
 
-    this.seguidorService.toggle(this.usuarioActual.id, this.usuario.id)
+    this.seguidorService.toggle(this.usuario.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (response.success) {
-            const nuevoEstado = response.following ?? false;
+          console.log('📦 Respuesta toggle:', response);
+          
+          if (response.success && response.data) {
+            const nuevoEstado = response.data.following ?? false;
             this.estaSiguiendo = nuevoEstado;
+            
+            console.log('✅ Nuevo estado de seguimiento:', nuevoEstado);
+            
             if (this.usuario) {
-              this.usuario.total_seguidores = (this.usuario.total_seguidores || 0) + (nuevoEstado ? 1 : -1);
-              this.usuario.total_seguidores = Math.max(0, this.usuario.total_seguidores);
+              const cambio = nuevoEstado ? 1 : -1;
+              this.usuario.total_seguidores = Math.max(
+                0, 
+                (this.usuario.total_seguidores || 0) + cambio
+              );
+              console.log('📊 Contador actualizado:', this.usuario.total_seguidores);
             }
           } else {
             alert('Error al procesar la solicitud');
           }
+          
           this.cargandoSeguir = false;
         },
         error: (error) => {
+          console.error('❌ Error al hacer toggle:', error);
           const mensajeError = this.getMensajeError(error);
           alert(mensajeError);
           this.cargandoSeguir = false;
@@ -366,12 +534,14 @@ export class Perfil implements OnInit, OnDestroy {
   }
 
   abrirSeguidores(): void {
+    console.log('👥 Abriendo modal de seguidores');
     this.tipoModalSeguidores = 'seguidores';
     this.toggleBodyOverflow(true);
     this.showSeguidoresModal = true;
   }
 
   abrirSiguiendo(): void {
+    console.log('👥 Abriendo modal de seguidos');
     this.tipoModalSeguidores = 'seguidos';
     this.toggleBodyOverflow(true);
     this.showSeguidoresModal = true;
@@ -392,19 +562,6 @@ export class Perfil implements OnInit, OnDestroy {
     return names.length >= 2 
       ? (names[0][0] + names[1][0]).toUpperCase()
       : names[0].substring(0, 2).toUpperCase();
-  }
-
-  private formatImageUrl(url: string | undefined | null): string | null {
-    if (!url) return null;
-    return url.startsWith('http') ? url : `${this.apiBaseUrl}${url}`;
-  }
-
-  getProfileImage(): string | null {
-    return this.formatImageUrl(this.usuario?.foto_perfil_url);
-  }
-
-  getCoverImage(): string | null {
-    return this.formatImageUrl(this.usuario?.foto_portada_url);
   }
 
   toggleProfileMode(): void {

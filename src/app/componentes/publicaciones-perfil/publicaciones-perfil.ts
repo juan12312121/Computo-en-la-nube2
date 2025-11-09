@@ -224,6 +224,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   
   /**
    * Cargar comentarios de una publicación desde el backend
+   * ✅ CORREGIDO: El servicio devuelve Observable<Comentario[]> directamente
    */
   cargarComentarios(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
@@ -237,17 +238,32 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
       subscription.unsubscribe();
     }
 
+    // ✅ El servicio devuelve Observable<Comentario[]> directamente
     const newSubscription = this.comentariosService.obtenerPorPublicacion(postId, 20, 0).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          post.comments = response.data.map(c => this.convertirComentarioAComment(c));
-          post.totalComments = response.pagination?.total || response.data.length;
-          post.hasMoreComments = response.pagination?.hasMore || false;
+      next: (comentarios) => {
+        console.log('✅ Comentarios recibidos:', {
+          tipo: typeof comentarios,
+          esArray: Array.isArray(comentarios),
+          cantidad: Array.isArray(comentarios) ? comentarios.length : 'N/A'
+        });
+
+        // ✅ comentarios YA ES UN ARRAY
+        if (Array.isArray(comentarios)) {
+          post.comments = comentarios.map(c => this.convertirComentarioAComment(c));
+          post.totalComments = comentarios.length;
+          post.hasMoreComments = false; // No hay paginación en este enfoque
+        } else {
+          console.warn('⚠️ comentarios no es array');
+          post.comments = [];
+          post.totalComments = 0;
         }
+        
         post.loadingComments = false;
       },
       error: (error) => {
-        console.error('Error al cargar comentarios:', error);
+        console.error('❌ Error al cargar comentarios:', error);
+        post.comments = [];
+        post.totalComments = 0;
         post.loadingComments = false;
       }
     });
@@ -257,6 +273,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
 
   /**
    * Cargar más comentarios (infinite scroll)
+   * ✅ CORREGIDO: Adaptado al nuevo servicio
    */
   cargarMasComentarios(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
@@ -264,17 +281,21 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
 
     post.loadingComments = true;
 
+    // ✅ El servicio devuelve Observable<Comentario[]> directamente
     this.comentariosService.obtenerPorPublicacion(postId, 20, post.comments.length).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const nuevosComentarios = response.data.map(c => this.convertirComentarioAComment(c));
+      next: (comentarios) => {
+        if (Array.isArray(comentarios) && comentarios.length > 0) {
+          const nuevosComentarios = comentarios.map(c => this.convertirComentarioAComment(c));
           post.comments = [...post.comments, ...nuevosComentarios];
-          post.hasMoreComments = response.pagination?.hasMore || false;
+          post.hasMoreComments = comentarios.length === 20; // Si trae 20, hay más
+        } else {
+          post.hasMoreComments = false;
         }
         post.loadingComments = false;
       },
       error: (error) => {
-        console.error('Error al cargar más comentarios:', error);
+        console.error('❌ Error al cargar más comentarios:', error);
+        post.hasMoreComments = false;
         post.loadingComments = false;
       }
     });
@@ -288,15 +309,12 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     let fotoPerfilUrl: string | null = null;
     
     if (comentario.foto_perfil_s3) {
-      // Si es una URL completa, usarla directamente
       if (comentario.foto_perfil_s3.startsWith('http')) {
         fotoPerfilUrl = comentario.foto_perfil_s3;
       } else {
-        // Si es una ruta relativa, agregarle el apiBaseUrl
         fotoPerfilUrl = `${this.apiBaseUrl}${comentario.foto_perfil_s3}`;
       }
     } else if (comentario.foto_perfil_url) {
-      // Fallback a foto_perfil_url si no hay foto_perfil_s3
       if (comentario.foto_perfil_url.startsWith('http')) {
         fotoPerfilUrl = comentario.foto_perfil_url;
       } else {
@@ -342,12 +360,11 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
           // Limpiar el input
           this.commentInputs[postId] = '';
           
-          // ✅ NO emitir evento commentAdded - El DetallePost ya lo maneja
           console.log('✅ Comentario agregado correctamente a publicación:', postId);
         }
       },
       error: (error) => {
-        console.error('Error al crear comentario:', error);
+        console.error('❌ Error al crear comentario:', error);
         alert('No se pudo agregar el comentario. Intenta de nuevo.');
       }
     });
@@ -379,7 +396,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error al eliminar comentario:', error);
+        console.error('❌ Error al eliminar comentario:', error);
         alert('No se pudo eliminar el comentario. Intenta de nuevo.');
       }
     });

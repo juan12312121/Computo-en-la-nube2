@@ -16,7 +16,7 @@ export class ModalCambiarBanner {
   @Input() currentTheme!: Theme;
   @Input() guardando = false;
   @Input() errorBanner = '';
-  @Input() apiBaseUrl = '';
+  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com'; // 🆕 URL de S3
 
   @Output() close = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<File>();
@@ -36,14 +36,18 @@ export class ModalCambiarBanner {
     this.previsualizacionBanner = null;
   }
 
+  // 🆕 Método actualizado para usar S3
   getCoverImage(): string | null {
     if (!this.usuario?.foto_portada_url) return null;
     
-    if (this.usuario.foto_portada_url.startsWith('http')) {
+    // Si ya es URL completa, retornarla
+    if (this.usuario.foto_portada_url.startsWith('http://') || 
+        this.usuario.foto_portada_url.startsWith('https://')) {
       return this.usuario.foto_portada_url;
     }
     
-    return `${this.apiBaseUrl}${this.usuario.foto_portada_url}`;
+    // Construir URL de S3
+    return `${this.s3BaseUrl}/${this.usuario.foto_portada_url.replace(/^\/+/, '')}`;
   }
 
   onFileSelected(event: Event): void {

@@ -18,7 +18,7 @@ export class ModalSeguidores implements OnChanges {
   @Input() tipo: TipoModal = 'seguidores';
   @Input() usuarioId: number | null = null;
   @Input() currentTheme!: Theme;
-  @Input() apiBaseUrl = '';
+  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com'; // 🆕 URL de S3
   
   @Output() close = new EventEmitter<void>();
 
@@ -53,33 +53,33 @@ export class ModalSeguidores implements OnChanges {
     this.error = '';
     this.usuarios = [];
 
-    // Separar las llamadas para evitar problemas de tipos
     if (this.tipo === 'seguidores') {
       this.seguidorService.listarSeguidores(this.usuarioId).subscribe({
         next: (response) => {
           console.log('📦 Respuesta seguidores recibida:', response);
           
-          this.usuarios = response.seguidores || [];
-          this.total = response.total || 0;
-          
-          console.log('✅ Seguidores procesados:', {
-            total: this.total,
-            usuarios: this.usuarios.length,
-            lista: this.usuarios
-          });
+          if (response.success && response.data) {
+            this.usuarios = response.data.seguidores || [];
+            this.total = response.data.total || 0;
+            
+            console.log('✅ Seguidores procesados:', {
+              total: this.total,
+              usuarios: this.usuarios.length,
+              lista: this.usuarios
+            });
+          } else {
+            console.warn('⚠️ Respuesta sin seguidores:', response);
+            this.usuarios = [];
+            this.total = 0;
+          }
           
           this.cargando = false;
         },
         error: (error: any) => {
           console.error('❌ Error al cargar seguidores:', error);
-          console.error('📋 Detalles del error:', {
-            status: error.status,
-            statusText: error.statusText,
-            message: error.message,
-            error: error.error
-          });
-          
           this.error = error.error?.mensaje || error.error?.message || 'No se pudo cargar la lista de seguidores';
+          this.usuarios = [];
+          this.total = 0;
           this.cargando = false;
         }
       });
@@ -88,27 +88,28 @@ export class ModalSeguidores implements OnChanges {
         next: (response) => {
           console.log('📦 Respuesta seguidos recibida:', response);
           
-          this.usuarios = response.seguidos || [];
-          this.total = response.total || 0;
-          
-          console.log('✅ Seguidos procesados:', {
-            total: this.total,
-            usuarios: this.usuarios.length,
-            lista: this.usuarios
-          });
+          if (response.success && response.data) {
+            this.usuarios = response.data.seguidos || [];
+            this.total = response.data.total || 0;
+            
+            console.log('✅ Seguidos procesados:', {
+              total: this.total,
+              usuarios: this.usuarios.length,
+              lista: this.usuarios
+            });
+          } else {
+            console.warn('⚠️ Respuesta sin seguidos:', response);
+            this.usuarios = [];
+            this.total = 0;
+          }
           
           this.cargando = false;
         },
         error: (error: any) => {
           console.error('❌ Error al cargar seguidos:', error);
-          console.error('📋 Detalles del error:', {
-            status: error.status,
-            statusText: error.statusText,
-            message: error.message,
-            error: error.error
-          });
-          
           this.error = error.error?.mensaje || error.error?.message || 'No se pudo cargar la lista de seguidos';
+          this.usuarios = [];
+          this.total = 0;
           this.cargando = false;
         }
       });
@@ -124,16 +125,20 @@ export class ModalSeguidores implements OnChanges {
     this.router.navigate(['/perfil', usuarioId]);
   }
 
+  // 🆕 Método actualizado para usar S3
   getProfileImage(usuario: UsuarioSeguidor): string {
     if (!usuario.foto_perfil_url) {
       return '';
     }
     
-    if (usuario.foto_perfil_url.startsWith('http')) {
+    // Si ya es URL completa, retornarla
+    if (usuario.foto_perfil_url.startsWith('http://') || 
+        usuario.foto_perfil_url.startsWith('https://')) {
       return usuario.foto_perfil_url;
     }
     
-    return `${this.apiBaseUrl}${usuario.foto_perfil_url}`;
+    // Construir URL de S3
+    return `${this.s3BaseUrl}/${usuario.foto_perfil_url.replace(/^\/+/, '')}`;
   }
 
   getInitials(usuario: UsuarioSeguidor): string {

@@ -65,6 +65,8 @@ interface BackendResponse {
 })
 export class FotosService {
   private apiUrl = 'http://3.146.83.30:3000/api/fotos';
+  // 🆕 URL base de S3
+  private readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
   constructor(private http: HttpClient) { }
 
@@ -73,6 +75,44 @@ export class FotosService {
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
+  }
+
+  // 🆕 Método para formatear URLs a S3
+  private formatearUrlS3(url: string, tipo: 'perfil' | 'portada' | 'publicacion'): string {
+    if (!url) return '';
+    
+    // Si ya apunta a S3, normalizarla por si tiene rutas incorrectas
+    if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+      // Corregir /perfiles/ a /perfil/ si existe
+      return url.replace('/perfiles/', '/perfil/');
+    }
+    
+    // Si es una URL del servidor API, extraer solo la ruta
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      const match = url.match(/\/uploads\/.+$/);
+      if (match) {
+        // Corregir /perfiles/ a /perfil/ si existe
+        const rutaCorregida = match[0].replace('/perfiles/', '/perfil/');
+        return `${this.s3BaseUrl}${rutaCorregida}`;
+      }
+    }
+    
+    // Si es solo un nombre de archivo (sin ruta), construir la ruta según el tipo
+    if (!url.includes('/') && !url.startsWith('uploads')) {
+      let carpeta = 'publicaciones';
+      
+      if (tipo === 'perfil' || url.includes('foto_perfil') || url.includes('perfil')) {
+        carpeta = 'perfil';
+      } else if (tipo === 'portada' || url.includes('foto_portada') || url.includes('portada')) {
+        carpeta = 'portadas';
+      }
+      
+      return `${this.s3BaseUrl}/uploads/${carpeta}/${url}`;
+    }
+    
+    // Si es una ruta relativa, construir URL completa
+    const cleanPath = url.replace(/^\/+/, '').replace('/perfiles/', '/perfil/');
+    return `${this.s3BaseUrl}/${cleanPath}`;
   }
 
   obtenerMisFotos(): Observable<Photo[]> {
@@ -126,40 +166,64 @@ export class FotosService {
   private transformarFotos(response: BackendResponse): Photo[] {
     const fotos: Photo[] = [];
 
-    // Mapear fotos de perfil del historial
+    // 🆕 Mapear fotos de perfil del historial con URLs de S3
     if (response.data?.fotos?.perfil_historial && Array.isArray(response.data.fotos.perfil_historial)) {
-      const fotosPerfil = response.data.fotos.perfil_historial.map((foto, index) => ({
-        id: `perfil-${foto.nombre}-${index}`,
-        url: foto.url,
-        caption: foto.es_actual ? 'Foto de perfil actual' : 'Foto de perfil anterior',
-        tipo: 'perfil' as const,
-        fecha: foto.fecha
-      }));
+      const fotosPerfil = response.data.fotos.perfil_historial.map((foto, index) => {
+        const urlS3 = this.formatearUrlS3(foto.url, 'perfil');
+        console.log('🔄 Transformando foto de perfil:', {
+          original: foto.url,
+          s3: urlS3
+        });
+        
+        return {
+          id: `perfil-${foto.nombre}-${index}`,
+          url: urlS3,
+          caption: foto.es_actual ? 'Foto de perfil actual' : 'Foto de perfil anterior',
+          tipo: 'perfil' as const,
+          fecha: foto.fecha
+        };
+      });
       fotos.push(...fotosPerfil);
     }
 
-    // Mapear fotos de portada del historial
+    // 🆕 Mapear fotos de portada del historial con URLs de S3
     if (response.data?.fotos?.portada_historial && Array.isArray(response.data.fotos.portada_historial)) {
-      const fotosPortada = response.data.fotos.portada_historial.map((foto, index) => ({
-        id: `portada-${foto.nombre}-${index}`,
-        url: foto.url,
-        caption: foto.es_actual ? 'Foto de portada actual' : 'Foto de portada anterior',
-        tipo: 'portada' as const,
-        fecha: foto.fecha
-      }));
+      const fotosPortada = response.data.fotos.portada_historial.map((foto, index) => {
+        const urlS3 = this.formatearUrlS3(foto.url, 'portada');
+        console.log('🔄 Transformando foto de portada:', {
+          original: foto.url,
+          s3: urlS3
+        });
+        
+        return {
+          id: `portada-${foto.nombre}-${index}`,
+          url: urlS3,
+          caption: foto.es_actual ? 'Foto de portada actual' : 'Foto de portada anterior',
+          tipo: 'portada' as const,
+          fecha: foto.fecha
+        };
+      });
       fotos.push(...fotosPortada);
     }
 
-    // Mapear fotos de publicaciones
+    // 🆕 Mapear fotos de publicaciones con URLs de S3
     if (response.data?.fotos?.publicaciones && Array.isArray(response.data.fotos.publicaciones)) {
-      const fotosPublicaciones = response.data.fotos.publicaciones.map(pub => ({
-        id: pub.id,
-        url: pub.url,
-        caption: pub.descripcion,
-        postId: pub.id,
-        tipo: 'publicacion' as const,
-        fecha: pub.fecha
-      }));
+      const fotosPublicaciones = response.data.fotos.publicaciones.map(pub => {
+        const urlS3 = this.formatearUrlS3(pub.url, 'publicacion');
+        console.log('🔄 Transformando foto de publicación:', {
+          original: pub.url,
+          s3: urlS3
+        });
+        
+        return {
+          id: pub.id,
+          url: urlS3,
+          caption: pub.descripcion,
+          postId: pub.id,
+          tipo: 'publicacion' as const,
+          fecha: pub.fecha
+        };
+      });
       fotos.push(...fotosPublicaciones);
     }
 
@@ -170,7 +234,10 @@ export class FotosService {
     console.log('👤 Fotos de perfil:', fotos.filter(f => f.tipo === 'perfil').length);
     console.log('🖼️ Fotos de portada:', fotos.filter(f => f.tipo === 'portada').length);
     console.log('📷 Fotos de publicaciones:', fotos.filter(f => f.tipo === 'publicacion').length);
-    console.log('📋 Fotos completas:', fotos);
+    console.log('📋 Primeras 3 URLs:', fotos.slice(0, 3).map(f => ({
+      tipo: f.tipo,
+      url: f.url
+    })));
     console.log('========================================');
 
     return fotos;

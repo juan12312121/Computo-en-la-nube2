@@ -122,8 +122,6 @@ export class DetallePost implements OnInit, OnDestroy {
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
-    
-    // ngOnInit no carga comentarios, espera a que se establezcan los @Input
   }
 
   ngOnDestroy(): void {
@@ -133,6 +131,7 @@ export class DetallePost implements OnInit, OnDestroy {
 
   /**
    * Cargar comentarios de la publicación desde la API
+   * ✅ CORREGIDO: El servicio ahora devuelve Observable<Comentario[]> directamente
    */
   cargarComentarios(): void {
     if (!this.post) {
@@ -140,7 +139,6 @@ export class DetallePost implements OnInit, OnDestroy {
       return;
     }
 
-    // Evitar cargas simultáneas
     if (this.comentariosLoading) {
       console.log('⏳ Ya hay una carga en progreso, evitando duplicada');
       return;
@@ -152,36 +150,40 @@ export class DetallePost implements OnInit, OnDestroy {
     const publicacionId = this.post.id;
     console.log('📥 Cargando comentarios para publicación ID:', publicacionId);
 
+    // ✅ El servicio devuelve Observable<Comentario[]>
+    // comentarios YA ES UN ARRAY, no un objeto con {success, data}
     this.comentariosService.obtenerPorPublicacion(publicacionId, 50, 0)
       .subscribe({
-        next: (response) => {
-          console.log('✅ Respuesta de API recibida:', response);
-          console.log('📊 Total de comentarios en respuesta:', response.data ? response.data.length : 0);
-          
-          if (response.success && response.data) {
-            this.comentariosAPI = response.data;
+        next: (comentarios) => {
+          console.log('✅ Respuesta de API recibida:', {
+            tipo: typeof comentarios,
+            esArray: Array.isArray(comentarios),
+            cantidad: Array.isArray(comentarios) ? comentarios.length : 'N/A'
+          });
+
+          // ✅ comentarios YA ES UN ARRAY
+          if (Array.isArray(comentarios)) {
+            this.comentariosAPI = comentarios;
             this.comentariosFormateados = this.formatearComentarios();
             this.ultimaActualizacion = Date.now();
-            
+
             console.log('🎨 Comentarios formateados:', this.comentariosFormateados.length);
           } else {
-            console.warn('⚠️ Respuesta sin datos válidos');
+            console.warn('⚠️ comentarios no es array:', comentarios);
+            this.comentariosAPI = [];
+            this.comentariosFormateados = [];
           }
+
           this.comentariosLoading = false;
         },
         error: (error) => {
           console.error('❌ Error en la solicitud HTTP:', error);
           this.comentariosError = 'No se pudieron cargar los comentarios';
+          this.comentariosAPI = [];
+          this.comentariosFormateados = [];
           this.comentariosLoading = false;
         }
       });
-  }
-
-  /**
-   * Iniciar refresco automático de comentarios cada 5 segundos
-   */
-  private iniciarRefrescoAutomatico(): void {
-    // Refresco automático deshabilitado
   }
 
   /**
@@ -198,24 +200,36 @@ export class DetallePost implements OnInit, OnDestroy {
    * Formatear comentarios de la API al formato del componente
    */
   private formatearComentarios(): Comment[] {
-    const formateados = this.comentariosAPI.map(com => {
-      const comentarioFormateado = {
+    // ✅ VALIDACIÓN DE SEGURIDAD
+    if (!Array.isArray(this.comentariosAPI)) {
+      console.warn('⚠️ comentariosAPI no es array:', {
+        tipo: typeof this.comentariosAPI,
+        valor: this.comentariosAPI
+      });
+      return [];
+    }
+
+    if (this.comentariosAPI.length === 0) {
+      console.log('ℹ️ Sin comentarios para formatear');
+      return [];
+    }
+
+    console.log('🔄 Formateando', this.comentariosAPI.length, 'comentarios');
+
+    const formateados = this.comentariosAPI.map((com) => {
+      const comentarioFormateado: Comment = {
         id: com.id,
-        author: com.nombre_completo || com.nombre_usuario,
-        avatar: this.generarAvatarIniciales(com.nombre_completo || com.nombre_usuario),
+        author: com.nombre_completo || com.nombre_usuario || 'Usuario',
+        avatar: this.generarAvatarIniciales(com.nombre_completo || com.nombre_usuario || 'U'),
         text: com.texto,
         time: this.formatearTiempo(com.fecha_creacion),
         avatarColor: this.generarColorAvatar(com.usuario_id)
       };
-      
-      console.log('🔄 Formateando comentario:', {
-        original: com,
-        formateado: comentarioFormateado
-      });
-      
+
       return comentarioFormateado;
     });
-    
+
+    console.log('✅ Comentarios formateados:', formateados.length);
     return formateados;
   }
 
@@ -262,7 +276,7 @@ export class DetallePost implements OnInit, OnDestroy {
     const ahora = new Date();
     const fecha_comentario = new Date(fecha);
     const diferencia = ahora.getTime() - fecha_comentario.getTime();
-    
+
     const minutos = Math.floor(diferencia / 60000);
     const horas = Math.floor(diferencia / 3600000);
     const dias = Math.floor(diferencia / 86400000);
@@ -271,7 +285,7 @@ export class DetallePost implements OnInit, OnDestroy {
     if (minutos < 60) return `Hace ${minutos} min`;
     if (horas < 24) return `Hace ${horas}h`;
     if (dias < 7) return `Hace ${dias}d`;
-    
+
     return fecha_comentario.toLocaleDateString('es-ES');
   }
 
@@ -302,7 +316,7 @@ export class DetallePost implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success && response.data) {
           console.log('✅ Comentario creado exitosamente');
-          
+
           // Agregar comentario nuevo a la lista localmente
           const nuevoComentario: Comment = {
             id: response.data.id,
@@ -312,11 +326,11 @@ export class DetallePost implements OnInit, OnDestroy {
             time: 'Ahora',
             avatarColor: this.generarColorAvatar(response.data.usuario_id)
           };
-          
+
           // Insertar al principio de la lista
           this.comentariosFormateados.unshift(nuevoComentario);
           this.commentInput = '';
-          
+
           console.log('✨ Comentario agregado a la lista local. Total:', this.comentariosFormateados.length);
         }
       },
@@ -357,7 +371,7 @@ export class DetallePost implements OnInit, OnDestroy {
 
     let shareUrl = '';
 
-    switch(platform) {
+    switch (platform) {
       case 'whatsapp':
         shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + postUrl)}`;
         break;

@@ -53,10 +53,9 @@
         [cargando]="cargandoPublicaciones"
         [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
         [usuarioIniciales]="getInitials()"
-        [apiBaseUrl]="apiBaseUrl"
+        [apiBaseUrl]="getS3BaseUrl()"
         [usuarioFotoPerfil]="getProfileImage()"
-        (likeToggled)="onLikeToggled($event)"
-        >
+        (likeToggled)="onLikeToggled($event)">
       </app-publicaciones-perfil>
     </div>
 
@@ -98,7 +97,7 @@
   [guardando]="guardandoPerfil"
   [errorGuardado]="errorGuardado"
   [mensajeError]="mensajeError"
-  [apiBaseUrl]="apiBaseUrl"
+  [s3BaseUrl]="getS3BaseUrl()"
   (close)="cerrarModalEdicion()"
   (guardar)="guardarPerfil($event)">
 </app-modal-editar-perfil>
@@ -111,7 +110,7 @@
   [currentTheme]="currentTheme"
   [guardando]="guardandoBanner"
   [errorBanner]="errorBanner"
-  [apiBaseUrl]="apiBaseUrl"
+  [s3BaseUrl]="getS3BaseUrl()"
   (close)="cerrarModalBanner()"
   (guardar)="guardarBanner($event)"
   (eliminar)="eliminarBanner()">
@@ -123,6 +122,6 @@
   [tipo]="tipoModalSeguidores"
   [usuarioId]="usuario?.id || null"
   [currentTheme]="currentTheme"
-  [apiBaseUrl]="apiBaseUrl"
+  [s3BaseUrl]="getS3BaseUrl()"
   (close)="cerrarModalSeguidores()">
 </app-modal-seguidores>

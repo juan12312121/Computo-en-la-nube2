@@ -25,7 +25,7 @@ export class ModalEditarPerfil {
   @Input() guardando = false;
   @Input() errorGuardado = false;
   @Input() mensajeError = '';
-  @Input() apiBaseUrl = '';
+  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com'; // 🆕 URL de S3
 
   @Output() close = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<{
@@ -75,14 +75,18 @@ export class ModalEditarPerfil {
     return names[0].substring(0, 2).toUpperCase();
   }
 
+  // 🆕 Método actualizado para usar S3
   getProfileImage(): string | null {
     if (!this.usuario?.foto_perfil_url) return null;
     
-    if (this.usuario.foto_perfil_url.startsWith('http')) {
+    // Si ya es URL completa, retornarla
+    if (this.usuario.foto_perfil_url.startsWith('http://') || 
+        this.usuario.foto_perfil_url.startsWith('https://')) {
       return this.usuario.foto_perfil_url;
     }
     
-    return `${this.apiBaseUrl}${this.usuario.foto_perfil_url}`;
+    // Construir URL de S3
+    return `${this.s3BaseUrl}/${this.usuario.foto_perfil_url.replace(/^\/+/, '')}`;
   }
 
   onFileSelected(event: Event): void {

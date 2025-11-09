@@ -1,17 +1,10 @@
-// ==================== notificaciones.component.ts ====================
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
+import { interval, Subject, Subscription } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
+import { Notificacion, NotificacionesService } from '../../core/servicios/notificacion/notificacion';
 import { Theme } from '../../core/servicios/temas';
-
-export interface Notification {
-  id: number;
-  user: string;
-  initials: string;
-  action: string;
-  time: string;
-  avatarColor: string;
-  isUnread: boolean;
-}
 
 @Component({
   selector: 'app-notificaciones',
@@ -25,74 +18,339 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   @Input() isMobile = false;
   @Output() close = new EventEmitter<void>();
 
+  // Estado UI
   showNotifications = false;
-  notifications: Notification[] = [
-    {
-      id: 1,
-      user: 'Juan López',
-      initials: 'JL',
-      action: 'comentó en tu publicación',
-      time: 'Hace 30 minutos',
-      avatarColor: 'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
-      isUnread: true
-    },
-    {
-      id: 2,
-      user: 'María García',
-      initials: 'MG',
-      action: 'le gustó tu publicación',
-      time: 'Hace 1 hora',
-      avatarColor: 'linear-gradient(to bottom right, #a855f7, #9333ea)',
-      isUnread: true
-    },
-    {
-      id: 3,
-      user: 'Carlos Pérez',
-      initials: 'CP',
-      action: 'comenzó a seguirte',
-      time: 'Hace 2 horas',
-      avatarColor: 'linear-gradient(to bottom right, #3b82f6, #2563eb)',
-      isUnread: true
-    },
-    {
-      id: 4,
-      user: 'Ana Martínez',
-      initials: 'AM',
-      action: 'compartió tu publicación',
-      time: 'Hace 3 horas',
-      avatarColor: 'linear-gradient(to bottom right, #ec4899, #db2777)',
-      isUnread: false
-    },
-    {
-      id: 5,
-      user: 'Luis Rodríguez',
-      initials: 'LR',
-      action: 'comentó: "¡Excelente trabajo!"',
-      time: 'Hace 5 horas',
-      avatarColor: 'linear-gradient(to bottom right, #f97316, #ea580c)',
-      isUnread: false
-    }
-  ];
+  cargando = false;
+  error = false;
 
-  get notificationsCount(): number {
-    return this.notifications.filter(n => n.isUnread).length;
+  // Datos
+  notificaciones: Notificacion[] = [];
+  contadorNoLeidas = 0;
+
+  // Paginación
+  limit = 20;
+  offset = 0;
+  hayMas = true;
+
+  // Subscripciones
+  private destroy$ = new Subject<void>();
+  private pollingSubscription?: Subscription;
+
+  // Exponer encodeURIComponent al template
+  encodeURIComponent = encodeURIComponent;
+
+  constructor(
+    private notificacionesService: NotificacionesService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    console.log('🔔 Inicializando componente de notificaciones');
+    
+    this.detectarMobile();
+    this.actualizarContador();
+    this.iniciarPolling();
   }
-
-  constructor() {
-    // Escuchar clics fuera del componente
-    document.addEventListener('click', this.handleClickOutside.bind(this));
-  }
-
-  ngOnInit(): void {}
 
   ngOnDestroy(): void {
-    document.removeEventListener('click', this.handleClickOutside.bind(this));
+    console.log('🔔 Destruyendo componente de notificaciones');
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.pollingSubscription?.unsubscribe();
+    this.restaurarScrollBody();
   }
 
-  /**
-   * Determina si el tema actual tiene un fondo claro o oscuro
-   * para ajustar el color del texto del header
-   */
+  private detectarMobile(): void {
+    this.isMobile = window.innerWidth <= 640;
+    console.log('📱 Detectado móvil:', this.isMobile);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    const wasMobile = this.isMobile;
+    this.detectarMobile();
+    
+    // Si cambió de móvil a desktop o viceversa, cerrar notificaciones
+    if (wasMobile !== this.isMobile && this.showNotifications) {
+      this.cerrarNotificaciones();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: Event): void {
+    if (!this.isMobile && this.showNotifications) {
+      const target = event.target as HTMLElement;
+      const isInsidePanel = target.closest('.notification-panel');
+      const isToggleButton = target.closest('.notification-toggle');
+      const isContainer = target.closest('.notification-container');
+      
+      if (!isInsidePanel && !isToggleButton && !isContainer) {
+        this.cerrarNotificaciones();
+      }
+    }
+  }
+
+  private bloquearScrollBody(): void {
+    if (this.isMobile) {
+      document.body.classList.add('notification-open');
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    }
+  }
+
+  private restaurarScrollBody(): void {
+    document.body.classList.remove('notification-open');
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+  }
+
+  private iniciarPolling(): void {
+    this.pollingSubscription = interval(30000)
+      .pipe(
+        switchMap(() => this.notificacionesService.contarNoLeidas()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.contadorNoLeidas = response.data.total;
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error en polling de notificaciones:', error);
+        }
+      });
+  }
+
+  private actualizarContador(): void {
+    this.notificacionesService.contarNoLeidas()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.contadorNoLeidas = response.data.total;
+            console.log('🔔 Contador actualizado:', this.contadorNoLeidas);
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error al actualizar contador:', error);
+        }
+      });
+  }
+
+  private cargarNotificaciones(): void {
+    this.cargando = true;
+    this.error = false;
+
+    this.notificacionesService.obtenerTodas(this.limit, this.offset)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('📦 Notificaciones recibidas:', response);
+          
+          if (response.success && response.data) {
+            this.notificaciones = response.data.notificaciones || [];
+            this.hayMas = this.notificaciones.length >= this.limit;
+            console.log('✅ Notificaciones cargadas:', this.notificaciones.length);
+          } else {
+            this.notificaciones = [];
+            this.hayMas = false;
+          }
+          
+          this.cargando = false;
+        },
+        error: (error) => {
+          console.error('❌ Error al cargar notificaciones:', error);
+          this.error = true;
+          this.cargando = false;
+        }
+      });
+  }
+
+  toggleNotifications(event: MouseEvent): void {
+    event.stopPropagation();
+    this.showNotifications = !this.showNotifications;
+    
+    if (this.showNotifications) {
+      this.bloquearScrollBody();
+      
+      if (this.notificaciones.length === 0) {
+        this.cargarNotificaciones();
+      }
+    } else {
+      this.restaurarScrollBody();
+    }
+  }
+
+  marcarComoLeida(notificacion: Notificacion, event?: MouseEvent): void {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    if (!notificacion.leida) {
+      this.notificacionesService.marcarComoLeida(notificacion.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            notificacion.leida = true;
+            this.contadorNoLeidas = Math.max(0, this.contadorNoLeidas - 1);
+            console.log('✅ Notificación marcada como leída:', notificacion.id);
+          },
+          error: (error) => {
+            console.error('❌ Error al marcar como leída:', error);
+          }
+        });
+    }
+  }
+
+  marcarTodasComoLeidas(): void {
+    if (this.contadorNoLeidas === 0) {
+      console.log('ℹ️ No hay notificaciones no leídas');
+      return;
+    }
+
+    this.notificacionesService.marcarTodasComoLeidas()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.notificaciones.forEach(n => n.leida = true);
+          this.contadorNoLeidas = 0;
+          console.log('✅ Todas las notificaciones marcadas como leídas');
+          
+          if (this.isMobile) {
+            this.mostrarFeedback('Todas marcadas como leídas ✓');
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error al marcar todas como leídas:', error);
+          if (this.isMobile) {
+            this.mostrarFeedback('Error al marcar como leídas ✗');
+          }
+        }
+      });
+  }
+
+  eliminarNotificacion(notificacionId: number, event: MouseEvent): void {
+    event.stopPropagation();
+
+    this.notificacionesService.eliminar(notificacionId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          const notif = this.notificaciones.find(n => n.id === notificacionId);
+          if (notif && !notif.leida) {
+            this.contadorNoLeidas = Math.max(0, this.contadorNoLeidas - 1);
+          }
+          
+          this.notificaciones = this.notificaciones.filter(n => n.id !== notificacionId);
+          console.log('✅ Notificación eliminada:', notificacionId);
+          
+          if (this.isMobile) {
+            this.mostrarFeedback('Notificación eliminada ✓');
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error al eliminar notificación:', error);
+          if (this.isMobile) {
+            this.mostrarFeedback('Error al eliminar ✗');
+          }
+        }
+      });
+  }
+
+  manejarClicNotificacion(notificacion: Notificacion): void {
+    console.log('👆 Clic en notificación:', notificacion);
+
+    this.marcarComoLeida(notificacion);
+    this.cerrarNotificaciones();
+
+    switch (notificacion.tipo) {
+      case 'follow':
+        this.router.navigate(['/perfil', notificacion.de_usuario_id]);
+        break;
+
+      case 'like':
+      case 'comment':
+        if (notificacion.publicacion_id) {
+          this.router.navigate(['/publicacion', notificacion.publicacion_id]);
+        }
+        break;
+
+      default:
+        console.log('Tipo de notificación no manejado:', notificacion.tipo);
+    }
+  }
+
+  obtenerMensajeCorto(mensaje: string): string {
+    if (!mensaje) return '';
+    
+    if (this.isMobile && mensaje.length > 60) {
+      return mensaje.substring(0, 60) + '...';
+    }
+    
+    return mensaje;
+  }
+
+  obtenerIconoTipo(tipo: string): string {
+    return this.notificacionesService.obtenerIconoTipo(tipo);
+  }
+
+  obtenerColorTipo(tipo: string): string {
+    return this.notificacionesService.obtenerColorTipo(tipo);
+  }
+
+  formatearTiempo(fecha: string): string {
+    return this.notificacionesService.formatearTiempo(fecha);
+  }
+
+  obtenerAvatar(notificacion: Notificacion): string {
+    // Priorizar foto de S3
+    if (notificacion.foto_perfil_s3) {
+      return notificacion.foto_perfil_s3;
+    }
+    
+    // Si hay URL de foto, usarla directamente
+    if (notificacion.foto_perfil_url) {
+      if (notificacion.foto_perfil_url.startsWith('http')) {
+        return notificacion.foto_perfil_url;
+      }
+      
+      return `http://3.146.83.30:3000${notificacion.foto_perfil_url}`;
+    }
+    
+    // Fallback: generar avatar con las iniciales
+    return this.obtenerAvatarFallback(notificacion.nombre_completo);
+  }
+
+  obtenerAvatarFallback(nombreCompleto: string): string {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(nombreCompleto)}&background=random&size=100`;
+  }
+
+  obtenerIniciales(nombreCompleto: string): string {
+    const nombres = nombreCompleto.trim().split(' ');
+    if (nombres.length >= 2) {
+      return (nombres[0][0] + nombres[1][0]).toUpperCase();
+    }
+    return nombres[0].substring(0, 2).toUpperCase();
+  }
+
+  cerrarNotificaciones(): void {
+    this.showNotifications = false;
+    this.restaurarScrollBody();
+    this.close.emit();
+  }
+
+  verTodasLasNotificaciones(): void {
+    this.cerrarNotificaciones();
+    this.router.navigate(['/notificaciones']);
+  }
+
+  private mostrarFeedback(mensaje: string): void {
+    console.log('💬 Feedback:', mensaje);
+  }
+
   isLightTheme(): boolean {
     const lightThemes = [
       'default',
@@ -109,39 +367,21 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     return lightThemes.includes(this.currentTheme.id);
   }
 
-  handleClickOutside(event: Event): void {
-    const target = event.target as HTMLElement;
-    if (
-      !target.closest('.notification-toggle') &&
-      !target.closest('.notification-panel') &&
-      !target.closest('.notification-container')
-    ) {
-      this.showNotifications = false;
+  get notificationsCount(): number {
+    return this.contadorNoLeidas;
+  }
+
+  get hayNotificaciones(): boolean {
+    return this.notificaciones.length > 0;
+  }
+
+  recargar(): void {
+    if (this.cargando) {
+      console.log('⏳ Ya hay una recarga en progreso');
+      return;
     }
-  }
-
-  toggleNotifications(event: MouseEvent): void {
-    event.stopPropagation();
-    this.showNotifications = !this.showNotifications;
-  }
-
-  markAsRead(notificationId: number): void {
-    const notification = this.notifications.find(n => n.id === notificationId);
-    if (notification) {
-      notification.isUnread = false;
-    }
-  }
-
-  markAllAsRead(): void {
-    this.notifications.forEach(n => n.isUnread = false);
-  }
-
-  deleteNotification(notificationId: number): void {
-    this.notifications = this.notifications.filter(n => n.id !== notificationId);
-  }
-
-  closeNotifications(): void {
-    this.showNotifications = false;
-    this.close.emit();
+    
+    this.offset = 0;
+    this.cargarNotificaciones();
   }
 }
