@@ -1,23 +1,17 @@
 version: 0.2
-
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 20
     commands:
       - echo "Instalando Angular CLI y dependencias..."
       - npm install -g @angular/cli
       - npm install
   build:
     commands:
-      - echo "Compilando el proyecto Angular..."
+      - echo "Compilando proyecto Angular en producción..."
       - ng build --configuration production
-  post_build:
-    commands:
-      - echo "Compilación completada correctamente."
-
 artifacts:
   files:
     - '**/*'
   base-directory: dist/frontend-trinoflow
-  discard-paths: no
