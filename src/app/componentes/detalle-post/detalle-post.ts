@@ -365,48 +365,48 @@ export class DetallePost implements OnInit, OnDestroy {
     }
   }
 
-  shareToSocial(platform: string): void {
-    const postUrl = `https://redstudent.com/post/${this.post?.id}`;
-    const text = this.post?.content || '';
+ shareToSocial(platform: string): void {
+  const postUrl = `http://3.146.83.30:4200/principal/post/${this.post?.id}`;  // ✅ ACTUALIZADO
+  const text = this.post?.content || '';
 
-    let shareUrl = '';
+  let shareUrl = '';
 
-    switch (platform) {
-      case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + postUrl)}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
-        break;
-      case 'telegram':
-        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(text)}`;
-        break;
-      case 'email':
-        shareUrl = `mailto:?subject=${encodeURIComponent('Mira esta publicación')}&body=${encodeURIComponent(text + '\n\n' + postUrl)}`;
-        break;
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, '_blank');
-      this.closeShareModal();
-    }
+  switch (platform) {
+    case 'whatsapp':
+      shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + postUrl)}`;
+      break;
+    case 'facebook':
+      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+      break;
+    case 'twitter':
+      shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`;
+      break;
+    case 'linkedin':
+      shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
+      break;
+    case 'telegram':
+      shareUrl = `https://t.me/share/url?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(text)}`;
+      break;
+    case 'email':
+      shareUrl = `mailto:?subject=${encodeURIComponent('Mira esta publicación')}&body=${encodeURIComponent(text + '\n\n' + postUrl)}`;
+      break;
   }
 
-  copyLink(): void {
-    const postUrl = `https://redstudent.com/post/${this.post?.id}`;
-    navigator.clipboard.writeText(postUrl).then(() => {
-      this.linkCopied = true;
-      setTimeout(() => {
-        this.linkCopied = false;
-      }, 2000);
-    });
+  if (shareUrl) {
+    window.open(shareUrl, '_blank');
+    this.closeShareModal();
   }
+}
+
+copyLink(): void {
+  const postUrl = `http://3.146.83.30:4200/principal/post/${this.post?.id}`;  // ✅ ACTUALIZADO
+  navigator.clipboard.writeText(postUrl).then(() => {
+    this.linkCopied = true;
+    setTimeout(() => {
+      this.linkCopied = false;
+    }, 2000);
+  });
+}
 
   /**
    * TrackBy para optimizar el rendering de comentarios en ngFor

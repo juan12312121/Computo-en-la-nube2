@@ -8,9 +8,10 @@ import { Principal } from './paginas/principal/principal';
 export const routes: Routes = [
   { path: '', redirectTo: 'principal', pathMatch: 'full' },
   { path: 'principal', component: Principal },
+  { path: 'principal/post/:id', component: Principal }, // ✅ NUEVA RUTA
   { path: 'explorar', component: Explorar },
-  { path: 'perfil', component: Perfil }, // Mi perfil
-  { path: 'perfil/:id', component: Perfil }, // Perfil de otro usuario
+  { path: 'perfil', component: Perfil },
+  { path: 'perfil/:id', component: Perfil },
   { path: 'login', component: Login },
   { path: 'registro', component: Registro },
   { path: '**', redirectTo: 'principal' }

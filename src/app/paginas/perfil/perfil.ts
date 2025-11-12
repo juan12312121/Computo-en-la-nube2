@@ -7,7 +7,7 @@ import { FotosPerfil } from '../../componentes/fotos-perfil/fotos-perfil';
 import { ModalCambiarBanner } from '../../componentes/modal-cambiar-banner/modal-cambiar-banner';
 import { FormularioEditarPerfil, ModalEditarPerfil } from '../../componentes/modal-editar-perfil/modal-editar-perfil';
 import { ModalSeguidores, TipoModal } from '../../componentes/modal-seguidores/modal-seguidores';
-import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { Navbar } from '../../componentes/navbar/navbar';
 import { ProfileErrorComponent } from '../../componentes/profile-error/profile-error';
 import { ProfileHeaderComponent, UsuarioPerfil } from '../../componentes/profile-header/profile-header';
 import { ProfileLoadingComponent } from '../../componentes/profile-loading/profile-loading';
@@ -36,7 +36,7 @@ interface Photo {
   standalone: true,
   imports: [
     CommonModule,
-    NavbarComponent,
+    Navbar,
     ProfileLoadingComponent,
     ProfileErrorComponent,
     ProfileHeaderComponent,

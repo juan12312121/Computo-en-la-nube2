@@ -1,17 +1,15 @@
-/* ==================== navbar.component.css ==================== */
-
 /* ==================== LOGO CON GRADIENTE ==================== */
 
-/* Clase base del logo */
 .logo .logo-gradient-text {
   display: inline-block !important;
   font-weight: 800 !important;
   background-clip: text !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
+  animation: gradientShift 8s ease-in-out infinite;
 }
 
-/* Gradientes por tema - Agregando todos los temas del service */
+/* Gradientes por tema */
 .logo-gradient-text[data-theme="default"] {
   background: linear-gradient(135deg, #f97316 0%, #fb923c 30%, #2dd4bf 70%, #14b8a6 100%) !important;
   background-size: 200% 200% !important;
@@ -52,7 +50,6 @@
   background-size: 200% 200% !important;
 }
 
-/* Temas experimentales */
 .logo-gradient-text[data-theme="neon"] {
   background: linear-gradient(135deg, #0ff 0%, #f0f 50%, #ff0 100%) !important;
   background-size: 200% 200% !important;
@@ -73,17 +70,11 @@
   background-size: 200% 200% !important;
 }
 
-/* Animación sutil del gradiente */
-.logo-gradient-text {
-  animation: gradientShift 8s ease-in-out infinite;
-}
-
 @keyframes gradientShift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
 
-/* Fallback sin gradiente */
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   .logo-gradient-text {
     -webkit-text-fill-color: #f97316 !important;
@@ -95,7 +86,7 @@
 
 .navbar {
   position: relative;
-  min-height: 4.5rem;
+  min-height: 3.5rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -105,7 +96,7 @@
 }
 
 .navbar .h-14 {
-  height: 4.5rem !important;
+  height: 3.5rem !important;
 }
 
 .navbar .actions {
@@ -175,17 +166,19 @@
   color: white !important;
 }
 
-/* Hover en todos los botones */
 [class*="btn-publicar-"]:hover {
   filter: brightness(1.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+[class*="btn-publicar-"]:active {
+  transform: scale(0.98);
+}
+
 /* ==================== DROPDOWNS ==================== */
 
 .theme-dropdown,
-.profile-dropdown,
-.notification-panel {
+.profile-dropdown {
   position: absolute !important;
   top: calc(100% + 0.25rem) !important;
   right: 0 !important;
@@ -203,11 +196,6 @@
   width: 14rem;
 }
 
-.notification-panel {
-  width: 22rem;
-  max-width: 22rem;
-}
-
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -219,9 +207,8 @@
   }
 }
 
-/* ==================== SLIDER DE TEMAS ==================== */
+/* ==================== SEARCH & SCROLL ==================== */
 
-/* Ocultar scrollbar pero mantener funcionalidad */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -231,44 +218,19 @@
   display: none;
 }
 
-/* Smooth scroll */
 .scroll-smooth {
   scroll-behavior: smooth;
 }
 
-/* Círculos de temas con efecto hover */
-.theme-dropdown button > div[style*="background"],
-button > div[style*="background"] {
-  position: relative;
-  overflow: hidden;
-}
+/* ==================== ANIMACIONES ==================== */
 
-.theme-dropdown button > div[style*="background"]::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.2);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.theme-dropdown button:hover > div[style*="background"]::before {
-  opacity: 1;
-}
-
-/* Botones de navegación del slider */
-.theme-dropdown button[class*="chevron"] {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* ==================== ANIMACIONES Y EFECTOS ==================== */
-
-.navbar *, .navbar button, .navbar a, .navbar i {
+.navbar *, 
+.navbar button, 
+.navbar a, 
+.navbar i {
   transition: all 0.3s ease;
 }
 
-/* Hover en logo */
 .logo:hover .fa-paper-plane {
   transform: rotate(15deg) scale(1.15);
 }
@@ -278,13 +240,11 @@ button > div[style*="background"] {
   transform: scale(1.03);
 }
 
-/* Hover en iconos */
 .navbar button:hover i,
 .navbar a:hover i {
   transform: scale(1.1);
 }
 
-/* Notificaciones pulsantes */
 .navbar .bg-red-500 {
   animation: pulse 2s ease-in-out infinite;
 }
@@ -294,7 +254,6 @@ button > div[style*="background"] {
   50% { transform: scale(1.05); opacity: 0.9; }
 }
 
-/* Chevron rotación */
 .fa-chevron-down {
   transition: transform 0.2s ease;
 }
@@ -303,7 +262,6 @@ button > div[style*="background"] {
   transform: rotate(180deg);
 }
 
-/* Animación fadeIn para dropdowns */
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
 }
@@ -322,19 +280,22 @@ button > div[style*="background"] {
 /* ==================== RESPONSIVE ==================== */
 
 @media (max-width: 640px) {
-  .logo .logo-gradient-text {
-    font-size: 1.5rem !important;
+  .navbar .h-14 {
+    height: 3.5rem !important;
   }
-  
+
+  .logo .logo-gradient-text {
+    font-size: 1.25rem !important;
+  }
+
   .logo .fa-paper-plane {
-    font-size: 1.75rem !important;
+    font-size: 1.5rem !important;
   }
 }
 
 @media (max-width: 768px) {
-  .notification-panel:not(.md\:hidden),
-  .profile-dropdown:not(.md\:hidden),
-  .theme-dropdown:not(.md\:hidden) {
+  .theme-dropdown,
+  .profile-dropdown {
     left: 0 !important;
     right: 0 !important;
     max-width: 100% !important;
@@ -357,15 +318,18 @@ button > div[style*="background"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .navbar *, .navbar button, .navbar a, .navbar i {
+  .navbar *, 
+  .navbar button, 
+  .navbar a, 
+  .navbar i {
     transition: none !important;
     animation: none !important;
   }
-  
+
   .logo-gradient-text {
     animation: none !important;
   }
-  
+
   .scroll-smooth {
     scroll-behavior: auto;
   }
@@ -384,11 +348,6 @@ button > div[style*="background"] {
   transform: scale(0.98);
 }
 
-.notification-panel .overflow-y-auto {
-  scroll-behavior: smooth;
-}
-
-/* Mobile menu open - prevenir scroll del body */
 body.mobile-menu-open {
   overflow: hidden;
 }
@@ -399,9 +358,8 @@ body.mobile-menu-open {
   }
 }
 
-/* ==================== MEJORAS VISUALES SLIDER ==================== */
+/* ==================== MEJORAS VISUALES ==================== */
 
-/* Sombras suaves en los círculos de temas */
 button > div[style*="background"] {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -410,62 +368,12 @@ button:hover > div[style*="background"] {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Transiciones suaves */
 button > div[style*="background"],
 button > div[style*="background"] > div {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Check icon más visible */
 button > div[style*="background"] > div {
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-}
-
-/* Indicador visual de scroll disponible */
-.theme-dropdown .relative::after,
-.theme-dropdown .relative::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  pointer-events: none;
-  z-index: 5;
-  transition: opacity 0.3s ease;
-}
-
-.theme-dropdown .relative::before {
-  left: 0;
-  background: linear-gradient(to right, currentColor, transparent);
-  opacity: 0;
-}
-
-.theme-dropdown .relative::after {
-  right: 0;
-  background: linear-gradient(to left, currentColor, transparent);
-  opacity: 0.05;
-}
-
-.theme-candy-body {
-  background: linear-gradient(to bottom right, #fef3c7, #fce7f3, #e9d5ff) !important;
-}
-
-/* Tema Chaos - Fondo con gradiente */
-.theme-chaos-body {
-  background: linear-gradient(to bottom right, #fed7aa, #99f6e4, #ddd6fe) !important;
-}
-
-/* Tema Chaos - Navbar con gradiente */
-.theme-chaos-navbar {
-  background: linear-gradient(to right, #fee2e2, #dbeafe) !important;
-}
-
-/* Asegurar que los gradientes se apliquen correctamente */
-body[data-theme="candy"] {
-  background: linear-gradient(to bottom right, #fef3c7, #fce7f3, #e9d5ff) !important;
-}
-
-body[data-theme="chaos"] {
-  background: linear-gradient(to bottom right, #fed7aa, #99f6e4, #ddd6fe) !important;
 }

@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { DetallePost } from '../../componentes/detalle-post/detalle-post';
-import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { Navbar } from '../../componentes/navbar/navbar';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
 import { ComentariosService } from '../../core/servicios/comentarios/comentarios';
 import { LikesService } from '../../core/servicios/likes/likes';
@@ -88,7 +89,7 @@ const SHARE_URLS: { [key: string]: (url: string, text: string) => string } = {
 @Component({
   selector: 'app-principal',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, DetallePost],
+  imports: [CommonModule, FormsModule, Navbar, DetallePost],
   templateUrl: './principal.html',
   styleUrls: ['./principal.css']
 })
@@ -115,9 +116,7 @@ export class Principal implements OnInit, OnDestroy {
 
   // ========== FORM STATE ==========
   commentInputs: { [key: number]: string } = {};
-  searchQuery = '';
-  selectedTab: 'redes' | 'usuarios' = 'redes';
-  selectedUsers: number[] = [];
+selectedTab: 'redes' = 'redes';
   
   // ========== REPORTES ==========
   reportMotivo: string = '';
@@ -145,6 +144,8 @@ export class Principal implements OnInit, OnDestroy {
   public readonly apiBaseUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'http://3.146.83.30:3000';
+    public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
+
 
   constructor(
     private themeService: ThemeService,
@@ -155,22 +156,34 @@ export class Principal implements OnInit, OnDestroy {
     private autenticacionService: AutenticacionService,
     private reportesService: ReportesService,
     private publicacionesOcultasService: PublicacionesOcultasService,
-    private noMeInteresaService: NoMeInteresaService
+    private noMeInteresaService: NoMeInteresaService,
+    private route: ActivatedRoute
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
   }
 
   // ========== LIFECYCLE HOOKS ==========
   ngOnInit(): void {
-    this.themeSubscription = this.themeService.currentTheme$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(theme => {
-        this.currentTheme = theme;
-      });
+  this.themeSubscription = this.themeService.currentTheme$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(theme => {
+      this.currentTheme = theme;
+    });
 
-    this.usuarioActualId = this.obtenerUsuarioActualId();
-    this.inicializarFeed();
-  }
+  this.usuarioActualId = this.obtenerUsuarioActualId();
+  this.inicializarFeed();
+
+  // ✅ DETECTAR parámetro de post en la URL
+  this.route.params
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(params => {
+      const postId = params['id'];
+      if (postId) {
+        console.log('📍 Post ID detectado en URL:', postId);
+        this.abrirPostDesdeURL(Number(postId));
+      }
+    });
+}
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -252,6 +265,38 @@ export class Principal implements OnInit, OnDestroy {
         });
     });
   }
+
+
+  /**
+ * Abrir modal de detalle de post cuando se accede desde URL directa
+ */
+private abrirPostDesdeURL(postId: number): void {
+  // Función recursiva que espera hasta que los posts estén cargados
+  const intentarAbrir = (intentos = 0) => {
+    if (intentos > 20) {
+      console.error('❌ Timeout: No se pudo cargar el post', postId);
+      return;
+    }
+
+    const post = this.posts.find(p => p.id === postId);
+    
+    if (post) {
+      console.log('✅ Post encontrado, abriendo detalle:', postId);
+      // Pequeño delay para asegurar que el DOM esté listo
+      setTimeout(() => {
+        this.openPostDetail(postId);
+      }, 100);
+    } else if (!this.isLoading) {
+      // Si ya terminó de cargar y no encontró el post
+      console.warn('⚠️ Post no encontrado en el feed:', postId);
+    } else {
+      // Reintentar después de 200ms
+      setTimeout(() => intentarAbrir(intentos + 1), 200);
+    }
+  };
+
+  intentarAbrir();
+}
 
   private cargarFeed(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -951,8 +996,7 @@ export class Principal implements OnInit, OnDestroy {
     event?.stopPropagation();
     this.sharePostId = postId;
     this.showShareModal = true;
-    this.searchQuery = '';
-    this.selectedUsers = [];
+
     this.linkCopied = false;
     this.selectedTab = 'redes';
     this.closePostOptions();
@@ -965,48 +1009,28 @@ export class Principal implements OnInit, OnDestroy {
     document.body.style.overflow = 'auto';
   }
 
-  switchShareTab(tab: 'redes' | 'usuarios'): void {
-    this.selectedTab = tab;
-    this.searchQuery = '';
+
+ shareToSocial(platform: string): void {
+  const post = this.posts.find(p => p.id === this.sharePostId);
+  if (!post) return;
+
+  const url = `http://3.146.83.30:4200/principal/post/${post.id}`;  // ✅ ACTUALIZADO
+  const shareUrl = SHARE_URLS[platform]?.(url, post.content || '');
+
+  if (shareUrl) {
+    window.open(shareUrl, '_blank');
+    post.shares++;
   }
+}
 
-  shareToSocial(platform: string): void {
-    const post = this.posts.find(p => p.id === this.sharePostId);
-    if (!post) return;
+copyLink(): void {
+  const url = `http://3.146.83.30:4200/principal/post/${this.sharePostId}`;  // ✅ ACTUALIZADO
+  navigator.clipboard.writeText(url).then(() => {
+    this.linkCopied = true;
+    setTimeout(() => this.linkCopied = false, 2000);
+  });
+}
 
-    const url = `https://redstudent.com/post/${post.id}`;
-    const shareUrl = SHARE_URLS[platform]?.(url, post.content || '');
-
-    if (shareUrl) {
-      window.open(shareUrl, '_blank');
-      post.shares++;
-    }
-  }
-
-  copyLink(): void {
-    const url = `https://redstudent.com/post/${this.sharePostId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      this.linkCopied = true;
-      setTimeout(() => this.linkCopied = false, 2000);
-    });
-  }
-
-  sendToUsers(): void {
-    if (this.selectedUsers.length === 0) return;
-    const post = this.posts.find(p => p.id === this.sharePostId);
-    if (post) post.shares += this.selectedUsers.length;
-    alert(`Publicación compartida con ${this.selectedUsers.length} usuario(s)`);
-    this.closeShareModal();
-  }
-
-  toggleUserSelection(userId: number): void {
-    const i = this.selectedUsers.indexOf(userId);
-    i > -1 ? this.selectedUsers.splice(i, 1) : this.selectedUsers.push(userId);
-  }
-
-  isUserSelected(userId: number): boolean {
-    return this.selectedUsers.includes(userId);
-  }
 
   onShareBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('share-modal-backdrop')) {
@@ -1014,13 +1038,6 @@ export class Principal implements OnInit, OnDestroy {
     }
   }
 
-  get filteredUsers(): User[] {
-    if (!this.searchQuery.trim()) return this.users;
-    const q = this.searchQuery.toLowerCase();
-    return this.users.filter(u =>
-      u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
-    );
-  }
 
   // ========== MODALS ==========
   openCreateModal(): void {
@@ -1077,11 +1094,36 @@ export class Principal implements OnInit, OnDestroy {
     return new Date(fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
 
-  private normalizarUrlImagen(url: string): string | null {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    return `${this.apiBaseUrl}${url.startsWith('/') ? url : '/' + url}`;
+private normalizarUrlImagen(url: string): string | null {
+  if (!url || url.includes('/undefined')) return null;
+  
+  // Si ya es URL completa de S3, devolverla tal cual
+  if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+    return url;
   }
+  
+  // Si es URL HTTP/HTTPS completa, devolverla
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // Si es ruta relativa como /uploads/..., construir URL completa
+  if (url.startsWith('/uploads/')) {
+    return `${this.apiBaseUrl}${url}`;
+  }
+  
+  // Si es solo nombre de archivo, asumimos que está en /uploads/publicaciones/
+  if (!url.includes('/')) {
+    return `${this.apiBaseUrl}/uploads/publicaciones/${url}`;
+  }
+  
+  // Si es otra ruta relativa
+  if (this.apiBaseUrl) {
+    return `${this.apiBaseUrl}${url}`;
+  }
+  
+  return url;
+}
 
   private generarColorAvatar(id: number): string {
     return AVATAR_COLORS[id % AVATAR_COLORS.length];

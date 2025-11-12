@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
@@ -17,87 +17,54 @@ import { NotificacionesComponent } from '../notificaciones/notificaciones';
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.css'],
 })
-export class NavbarComponent implements OnInit, OnDestroy {
-  @Output() openCreate = new EventEmitter<void>();
-  
-  @ViewChild('themeSlider') themeSlider?: ElementRef<HTMLDivElement>;
+export class Navbar implements OnInit, OnDestroy {
   @ViewChild('themeSliderMobile') themeSliderMobile?: ElementRef<HTMLDivElement>;
 
   private apiBaseUrl: string;
+  private themeSubscription?: Subscription;
+  private authSubscription?: Subscription;
+  private searchSubscription?: Subscription;
+  private searchSubject = new Subject<string>();
 
-  // ========== ESTADO AUTENTICACIÓN ==========
-  currentUser: Usuario | null = null;
+  // UI STATE
   isLoggedIn = false;
-  
-  // ========== UI STATE ==========
+  currentUser: Usuario | null = null;
+  currentTheme!: Theme;
+  themes: Theme[] = [];
+
+  // MODAL & MENU
   showCrearPost = false;
   showMobileMenu = false;
-  showMobileProfileMenu = false;
   showProfileMenu = false;
   showThemeMenu = false;
   showSearchResults = false;
   showMobileSearch = false;
 
-  // ========== TEMAS ==========
-  currentTheme!: Theme;
-  themes: Theme[] = [];
-  
-  canScrollLeft = false;
-  canScrollRight = true;
+  // SCROLL MÓVIL
   canScrollLeftMobile = false;
   canScrollRightMobile = true;
-  
-  // ========== SUBSCRIPCIONES ==========
-  private themeSubscription?: Subscription;
-  private authSubscription?: Subscription;
-  private searchSubscription?: Subscription;
 
-  // ========== BÚSQUEDA ==========
+  // BÚSQUEDA
   searchQuery = '';
   searchResults: UsuarioBusqueda[] = [];
   isSearching = false;
-  private searchSubject = new Subject<string>();
 
-  get currentThemeData(): Theme {
-    return this.currentTheme;
-  }
-
-  get currentThemeId(): string {
-    return this.currentTheme.id;
-  }
-
-  get userName(): string {
-    return this.currentUser?.nombre_completo || 'Usuario';
-  }
-
-  get userUsername(): string {
-    return this.currentUser?.nombre_usuario ? `@${this.currentUser.nombre_usuario}` : '@usuario';
-  }
-
+  // GETTERS
+  get currentThemeData(): Theme { return this.currentTheme; }
+  get currentThemeId(): string { return this.currentTheme.id; }
+  get userName(): string { return this.currentUser?.nombre_completo || 'Usuario'; }
+  get userUsername(): string { return this.currentUser?.nombre_usuario ? `@${this.currentUser.nombre_usuario}` : '@usuario'; }
   get userAvatar(): string {
     if (!this.currentUser?.foto_perfil_url) {
-      const fallbackUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200';
-      return fallbackUrl;
+      return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200';
     }
-    
     if (this.currentUser.foto_perfil_url.startsWith('http')) {
       return this.currentUser.foto_perfil_url;
     }
-    
     const path = this.currentUser.foto_perfil_url.startsWith('/') 
       ? this.currentUser.foto_perfil_url 
       : `/${this.currentUser.foto_perfil_url}`;
-    
     return `${this.apiBaseUrl}${path}`;
-  }
-
-  get userInitials(): string {
-    if (!this.currentUser?.nombre_completo) return 'U';
-    const names = this.currentUser.nombre_completo.split(' ');
-    if (names.length >= 2) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return names[0][0].toUpperCase();
   }
 
   constructor(
@@ -107,29 +74,22 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private router: Router
   ) {
     const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      this.apiBaseUrl = 'http://localhost:3000';
-    } else {
-      this.apiBaseUrl = 'http://3.146.83.30:3000';
-    }
-    
+    this.apiBaseUrl = host === 'localhost' || host === '127.0.0.1'
+      ? 'http://localhost:3000'
+      : 'http://3.146.83.30:3000';
+
     this.currentTheme = this.themeService.getCurrentTheme();
     this.themes = this.themeService.getThemes();
 
-    document.addEventListener('click', (event: Event) => {
-      const target = event.target as HTMLElement;
-      if (
-        target.closest('.profile-toggle') ||
-        target.closest('.profile-dropdown') ||
-        target.closest('.theme-toggle') ||
-        target.closest('.theme-dropdown') ||
-        target.closest('.search-container') ||
-        target.closest('.search-results')
-      ) return;
-
-      this.showProfileMenu = false;
-      this.showThemeMenu = false;
-      this.showSearchResults = false;
+    document.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.profile-toggle') && !target.closest('.profile-dropdown') &&
+          !target.closest('.theme-toggle') && !target.closest('.theme-dropdown') &&
+          !target.closest('.search-container') && !target.closest('.search-results')) {
+        this.showProfileMenu = false;
+        this.showThemeMenu = false;
+        this.showSearchResults = false;
+      }
     });
   }
 
@@ -143,17 +103,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.isLoggedIn = !!user;
     });
 
-    // Configurar búsqueda con debounce
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(400),
       distinctUntilChanged()
-    ).subscribe(searchTerm => {
-      if (searchTerm.trim().length > 0) {
-        this.buscarUsuarios(searchTerm);
-      } else {
-        this.searchResults = [];
-        this.showSearchResults = false;
-      }
+    ).subscribe(term => {
+      term.trim().length > 0 ? this.buscarUsuarios(term) : this.limpiarBusqueda();
     });
   }
 
@@ -164,8 +118,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     document.body.classList.remove('mobile-menu-open');
   }
 
-  // ========== BÚSQUEDA ==========
-
+  // BÚSQUEDA
   onSearchInput(query: string): void {
     this.searchQuery = query;
     this.searchSubject.next(query);
@@ -173,20 +126,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   buscarUsuarios(termino: string): void {
     this.isSearching = true;
-    
     this.usuarioService.buscarUsuarios(termino).subscribe({
       next: (response) => {
-        if (response.success && response.data) {
-          this.searchResults = response.data;
-          this.showSearchResults = this.searchResults.length > 0;
-        } else {
-          this.searchResults = [];
-          this.showSearchResults = false;
-        }
+        this.searchResults = response.success && response.data ? response.data : [];
+        this.showSearchResults = this.searchResults.length > 0;
         this.isSearching = false;
       },
-      error: (error) => {
-        console.error('Error al buscar usuarios:', error);
+      error: () => {
         this.searchResults = [];
         this.showSearchResults = false;
         this.isSearching = false;
@@ -198,23 +144,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (!usuario.foto_perfil_url) {
       return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(usuario.nombre_completo) + '&background=random&size=100';
     }
-    
     if (usuario.foto_perfil_url.startsWith('http')) {
       return usuario.foto_perfil_url;
     }
-    
-    const path = usuario.foto_perfil_url.startsWith('/') 
-      ? usuario.foto_perfil_url 
-      : `/${usuario.foto_perfil_url}`;
-    
+    const path = usuario.foto_perfil_url.startsWith('/') ? usuario.foto_perfil_url : `/${usuario.foto_perfil_url}`;
     return `${this.apiBaseUrl}${path}`;
   }
 
   verPerfil(usuario: UsuarioBusqueda): void {
-    this.searchQuery = '';
-    this.searchResults = [];
-    this.showSearchResults = false;
-    this.showMobileSearch = false;
+    this.limpiarBusqueda();
     this.showMobileMenu = false;
     this.router.navigate(['/perfil', usuario.id]);
   }
@@ -227,13 +165,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   toggleMobileSearch(): void {
     this.showMobileSearch = !this.showMobileSearch;
-    if (!this.showMobileSearch) {
-      this.limpiarBusqueda();
-    }
+    if (!this.showMobileSearch) this.limpiarBusqueda();
   }
 
-  // ========== TEMAS ==========
-
+  // TEMAS
   applyTheme(themeId: string): void {
     this.themeService.setTheme(themeId);
     this.showThemeMenu = false;
@@ -246,76 +181,30 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showSearchResults = false;
   }
 
-  scrollThemes(direction: 'left' | 'right'): void {
-    if (!this.themeSlider) return;
-    
-    const scrollAmount = 200;
-    const container = this.themeSlider.nativeElement;
-    
-    if (direction === 'left') {
-      container.scrollLeft -= scrollAmount;
-    } else {
-      container.scrollLeft += scrollAmount;
-    }
-    
-    setTimeout(() => this.onThemeScroll(), 100);
-  }
-
-  onThemeScroll(): void {
-    if (!this.themeSlider) return;
-    
-    const container = this.themeSlider.nativeElement;
-    this.canScrollLeft = container.scrollLeft > 0;
-    this.canScrollRight = container.scrollLeft < (container.scrollWidth - container.clientWidth - 10);
-  }
-
   scrollThemesMobile(direction: 'left' | 'right'): void {
     if (!this.themeSliderMobile) return;
-    
-    const scrollAmount = 300;
     const container = this.themeSliderMobile.nativeElement;
-    
-    if (direction === 'left') {
-      container.scrollLeft -= scrollAmount;
-    } else {
-      container.scrollLeft += scrollAmount;
-    }
-    
+    container.scrollLeft += direction === 'left' ? -300 : 300;
     setTimeout(() => this.onThemeScrollMobile(), 150);
   }
 
   onThemeScrollMobile(): void {
     if (!this.themeSliderMobile) return;
-    
     const container = this.themeSliderMobile.nativeElement;
     const scrollLeft = container.scrollLeft;
     const maxScroll = container.scrollWidth - container.clientWidth;
-    
     this.canScrollLeftMobile = scrollLeft > 10;
     this.canScrollRightMobile = scrollLeft < (maxScroll - 10);
   }
 
-  // ========== MENÚ MÓVIL ==========
-
+  // MENÚ
   toggleMobileMenu(): void {
     this.showMobileMenu = !this.showMobileMenu;
     this.showProfileMenu = false;
     this.showThemeMenu = false;
-    this.showMobileProfileMenu = false;
     this.showMobileSearch = false;
-    
-    if (this.showMobileMenu) {
-      document.body.classList.add('mobile-menu-open');
-    } else {
-      document.body.classList.remove('mobile-menu-open');
-    }
+    document.body.classList.toggle('mobile-menu-open', this.showMobileMenu);
   }
-
-  toggleMobileProfileMenu(): void {
-    this.showMobileProfileMenu = !this.showMobileProfileMenu;
-  }
-
-  // ========== PERFIL ==========
 
   toggleProfileMenu(event: MouseEvent): void {
     event.stopPropagation();
@@ -329,20 +218,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
       next: () => {
         this.showProfileMenu = false;
         this.showMobileMenu = false;
-        this.showMobileProfileMenu = false;
         this.showThemeMenu = false;
         document.body.classList.remove('mobile-menu-open');
         this.router.navigate(['/login']);
       },
-      error: (error) => {
-        console.error('Error en logout:', error);
+      error: () => {
         this.authService.limpiarSesion();
         this.router.navigate(['/login']);
       }
     });
   }
-
-  // ========== CREAR POST ==========
 
   onOpenCreate(): void {
     this.showCrearPost = true;

@@ -26,6 +26,10 @@
   background: black;
 }
 
+app-post-card {
+  margin-bottom: 2rem; /* 32px para más espacio */
+}
+
 /* Imagen adaptativa que se ajusta al contenido */
 .cursor-pointer img {
   width: 100%;

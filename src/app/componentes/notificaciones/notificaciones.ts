@@ -18,6 +18,12 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   @Input() isMobile = false;
   @Output() close = new EventEmitter<void>();
 
+  // ✅ URLs Base
+  public readonly apiBaseUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'http://3.146.83.30:3000';
+  public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
+
   // Estado UI
   showNotifications = false;
   cargando = false;
@@ -148,7 +154,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          console.log('📦 Notificaciones recibidas:', response);
+          console.log(' Notificaciones recibidas:', response);
           
           if (response.success && response.data) {
             this.notificaciones = response.data.notificaciones || [];
@@ -162,7 +168,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
           this.cargando = false;
         },
         error: (error) => {
-          console.error('❌ Error al cargar notificaciones:', error);
+          console.error('Error al cargar notificaciones:', error);
           this.error = true;
           this.cargando = false;
         }
@@ -199,7 +205,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
             console.log('✅ Notificación marcada como leída:', notificacion.id);
           },
           error: (error) => {
-            console.error('❌ Error al marcar como leída:', error);
+            console.error('Error al marcar como leída:', error);
           }
         });
     }
@@ -224,7 +230,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('❌ Error al marcar todas como leídas:', error);
+          console.error('Error al marcar todas como leídas:', error);
           if (this.isMobile) {
             this.mostrarFeedback('Error al marcar como leídas ✗');
           }
@@ -252,7 +258,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('❌ Error al eliminar notificación:', error);
+          console.error(' Error al eliminar notificación:', error);
           if (this.isMobile) {
             this.mostrarFeedback('Error al eliminar ✗');
           }
@@ -317,7 +323,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
         return notificacion.foto_perfil_url;
       }
       
-      return `http://3.146.83.30:3000${notificacion.foto_perfil_url}`;
+      return `${this.apiBaseUrl}${notificacion.foto_perfil_url}`;
     }
     
     // Fallback: generar avatar con las iniciales
@@ -377,7 +383,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
 
   recargar(): void {
     if (this.cargando) {
-      console.log('⏳ Ya hay una recarga en progreso');
+      console.log('Ya hay una recarga en progreso');
       return;
     }
     

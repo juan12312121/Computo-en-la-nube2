@@ -125,16 +125,13 @@
 
       <!-- LISTA DE NOTIFICACIONES -->
       <div *ngIf="!cargando && !error && hayNotificaciones">
-        <button
+        <div
           *ngFor="let notificacion of notificaciones"
-          (click)="manejarClicNotificacion(notificacion)"
-          class="w-full flex items-start gap-3 px-4 py-3 transition-all duration-200 border-b group relative touch-manipulation"
+          class="w-full flex items-start gap-3 px-4 py-3 transition-all duration-200 border-b group relative"
           [ngClass]="[
-            currentTheme.hoverBgLight || '',
             currentTheme.borderColor || '',
             notificacion.leida ? 'opacity-60' : ''
-          ]"
-          [attr.aria-label]="'Notificación de ' + notificacion.nombre_completo">
+          ]">
           
           <!-- Indicador de no leída -->
           <div 
@@ -143,8 +140,11 @@
             [style.background]="currentTheme.color"
             aria-hidden="true"></div>
 
-          <!-- Avatar -->
-          <div class="relative flex-shrink-0 ml-2">
+          <!-- Avatar (clickeable) -->
+          <button 
+            (click)="manejarClicNotificacion(notificacion)"
+            class="relative flex-shrink-0 ml-2 touch-manipulation"
+            [attr.aria-label]="'Ver notificación de ' + notificacion.nombre_completo">
             <img 
               [src]="obtenerAvatar(notificacion)"
               [alt]="notificacion.nombre_completo"
@@ -161,10 +161,14 @@
               aria-hidden="true">
               {{ obtenerIconoTipo(notificacion.tipo) }}
             </div>
-          </div>
+          </button>
 
-          <!-- Contenido -->
-          <div class="flex-1 min-w-0 text-left">
+          <!-- Contenido (clickeable) -->
+          <button
+            (click)="manejarClicNotificacion(notificacion)"
+            class="flex-1 min-w-0 text-left touch-manipulation"
+            [ngClass]="currentTheme.hoverBgLight || ''"
+            [attr.aria-label]="'Notificación: ' + notificacion.mensaje">
             <p class="text-sm font-medium mb-0.5 leading-snug" [ngClass]="currentTheme.textPrimaryClass || ''">
               <span class="font-bold">{{ notificacion.nombre_completo }}</span>
               <span class="font-normal ml-1">{{ obtenerMensajeCorto(notificacion.mensaje) }}</span>
@@ -173,17 +177,17 @@
             <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
               {{ formatearTiempo(notificacion.fecha_creacion) }}
             </p>
-          </div>
+          </button>
 
-          <!-- Botón eliminar -->
+          <!-- Botón eliminar (SIEMPRE VISIBLE) -->
           <button
             (click)="eliminarNotificacion(notificacion.id, $event)"
-            class="flex-shrink-0 p-2 rounded-md transition-all duration-200 hover:bg-red-50 hover:text-red-600 md:opacity-0 md:group-hover:opacity-100 touch-manipulation"
-            title="Eliminar"
+            class="flex-shrink-0 p-2 rounded-md transition-all duration-200 hover:bg-red-50 hover:text-red-600 touch-manipulation"
+            title="Eliminar notificación"
             aria-label="Eliminar notificación">
             <i class="fas fa-trash text-xs"></i>
           </button>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -217,13 +221,28 @@
     <h1 class="text-xl font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">
       Notificaciones
     </h1>
-    <button
-      (click)="cerrarNotificaciones()"
-      class="p-2 rounded-lg transition-all active:scale-90"
-      [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
-      aria-label="Cerrar">
-      <i class="fas fa-times text-lg"></i>
-    </button>
+    
+    <div class="flex items-center gap-2">
+      <!-- Marcar todas como leídas (móvil) -->
+      <button
+        *ngIf="notificationsCount > 0"
+        (click)="marcarTodasComoLeidas()"
+        class="p-2 rounded-lg transition-all active:scale-90"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
+        title="Marcar todas como leídas"
+        aria-label="Marcar todas como leídas">
+        <i class="fas fa-check-double text-base"></i>
+      </button>
+
+      <!-- Cerrar -->
+      <button
+        (click)="cerrarNotificaciones()"
+        class="p-2 rounded-lg transition-all active:scale-90"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
+        aria-label="Cerrar">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
   </div>
 
   <!-- CONTENIDO PRINCIPAL -->
@@ -271,44 +290,54 @@
     <!-- LISTA DE NOTIFICACIONES -->
     <div *ngIf="!cargando && !error && hayNotificaciones" class="divide-y"
          [ngClass]="currentTheme.borderColor || ''">
-      <button
+      <div
         *ngFor="let notificacion of notificaciones"
-        (click)="manejarClicNotificacion(notificacion)"
-        class="w-full flex items-center gap-3 px-4 py-3 transition-colors active:opacity-50"
-        [ngClass]="[
-          currentTheme.hoverBgLight || '',
-          notificacion.leida ? 'opacity-60' : ''
-        ]"
-        [attr.aria-label]="'Notificación de ' + notificacion.nombre_completo">
+        class="w-full flex items-center gap-3 px-4 py-3 relative"
+        [ngClass]="notificacion.leida ? 'opacity-60' : ''">
         
-        <!-- Avatar -->
-        <img 
-          [src]="obtenerAvatar(notificacion)"
-          [alt]="notificacion.nombre_completo"
-          (error)="$any($event.target).src=obtenerAvatarFallback(notificacion.nombre_completo)"
-          class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-          loading="lazy">
-        
-        <!-- Contenido -->
-        <div class="flex-1 min-w-0 text-left">
-          <p class="text-sm leading-tight" [ngClass]="currentTheme.textPrimaryClass || ''">
-            <span class="font-semibold">{{ notificacion.nombre_completo }}</span>
-            <span class="font-normal"> {{ obtenerMensajeCorto(notificacion.mensaje) }}</span>
-          </p>
-          <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
-            {{ formatearTiempo(notificacion.fecha_creacion) }}
-          </p>
-        </div>
+        <!-- Contenedor clickeable (Avatar + Contenido) -->
+        <button
+          (click)="manejarClicNotificacion(notificacion)"
+          class="flex items-center gap-3 flex-1 min-w-0 text-left transition-colors active:opacity-50"
+          [attr.aria-label]="'Notificación de ' + notificacion.nombre_completo">
+          
+          <!-- Avatar -->
+          <img 
+            [src]="obtenerAvatar(notificacion)"
+            [alt]="notificacion.nombre_completo"
+            (error)="$any($event.target).src=obtenerAvatarFallback(notificacion.nombre_completo)"
+            class="w-12 h-12 rounded-full object-cover flex-shrink-0"
+            loading="lazy">
+          
+          <!-- Contenido -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm leading-tight" [ngClass]="currentTheme.textPrimaryClass || ''">
+              <span class="font-semibold">{{ notificacion.nombre_completo }}</span>
+              <span class="font-normal"> {{ obtenerMensajeCorto(notificacion.mensaje) }}</span>
+            </p>
+            <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+              {{ formatearTiempo(notificacion.fecha_creacion) }}
+            </p>
+          </div>
 
-        <!-- Indicador no leído -->
-        <div 
-          *ngIf="!notificacion.leida"
-          class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-          [style.background]="currentTheme.color"
-          aria-hidden="true"></div>
-      </button>
+          <!-- Indicador no leído -->
+          <div 
+            *ngIf="!notificacion.leida"
+            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            [style.background]="currentTheme.color"
+            aria-hidden="true"></div>
+        </button>
+
+        <!-- Botón eliminar (SEPARADO Y SIEMPRE VISIBLE) -->
+        <button
+          (click)="eliminarNotificacion(notificacion.id, $event)"
+          class="flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 text-red-500"
+          [ngClass]="currentTheme.hoverBgLight || ''"
+          title="Eliminar notificación"
+          aria-label="Eliminar notificación">
+          <i class="fas fa-trash text-sm"></i>
+        </button>
+      </div>
     </div>
   </div>
-
-
 </div>

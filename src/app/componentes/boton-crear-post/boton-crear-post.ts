@@ -22,8 +22,11 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   private authSubscription?: Subscription;
   private themeSubscription?: Subscription;
 
-  // ✅ API Base URL
-  apiBaseUrl: string;
+  // ✅ URLs Base
+  public readonly apiBaseUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'http://3.146.83.30:3000';
+  public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
   postContent = '';
   selectedImage: string | null = null;
@@ -49,12 +52,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     private elementRef: ElementRef,
     private renderer: Renderer2
   ) {
-    // ✅ Configurar API Base URL
-    const host = window.location.hostname;
-    this.apiBaseUrl = (host === 'localhost' || host === '127.0.0.1')
-      ? 'http://localhost:3000'
-      : 'http://3.146.83.30:3000';
-
     this.currentTheme = this.themeService.getCurrentTheme();
   }
 

@@ -48,16 +48,16 @@
   <div>
     <!-- Todo Tab Content -->
     <div *ngIf="activeTab === 'todo'">
-      <app-publicaciones-perfil
-        [publicaciones]="publicacionesReales"
-        [cargando]="cargandoPublicaciones"
-        [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
-        [usuarioIniciales]="getInitials()"
-        [apiBaseUrl]="getS3BaseUrl()"
-        [usuarioFotoPerfil]="getProfileImage()"
-        (likeToggled)="onLikeToggled($event)">
-      </app-publicaciones-perfil>
-    </div>
+  <app-publicaciones-perfil
+    [publicaciones]="publicacionesReales"
+    [cargando]="cargandoPublicaciones"
+    [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
+    [usuarioIniciales]="getInitials()"
+    [apiBaseUrl]="'http://3.146.83.30:3000'"
+    [usuarioFotoPerfil]="getProfileImage()"
+    (likeToggled)="onLikeToggled($event)">
+  </app-publicaciones-perfil>
+</div>
 
     <!-- Fotos Tab Content -->
     <div *ngIf="activeTab === 'fotos'">
@@ -69,12 +69,11 @@
 
     <!-- Documentos Tab Content -->
     <div *ngIf="activeTab === 'documentos'">
-      <app-documentos-lista
-        [documents]="documents"
-        [currentTheme]="currentTheme"
-        (downloadDocument)="onDocumentDownload($event)">
-      </app-documentos-lista>
-    </div>
+  <app-documentos-lista
+    [currentTheme]="currentTheme"
+    (downloadDocument)="onDocumentDownload($event)">
+  </app-documentos-lista>
+</div>
 
     <!-- Secciones Tab Content -->
     <div *ngIf="activeTab === 'secciones'">

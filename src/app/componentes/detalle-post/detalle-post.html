@@ -353,7 +353,7 @@
            [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
         <i class="fas fa-link" [ngClass]="currentTheme.accentColor"></i>
         <input type="text" 
-               [value]="'https://redstudent.com/post/' + post?.id" 
+               [value]="'http://3.146.83.30:4200/principal/post/' + post?.id" 
                readonly 
                class="flex-1 bg-transparent text-sm outline-none"
                [ngClass]="currentTheme.textSecondaryClass">

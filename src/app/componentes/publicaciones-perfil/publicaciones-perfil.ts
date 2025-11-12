@@ -42,10 +42,11 @@ interface Comment {
 }
 
 interface Photo {
-  id: number;
+  id: number | string;
   url: string;
   caption: string;
   postId: number;
+  tipo: 'perfil' | 'portada' | 'publicacion';
 }
 
 @Component({
@@ -66,27 +67,19 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   @Output() likeToggled = new EventEmitter<number>();
   @Output() postShared = new EventEmitter<{postId: number, platform: string}>();
 
-  // Datos convertidos
   posts: Post[] = [];
   photos: Photo[] = [];
   commentInputs: { [key: number]: string } = {};
 
-  // Detalle de post
   selectedPost: Post | null = null;
   showPostDetail = false;
 
-  // Compartir
   showShareModal = false;
   sharePostId: number | null = null;
 
-  // Tema
   currentTheme: Theme;
   private themeSubscription?: Subscription;
-
-  // Usuario actual
   private usuarioActualId: number | null = null;
-
-  // Control de carga de comentarios
   private comentariosSubscriptions: Map<number, Subscription> = new Map();
 
   constructor(
@@ -95,7 +88,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     private autenticacionService: AutenticacionService
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
-    // Obtener el ID del usuario actual desde currentUserValue
     const currentUser = this.autenticacionService.currentUserValue;
     this.usuarioActualId = currentUser ? currentUser.id : null;
   }
@@ -113,57 +105,90 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['publicaciones'] && this.publicaciones) {
-      this.actualizarPostsDesdeAPI();
+    console.log('🔄 ngOnChanges llamado');
+    
+    if (changes['publicaciones']) {
+      const nuevasPublicaciones = changes['publicaciones'].currentValue as Publicacion[];
+      console.log('📋 Publicaciones:', nuevasPublicaciones?.length || 0);
+
+      if (nuevasPublicaciones && nuevasPublicaciones.length > 0) {
+        console.log('✅ Actualizando posts...');
+        this.actualizarPostsDesdeAPI();
+      }
     }
   }
 
-  // ==================== CONVERSIÓN DE DATOS ====================
-  
   private actualizarPostsDesdeAPI(): void {
-    this.posts = this.publicaciones.map(pub => this.convertirPublicacionAPost(pub));
+    console.log('🔄 Procesando publicaciones...');
+    console.log('📍 apiBaseUrl:', this.apiBaseUrl);
     
-    // Actualizar también las fotos desde las publicaciones con imagen
-    this.photos = this.publicaciones
-      .filter(pub => pub.imagen_url || pub.imagen_s3)
-      .map((pub) => ({
+    this.posts = this.publicaciones.map(pub => {
+      const urlImagen = this.obtenerUrlImagen(pub);
+      
+      return {
         id: pub.id,
-        url: this.obtenerUrlImagen(pub)!,
-        caption: pub.contenido.substring(0, 50) + (pub.contenido.length > 50 ? '...' : ''),
-        postId: pub.id
-      }));
-  }
+        author: pub.nombre_completo || pub.nombre_usuario || 'Usuario',
+        avatar: this.obtenerIniciales(pub.nombre_completo || pub.nombre_usuario || 'Usuario'),
+        time: this.calcularTiempoTranscurrido(pub.fecha_creacion),
+        content: pub.contenido,
+        image: urlImagen,
+        category: pub.categoria || 'General',
+        categoryColor: pub.color_categoria || 'bg-gray-500',
+        likes: 0,
+        liked: false,
+        shares: 0,
+        avatarColor: this.generarColorAvatar(pub.usuario_id),
+        comments: [],
+        profileImageUrl: this.obtenerUrlFotoPerfil(pub),
+        showComments: false,
+        totalComments: 0,
+        loadingComments: false,
+        hasMoreComments: false
+      };
+    });
 
-  private convertirPublicacionAPost(pub: Publicacion): Post {
-    return {
-      id: pub.id,
-      author: pub.nombre_completo || pub.nombre_usuario || 'Usuario',
-      avatar: this.obtenerIniciales(pub.nombre_completo || pub.nombre_usuario || 'Usuario'),
-      time: this.calcularTiempoTranscurrido(pub.fecha_creacion),
-      content: pub.contenido,
-      image: this.obtenerUrlImagen(pub),
-      category: pub.categoria || 'General',
-      categoryColor: pub.color_categoria || 'bg-gray-500',
-      likes: 0,
-      liked: false,
-      shares: 0,
-      avatarColor: this.generarColorAvatar(pub.usuario_id),
-      comments: [],
-      profileImageUrl: this.obtenerUrlFotoPerfil(pub),
-      showComments: false,
-      totalComments: 0,
-      loadingComments: false,
-      hasMoreComments: false
-    };
+    const postsConImagen = this.posts.filter(p => p.image).length;
+    console.log('✅ Posts procesados:', this.posts.length);
+    console.log('🖼️ Posts con imágenes:', postsConImagen);
   }
 
   private obtenerUrlImagen(pub: Publicacion): string | null {
+    // Priorizar imagen_s3
     if (pub.imagen_s3) {
-      return pub.imagen_s3.startsWith('http') ? pub.imagen_s3 : `${this.apiBaseUrl}${pub.imagen_s3}`;
+      if (pub.imagen_s3.includes('/undefined')) {
+        return null;
+      }
+      
+      // Si ya contiene S3 o http, devolverla tal cual
+      if (pub.imagen_s3.includes('s3') || pub.imagen_s3.startsWith('http')) {
+        return pub.imagen_s3;
+      }
+      
+      // Completar con apiBaseUrl si es necesario
+      if (this.apiBaseUrl) {
+        return `${this.apiBaseUrl}${pub.imagen_s3}`;
+      }
+      
+      return pub.imagen_s3;
     }
+
+    // Fallback a imagen_url
     if (pub.imagen_url) {
-      return pub.imagen_url.startsWith('http') ? pub.imagen_url : `${this.apiBaseUrl}${pub.imagen_url}`;
+      if (pub.imagen_url.includes('/undefined')) {
+        return null;
+      }
+      
+      if (pub.imagen_url.includes('s3') || pub.imagen_url.startsWith('http')) {
+        return pub.imagen_url;
+      }
+      
+      if (this.apiBaseUrl) {
+        return `${this.apiBaseUrl}${pub.imagen_url}`;
+      }
+      
+      return pub.imagen_url;
     }
+
     return null;
   }
 
@@ -171,10 +196,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     const fotoPerfil = (pub as any).foto_perfil_url;
     
     if (fotoPerfil) {
-      if (fotoPerfil.startsWith('http')) {
-        return fotoPerfil;
-      }
-      return `${this.apiBaseUrl}${fotoPerfil}`;
+      return fotoPerfil.startsWith('http') ? fotoPerfil : `${this.apiBaseUrl}${fotoPerfil}`;
     }
     
     return this.usuarioFotoPerfil;
@@ -220,48 +242,28 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     return colores[usuarioId % colores.length];
   }
 
-  // ==================== MANEJO DE COMENTARIOS ====================
-  
-  /**
-   * Cargar comentarios de una publicación desde el backend
-   * ✅ CORREGIDO: El servicio devuelve Observable<Comentario[]> directamente
-   */
   cargarComentarios(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
 
     post.loadingComments = true;
 
-    // Cancelar suscripción anterior si existe
     const subscription = this.comentariosSubscriptions.get(postId);
     if (subscription) {
       subscription.unsubscribe();
     }
 
-    // ✅ El servicio devuelve Observable<Comentario[]> directamente
     const newSubscription = this.comentariosService.obtenerPorPublicacion(postId, 20, 0).subscribe({
       next: (comentarios) => {
-        console.log('✅ Comentarios recibidos:', {
-          tipo: typeof comentarios,
-          esArray: Array.isArray(comentarios),
-          cantidad: Array.isArray(comentarios) ? comentarios.length : 'N/A'
-        });
-
-        // ✅ comentarios YA ES UN ARRAY
         if (Array.isArray(comentarios)) {
           post.comments = comentarios.map(c => this.convertirComentarioAComment(c));
           post.totalComments = comentarios.length;
-          post.hasMoreComments = false; // No hay paginación en este enfoque
-        } else {
-          console.warn('⚠️ comentarios no es array');
-          post.comments = [];
-          post.totalComments = 0;
+          post.hasMoreComments = false;
         }
-        
         post.loadingComments = false;
       },
       error: (error) => {
-        console.error('❌ Error al cargar comentarios:', error);
+        console.error('Error al cargar comentarios:', error);
         post.comments = [];
         post.totalComments = 0;
         post.loadingComments = false;
@@ -271,55 +273,41 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     this.comentariosSubscriptions.set(postId, newSubscription);
   }
 
-  /**
-   * Cargar más comentarios (infinite scroll)
-   * ✅ CORREGIDO: Adaptado al nuevo servicio
-   */
   cargarMasComentarios(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post || post.loadingComments || !post.hasMoreComments) return;
 
     post.loadingComments = true;
 
-    // ✅ El servicio devuelve Observable<Comentario[]> directamente
     this.comentariosService.obtenerPorPublicacion(postId, 20, post.comments.length).subscribe({
       next: (comentarios) => {
         if (Array.isArray(comentarios) && comentarios.length > 0) {
           const nuevosComentarios = comentarios.map(c => this.convertirComentarioAComment(c));
           post.comments = [...post.comments, ...nuevosComentarios];
-          post.hasMoreComments = comentarios.length === 20; // Si trae 20, hay más
+          post.hasMoreComments = comentarios.length === 20;
         } else {
           post.hasMoreComments = false;
         }
         post.loadingComments = false;
       },
-      error: (error) => {
-        console.error('❌ Error al cargar más comentarios:', error);
+      error: () => {
         post.hasMoreComments = false;
         post.loadingComments = false;
       }
     });
   }
 
-  /**
-   * Convertir un Comentario del backend a Comment de la UI
-   */
   private convertirComentarioAComment(comentario: Comentario): Comment {
-    // Priorizar foto_perfil_s3 sobre foto_perfil_url
     let fotoPerfilUrl: string | null = null;
     
     if (comentario.foto_perfil_s3) {
-      if (comentario.foto_perfil_s3.startsWith('http')) {
-        fotoPerfilUrl = comentario.foto_perfil_s3;
-      } else {
-        fotoPerfilUrl = `${this.apiBaseUrl}${comentario.foto_perfil_s3}`;
-      }
+      fotoPerfilUrl = comentario.foto_perfil_s3.startsWith('http')
+        ? comentario.foto_perfil_s3
+        : `${this.apiBaseUrl}${comentario.foto_perfil_s3}`;
     } else if (comentario.foto_perfil_url) {
-      if (comentario.foto_perfil_url.startsWith('http')) {
-        fotoPerfilUrl = comentario.foto_perfil_url;
-      } else {
-        fotoPerfilUrl = `${this.apiBaseUrl}${comentario.foto_perfil_url}`;
-      }
+      fotoPerfilUrl = comentario.foto_perfil_url.startsWith('http')
+        ? comentario.foto_perfil_url
+        : `${this.apiBaseUrl}${comentario.foto_perfil_url}`;
     }
 
     return {
@@ -335,9 +323,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     };
   }
 
-  /**
-   * Agregar un nuevo comentario
-   */
   addComment(postId: number, commentText: string): void {
     const text = commentText.trim();
     if (!text) return;
@@ -345,34 +330,24 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
 
-    // Crear el comentario en el backend
     this.comentariosService.crear({
       publicacion_id: postId,
       texto: text
     }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          // Agregar el comentario a la lista
           const nuevoComentario = this.convertirComentarioAComment(response.data);
-          post.comments.unshift(nuevoComentario); // Agregar al inicio
+          post.comments.unshift(nuevoComentario);
           post.totalComments = (post.totalComments || 0) + 1;
-          
-          // Limpiar el input
           this.commentInputs[postId] = '';
-          
-          console.log('✅ Comentario agregado correctamente a publicación:', postId);
         }
       },
-      error: (error) => {
-        console.error('❌ Error al crear comentario:', error);
-        alert('No se pudo agregar el comentario. Intenta de nuevo.');
+      error: () => {
+        alert('No se pudo agregar el comentario.');
       }
     });
   }
 
-  /**
-   * Eliminar un comentario
-   */
   eliminarComentario(postId: number, comentarioId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
@@ -383,27 +358,21 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
       return;
     }
 
-    if (!confirm('¿Estás seguro de que deseas eliminar este comentario?')) {
-      return;
-    }
+    if (!confirm('¿Estás seguro?')) return;
 
     this.comentariosService.eliminar(comentarioId).subscribe({
       next: (response) => {
         if (response.success) {
-          // Eliminar el comentario de la lista
           post.comments = post.comments.filter(c => c.id !== comentarioId);
           post.totalComments = Math.max(0, (post.totalComments || 0) - 1);
         }
       },
-      error: (error) => {
-        console.error('❌ Error al eliminar comentario:', error);
-        alert('No se pudo eliminar el comentario. Intenta de nuevo.');
+      error: () => {
+        alert('Error al eliminar el comentario.');
       }
     });
   }
 
-  // ==================== MANEJO DE POSTS ====================
-  
   toggleLike(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (post) {
@@ -419,7 +388,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
 
     post.showComments = !post.showComments;
 
-    // Si se están mostrando los comentarios y aún no se han cargado, cargarlos
     if (post.showComments && post.comments.length === 0 && !post.loadingComments) {
       this.cargarComentarios(postId);
     }
@@ -432,8 +400,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     }
   }
 
-  // ==================== COMPARTIR ====================
-  
   openShareModal(postId: number): void {
     this.sharePostId = postId;
     const post = this.posts.find(p => p.id === postId);
@@ -464,19 +430,15 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     if (post) {
       post.shares += data.userIds.length;
     }
-    console.log('Compartiendo post con usuarios:', data);
     this.closeShareModal();
   }
 
-  // ==================== DETALLE DE POST ====================
-  
   openPostDetail(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (post) {
       this.selectedPost = post;
       this.showPostDetail = true;
       
-      // Cargar comentarios si no se han cargado
       if (post.comments.length === 0 && !post.loadingComments) {
         this.cargarComentarios(postId);
       }
@@ -507,9 +469,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     }
   }
 
-  /**
-   * TrackBy para optimizar el rendering de comentarios en ngFor
-   */
   trackByCommentId(index: number, comment: Comment): number {
     return comment.id;
   }

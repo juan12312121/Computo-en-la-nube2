@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { NavbarComponent } from '../../componentes/navbar/navbar';
+import { Navbar } from '../../componentes/navbar/navbar';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
 import { LikesService } from '../../core/servicios/likes/likes';
 import { Publicacion, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
@@ -53,7 +53,7 @@ const AVATAR_COLORS = [
 @Component({
   selector: 'app-explorar',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './explorar.html',
   styleUrl: './explorar.css'
 })
@@ -343,5 +343,18 @@ export class Explorar implements OnInit, OnDestroy {
 
   trackByPostId(index: number, post: Post): number {
     return post.id;
+  }
+
+  trackByTag(index: number, tag: Tag): string {
+    return tag.name;
+  }
+
+  // Método helper para convertir hex a rgb (útil para algunos estilos)
+  hexToRgb(hex: string): string {
+    if (!hex) return '107, 114, 128'; // gray-500 default
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result 
+      ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+      : '107, 114, 128';
   }
 }
