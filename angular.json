@@ -11,8 +11,9 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
+            "outputPath": "dist/frontend-trinoflow",
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
@@ -21,7 +22,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/"
               }
             ],
             "styles": [
@@ -31,40 +33,42 @@
           "configurations": {
             "production": {
               "budgets": [
-  {
-    "type": "initial",
-    "maximumWarning": "2mb",
-    "maximumError": "5mb"
-  },
-  {
-    "type": "anyComponentStyle",
-    "maximumWarning": "50kb",
-    "maximumError": "100kb"
-  }
-],
-
-              "outputHashing": "all"
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "50kb",
+                  "maximumError": "100kb"
+                }
+              ],
+              "outputHashing": "all",
+              "optimization": true,
+              "sourceMap": false,
+              "extractLicenses": true,
+              "buildOptimizer": true
             },
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "buildOptimizer": false
             }
           },
           "defaultConfiguration": "production"
         },
-
-"serve": {
-  "builder": "@angular/build:dev-server",
-  "options": {
-    "host": "0.0.0.0",
-    "port": 4200,
-    "allowedHosts": [
-      "mi-load-balancer-1124532082.us-east-2.elb.amazonaws.com",
-      ".elb.amazonaws.com"
-    ]
-  },
-
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "host": "0.0.0.0",
+            "port": 4200,
+            "allowedHosts": [
+              "mi-load-balancer-1124532082.us-east-2.elb.amazonaws.com",
+              ".elb.amazonaws.com"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "frontend-trinoflow:build:production"
@@ -76,10 +80,10 @@
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
-          "builder": "@angular/build:extract-i18n"
+          "builder": "@angular-devkit/build-angular:extract-i18n"
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "polyfills": [
               "zone.js",
@@ -89,7 +93,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/"
               }
             ],
             "styles": [
