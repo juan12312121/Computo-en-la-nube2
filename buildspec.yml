@@ -1,8 +1,9 @@
 version: 0.2
+
 phases:
   install:
     runtime-versions:
-      nodejs: 20
+      nodejs: 22
     commands:
       - echo "Instalando Angular CLI y dependencias..."
       - npm install -g @angular/cli
@@ -10,7 +11,7 @@ phases:
   build:
     commands:
       - echo "Compilando proyecto Angular en producción..."
-      - ng build --configuration production
+      - npx ng build --configuration production
 artifacts:
   files:
     - '**/*'
