@@ -60,17 +60,14 @@
           "options": {
             "host": "0.0.0.0",
             "port": 4200,
-            "allowedHosts": [
-              "mi-load-balancer-1124532082.us-east-2.elb.amazonaws.com",
-              ".elb.amazonaws.com"
-            ]
+            "buildTarget": "frontend-trinoflow:build:development"
           },
           "configurations": {
             "production": {
-              "browserTarget": "frontend-trinoflow:build:production"
+              "buildTarget": "frontend-trinoflow:build:production"
             },
             "development": {
-              "browserTarget": "frontend-trinoflow:build:development"
+              "buildTarget": "frontend-trinoflow:build:development"
             }
           },
           "defaultConfiguration": "development"

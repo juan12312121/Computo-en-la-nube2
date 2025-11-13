@@ -133,6 +133,20 @@ selectedTab: 'redes' = 'redes';
   // ========== OCULTAR ==========
   ocultarLoading = false;
 
+
+  usuarioActual: any = null;
+usuariosActivos: any[] = [];
+usuariosSugeridos: any[] = [];
+categoriasDisponibles = [
+  { nombre: 'Tecnología', icon: 'fa-laptop-code', color: 'text-blue-500', filtro: 'Tecnología' },
+  { nombre: 'Deportes', icon: 'fa-futbol', color: 'text-green-500', filtro: 'Deportes' },
+  { nombre: 'Arte', icon: 'fa-palette', color: 'text-purple-500', filtro: 'Arte' },
+  { nombre: 'Ciencia', icon: 'fa-flask', color: 'text-teal-500', filtro: 'Ciencia' },
+  { nombre: 'Música', icon: 'fa-music', color: 'text-pink-500', filtro: 'Música' },
+  { nombre: 'Gaming', icon: 'fa-gamepad', color: 'text-indigo-500', filtro: 'Gaming' }
+];
+categoriaSeleccionada: string | null = null;
+
   // ========== CACHE LOCAL ==========
   publicacionesOcultas = new Set<number>();
   publicacionesNoInteresan = new Set<number>();
@@ -1062,7 +1076,7 @@ copyLink(): void {
   }
 
   // ========== UTILIDADES ==========
-  private obtenerUsuarioActualId(): number | null {
+  public obtenerUsuarioActualId(): number | null {
     const user = localStorage.getItem('currentUser');
     if (!user) return null;
     try {
@@ -1072,7 +1086,7 @@ copyLink(): void {
     }
   }
 
-  private obtenerIniciales(nombre: string): string {
+  public obtenerIniciales(nombre: string): string {
     if (!nombre) return 'U';
     const palabras = nombre.trim().split(' ');
     return palabras.length >= 2
@@ -1080,7 +1094,7 @@ copyLink(): void {
       : nombre.substring(0, 2).toUpperCase();
   }
 
-  private formatearTiempo(fecha: string): string {
+  public formatearTiempo(fecha: string): string {
     const diff = Date.now() - new Date(fecha).getTime();
     const min = Math.floor(diff / 60000);
     const hrs = Math.floor(diff / 3600000);
@@ -1125,7 +1139,7 @@ private normalizarUrlImagen(url: string): string | null {
   return url;
 }
 
-  private generarColorAvatar(id: number): string {
+  public generarColorAvatar(id: number): string {
     return AVATAR_COLORS[id % AVATAR_COLORS.length];
   }
 
@@ -1185,4 +1199,91 @@ private normalizarUrlImagen(url: string): string | null {
   trackByUserId(index: number, user: User): number {
     return user.id;
   }
+
+
+  // ========== MÉTODOS SIDEBARS (NUEVO) ==========
+private cargarDatosUsuarioActual(): void {
+  const userStr = localStorage.getItem('currentUser');
+  if (userStr) {
+    try {
+      this.usuarioActual = JSON.parse(userStr);
+      console.log('✅ Usuario actual cargado:', this.usuarioActual);
+    } catch (error) {
+      console.error('❌ Error al parsear usuario actual:', error);
+    }
+  }
+}
+
+private cargarUsuariosActivosEstatico(): void {
+  // Datos estáticos de ejemplo
+  this.usuariosActivos = [
+    {
+      id: 2,
+      nombre_usuario: 'elasaltacunas',
+      nombre_completo: 'Jesus Ayala',
+      foto_perfil_url: null,
+      carrera: 'Licenciatura en levantar culitos en el gym',
+      total_seguidores: 45,
+      estaConectado: true
+    },
+    {
+      id: 3,
+      nombre_usuario: 'Juan',
+      nombre_completo: 'Campos',
+      foto_perfil_url: null,
+      carrera: 'Ingeniería en Software',
+      total_seguidores: 23,
+      estaConectado: true
+    }
+  ];
+  console.log('✅ Usuarios activos cargados (estático):', this.usuariosActivos.length);
+}
+
+private cargarUsuariosSugeridosEstatico(): void {
+  // Datos estáticos de ejemplo
+  this.usuariosSugeridos = [
+    {
+      id: 4,
+      nombre_usuario: 'maria_tech',
+      nombre_completo: 'María González',
+      foto_perfil_url: null,
+      carrera: 'Ingeniería en Sistemas',
+      total_seguidores: 156,
+      razon: 'Sigue a 3 de tus amigos'
+    },
+    {
+      id: 5,
+      nombre_usuario: 'carlos_dev',
+      nombre_completo: 'Carlos Ramírez',
+      foto_perfil_url: null,
+      carrera: 'Desarrollo Web',
+      total_seguidores: 89,
+      razon: 'Popular en tu red'
+    }
+  ];
+  console.log('✅ Usuarios sugeridos cargados (estático):', this.usuariosSugeridos.length);
+}
+
+filtrarPorCategoria(categoria: string): void {
+  this.categoriaSeleccionada = this.categoriaSeleccionada === categoria ? null : categoria;
+  
+  if (this.categoriaSeleccionada) {
+    console.log('🔍 Filtrando por categoría:', categoria);
+    // TODO: Implementar filtro real cuando conectes con la API
+  } else {
+    console.log('🔍 Mostrando todas las categorías');
+  }
+}
+
+navegarAPerfil(): void {
+  console.log('👤 Navegando a perfil del usuario:', this.usuarioActualId);
+  // TODO: Implementar navegación cuando tengas las rutas
+  alert('Navegación a perfil en desarrollo');
+}
+
+seguirUsuario(usuarioId: number): void {
+  console.log('➕ Siguiendo usuario:', usuarioId);
+  // TODO: Implementar cuando conectes con la API
+  alert('Funcionalidad de seguir en desarrollo');
+}
 }

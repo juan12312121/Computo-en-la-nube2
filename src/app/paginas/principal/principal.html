@@ -1,239 +1,451 @@
 <!-- NAVBAR -->
 <app-navbar (openCreate)="openCreateModal()"></app-navbar>
 
-<!-- MAIN FEED CONTAINER -->
-<div class="max-w-2xl mx-auto px-2 sm:px-4 py-3 sm:py-6 space-y-3 sm:space-y-4">
+<!-- LAYOUT PRINCIPAL: 3 COLUMNAS -->
+<div class="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
 
-  <!-- LOADING STATE -->
-  <div *ngIf="isLoading" class="text-center py-12">
-    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2"
-         [ngClass]="'border-' + currentThemeData.textPrimary?.replace('text-', '')"></div>
-    <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
-      Cargando publicaciones...
-    </p>
-  </div>
+    <!-- ============================================ -->
+    <!-- SIDEBAR IZQUIERDO: PERFIL + CATEGORÍAS -->
+    <!-- ============================================ -->
+    <aside class="hidden lg:block lg:col-span-3">
+      <div class="sticky top-20 space-y-4">
 
-  <!-- ERROR STATE -->
-  <div *ngIf="!isLoading && errorMessage" 
-       class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-    <i class="fas fa-exclamation-circle mr-2"></i>{{ errorMessage }}
-  </div>
-
-  <!-- POSTS -->
-  <div *ngFor="let post of posts; trackBy: trackByPostId"
-       [attr.data-post-id]="post.id"
-       class="border rounded-xl shadow-sm hover:shadow-md transition relative"
-       [ngClass]="currentTheme.cardBg || ''">
-
-    <!-- POST HEADER -->
-    <div class="px-4 pt-3 pb-2">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
-               [style.background]="post.avatarColor">
-            {{ post.avatar }}
+        <!-- MI PERFIL -->
+        <div class="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition cursor-pointer"
+             [ngClass]="currentTheme.cardBg || ''"
+             (click)="navegarAPerfil()">
+          
+          <!-- Portada -->
+          <div class="h-16 relative"
+               [ngStyle]="usuarioActual?.foto_portada_url 
+                 ? {'background-image': 'url(' + usuarioActual.foto_portada_url + ')', 'background-size': 'cover', 'background-position': 'center'} 
+                 : {'background': 'linear-gradient(to right, #f97316, #ec4899)'}">
           </div>
-          <div>
-            <h3 class="font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">{{ post.author }}</h3>
-            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>
-          </div>
-        </div>
+          
+          <!-- Contenido -->
+          <div class="px-4 pb-4 -mt-8 relative">
+            <!-- Avatar -->
+            <div *ngIf="usuarioActual?.foto_perfil_url; else avatarIniciales"
+                 class="w-16 h-16 rounded-full border-4 shadow-lg bg-cover bg-center"
+                 [ngStyle]="{'background-image': 'url(' + usuarioActual.foto_perfil_url + ')'}"
+                 [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'border-gray-800' : 'border-white'">
+            </div>
+            <ng-template #avatarIniciales>
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl border-4 shadow-lg"
+                   [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'border-gray-800' : 'border-white'">
+                {{ obtenerIniciales(usuarioActual?.nombre_completo || 'Usuario') }}
+              </div>
+            </ng-template>
 
-        <!-- MENÚ DE OPCIONES (3 PUNTOS) -->
-        <div class="relative">
-          <button (click)="togglePostOptions(post.id, $event)" 
-                  class="transition p-2 hover:opacity-70"
-                  [ngClass]="currentTheme.textSecondaryClass || ''">
-            <i class="fas fa-ellipsis-h"></i>
-          </button>
+            <h3 class="font-bold mt-3 truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+              {{ usuarioActual?.nombre_completo || 'Mi Perfil' }}
+            </h3>
+            <p class="text-sm truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+              @{{ usuarioActual?.nombre_usuario || 'usuario' }}
+            </p>
 
-          <!-- DROPDOWN MENÚ -->
-          <div *ngIf="post.showOptions" 
-               (click)="closePostOptions()"
-               class="absolute right-0 top-10 z-50 rounded-lg shadow-lg border min-w-[200px]"
-               [ngClass]="currentTheme.cardBg || ''">
-            
-            <!-- NO ME INTERESA - Solo publicaciones ajenas -->
-            <button *ngIf="post.usuarioId !== usuarioActualId"
-                    (click)="openNoInteresaModal(post.id, $event)"
-                    class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm"
-                    [ngClass]="currentTheme.textPrimaryClass || ''">
-              <i class="fas fa-thumbs-down text-orange-500"></i>
-              No me interesa
-            </button>
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t" [ngClass]="currentTheme.borderColor || ''">
+              <div class="text-center">
+                <div class="font-bold text-lg" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuarioActual?.total_posts || 0 }}
+                </div>
+                <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">Posts</div>
+              </div>
+              <div class="text-center">
+                <div class="font-bold text-lg" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuarioActual?.total_seguidores || 0 }}
+                </div>
+                <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">Seguidores</div>
+              </div>
+              <div class="text-center">
+                <div class="font-bold text-lg" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuarioActual?.total_siguiendo || 0 }}
+                </div>
+                <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">Siguiendo</div>
+              </div>
+            </div>
 
-            <!-- OCULTAR PUBLICACIÓN -->
-            <button (click)="ocultarPublicacion(post.id, $event)"
-                    class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm"
-                    [ngClass]="currentTheme.textPrimaryClass || ''">
-              <i class="fas fa-eye-slash text-gray-500"></i>
-              Ocultar publicación
-            </button>
-
-            <!-- REPORTAR - Solo si NO es propia publicación -->
-            <button *ngIf="post.usuarioId !== usuarioActualId"
-                    (click)="openReportModal(post.id, $event)"
-                    class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm border-t"
-                    [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.borderColor || '']">
-              <i class="fas fa-flag text-red-500"></i>
-              Reportar publicación
-            </button>
-
-            <!-- ELIMINAR - Solo si es propia publicación -->
-            <button *ngIf="post.usuarioId === usuarioActualId"
-                    class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm text-red-500 border-t"
-                    [ngClass]="currentTheme.borderColor || ''">
-              <i class="fas fa-trash-alt"></i>
-              Eliminar publicación
+            <!-- Botón Ver Perfil -->
+            <button class="w-full mt-4 py-2 rounded-lg font-semibold text-sm transition text-white"
+                    [ngClass]="currentThemeData.accentBg || 'bg-orange-500 hover:bg-orange-600'">
+              <i class="fas fa-user mr-2"></i>Ver mi perfil
             </button>
           </div>
         </div>
+
+        <!-- CATEGORÍAS -->
+        <div class="rounded-xl shadow-sm border p-4" [ngClass]="currentTheme.cardBg || ''">
+          <h3 class="font-bold mb-3 flex items-center gap-2" [ngClass]="currentTheme.textPrimaryClass || ''">
+            <i class="fas fa-tag"></i>
+            Categorías
+          </h3>
+          
+          <div class="space-y-2">
+            <button *ngFor="let cat of categoriasDisponibles"
+                    (click)="filtrarPorCategoria(cat.filtro)"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition"
+                    [ngClass]="categoriaSeleccionada === cat.filtro 
+                      ? [currentThemeData.accentBg, 'text-white'] 
+                      : [currentTheme.textSecondaryClass, currentThemeData.hoverBackground]">
+              <i class="fas" [ngClass]="[cat.icon, categoriaSeleccionada === cat.filtro ? 'text-white' : cat.color]"></i>
+              <span class="flex-1 text-left">{{ cat.nombre }}</span>
+              <i *ngIf="categoriaSeleccionada === cat.filtro" class="fas fa-check text-white"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
-    </div>
+    </aside>
 
-    <!-- POST CONTENT -->
-    <div class="px-4 pb-3">
-      <p class="leading-relaxed text-sm sm:text-base" [ngClass]="currentTheme.textPrimaryClass || ''">
-        {{ post.content }}
-      </p>
-    </div>
+    <!-- ============================================ -->
+    <!-- FEED CENTRAL (TU CÓDIGO ORIGINAL) -->
+    <!-- ============================================ -->
+    <main class="lg:col-span-6 space-y-3 sm:space-y-4">
 
-    <!-- POST IMAGE -->
-    <div *ngIf="post.image" (click)="openPostDetail(post.id)" class="cursor-pointer hover:opacity-95 transition">
-      <img [src]="post.image" [alt]="post.category" class="w-full h-auto">
-    </div>
-
-    <!-- CATEGORY TAG -->
-    <div class="px-4 pt-3">
-      <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
-            [ngClass]="currentThemeData.accentBg || ''">
-        {{ post.category }}
-      </span>
-    </div>
-
-    <!-- POST STATS -->
-    <div class="px-4 py-3 flex items-center justify-between text-sm border-t"
-         [ngClass]="[currentTheme.borderColor || '', currentTheme.textSecondaryClass || '']">
-      <button (click)="openPostDetail(post.id)" class="hover:underline font-medium">
-        {{ post.likes }} Me gusta
-      </button>
-      <button (click)="toggleComments(post.id)" class="hover:underline font-medium">
-        {{ post.totalComments || 0 }} comentarios · {{ post.shares }} compartidos
-      </button>
-    </div>
-
-    <!-- ACTION BUTTONS -->
-    <div class="border-t px-2 py-1.5 flex items-center gap-1" [ngClass]="currentTheme.borderColor || ''">
-      <button (click)="toggleLike(post.id)"
-              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-              [ngClass]="post.liked
-                ? [currentThemeData.textPrimary || '', 'bg-opacity-10', currentThemeData.accentBg || '']
-                : [currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
-        <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
-        <span>Me gusta</span>
-      </button>
-
-      <button (click)="toggleComments(post.id)"
-              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-              [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
-        <i class="fas fa-comment"></i>
-        <span>Comentar</span>
-      </button>
-
-      <button (click)="openShareModal(post.id, $event)"
-              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-              [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
-        <i class="fas fa-share"></i>
-        <span>Compartir</span>
-      </button>
-    </div>
-
-    <!-- COMMENTS SECTION (EXPANDABLE) -->
-    <div *ngIf="post.showComments" class="border-t" [ngClass]="currentTheme.borderColor || ''">
-
-      <!-- LOADING COMMENTS -->
-      <div *ngIf="post.loadingComments" class="px-4 py-12 text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2"
+      <!-- LOADING STATE -->
+      <div *ngIf="isLoading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2"
              [ngClass]="'border-' + currentThemeData.textPrimary?.replace('text-', '')"></div>
         <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
-          Cargando comentarios...
+          Cargando publicaciones...
         </p>
       </div>
 
-      <!-- COMMENTS LIST -->
-      <div *ngIf="!post.loadingComments && post.comments.length > 0"
-           class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
-        <div *ngFor="let comment of post.comments; trackBy: trackByCommentId"
-             class="flex gap-2.5 animate-fade-in">
-          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
-               [style.background]="comment.avatarColor">
-            {{ comment.avatar }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="rounded-2xl px-4 py-2.5 shadow-sm break-words" [ngClass]="currentTheme.cardBg || ''">
-              <p class="font-bold text-sm" [ngClass]="currentTheme.textPrimaryClass || ''">
-                {{ comment.author }}
-              </p>
-              <p class="text-sm mt-1 leading-relaxed" [ngClass]="currentTheme.textPrimaryClass || ''">
-                {{ comment.text }}
-              </p>
+      <!-- ERROR STATE -->
+      <div *ngIf="!isLoading && errorMessage" 
+           class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <i class="fas fa-exclamation-circle mr-2"></i>{{ errorMessage }}
+      </div>
+
+      <!-- POSTS -->
+      <div *ngFor="let post of posts; trackBy: trackByPostId"
+           [attr.data-post-id]="post.id"
+           class="border rounded-xl shadow-sm hover:shadow-md transition relative"
+           [ngClass]="currentTheme.cardBg || ''">
+
+        <!-- POST HEADER -->
+        <div class="px-4 pt-3 pb-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+                   [style.background]="post.avatarColor">
+                {{ post.avatar }}
+              </div>
+              <div>
+                <h3 class="font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">{{ post.author }}</h3>
+                <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>
+              </div>
             </div>
-            <div class="flex items-center gap-3 mt-1.5 px-3 text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
-              <span>{{ comment.time }}</span>
-              <button class="hover:underline font-semibold">Me gusta</button>
-              <button class="hover:underline font-semibold hidden sm:inline">Responder</button>
-              <button *ngIf="comment.usuario_id === usuarioActualId"
-                      (click)="eliminarComentario(post.id, comment.id)"
-                      class="hover:underline font-semibold text-red-500 ml-auto">
-                <i class="fas fa-trash-alt"></i>
+
+            <!-- MENÚ DE OPCIONES (3 PUNTOS) -->
+            <div class="relative">
+              <button (click)="togglePostOptions(post.id, $event)" 
+                      class="transition p-2 hover:opacity-70"
+                      [ngClass]="currentTheme.textSecondaryClass || ''">
+                <i class="fas fa-ellipsis-h"></i>
+              </button>
+
+              <!-- DROPDOWN MENÚ -->
+              <div *ngIf="post.showOptions" 
+                   (click)="closePostOptions()"
+                   class="absolute right-0 top-10 z-50 rounded-lg shadow-lg border min-w-[200px]"
+                   [ngClass]="currentTheme.cardBg || ''">
+                
+                <!-- NO ME INTERESA - Solo publicaciones ajenas -->
+                <button *ngIf="post.usuarioId !== usuarioActualId"
+                        (click)="openNoInteresaModal(post.id, $event)"
+                        class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm"
+                        [ngClass]="currentTheme.textPrimaryClass || ''">
+                  <i class="fas fa-thumbs-down text-orange-500"></i>
+                  No me interesa
+                </button>
+
+                <!-- OCULTAR PUBLICACIÓN -->
+                <button (click)="ocultarPublicacion(post.id, $event)"
+                        class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm"
+                        [ngClass]="currentTheme.textPrimaryClass || ''">
+                  <i class="fas fa-eye-slash text-gray-500"></i>
+                  Ocultar publicación
+                </button>
+
+                <!-- REPORTAR - Solo si NO es propia publicación -->
+                <button *ngIf="post.usuarioId !== usuarioActualId"
+                        (click)="openReportModal(post.id, $event)"
+                        class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm border-t"
+                        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.borderColor || '']">
+                  <i class="fas fa-flag text-red-500"></i>
+                  Reportar publicación
+                </button>
+
+                <!-- ELIMINAR - Solo si es propia publicación -->
+                <button *ngIf="post.usuarioId === usuarioActualId"
+                        class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm text-red-500 border-t"
+                        [ngClass]="currentTheme.borderColor || ''">
+                  <i class="fas fa-trash-alt"></i>
+                  Eliminar publicación
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- POST CONTENT -->
+        <div class="px-4 pb-3">
+          <p class="leading-relaxed text-sm sm:text-base" [ngClass]="currentTheme.textPrimaryClass || ''">
+            {{ post.content }}
+          </p>
+        </div>
+
+        <!-- POST IMAGE -->
+        <div *ngIf="post.image" (click)="openPostDetail(post.id)" class="cursor-pointer hover:opacity-95 transition">
+          <img [src]="post.image" [alt]="post.category" class="w-full h-auto">
+        </div>
+
+        <!-- CATEGORY TAG -->
+        <div class="px-4 pt-3">
+          <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
+                [ngClass]="currentThemeData.accentBg || ''">
+            {{ post.category }}
+          </span>
+        </div>
+
+        <!-- POST STATS -->
+        <div class="px-4 py-3 flex items-center justify-between text-sm border-t"
+             [ngClass]="[currentTheme.borderColor || '', currentTheme.textSecondaryClass || '']">
+          <button (click)="openPostDetail(post.id)" class="hover:underline font-medium">
+            {{ post.likes }} Me gusta
+          </button>
+          <button (click)="toggleComments(post.id)" class="hover:underline font-medium">
+            {{ post.totalComments || 0 }} comentarios · {{ post.shares }} compartidos
+          </button>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="border-t px-2 py-1.5 flex items-center gap-1" [ngClass]="currentTheme.borderColor || ''">
+          <button (click)="toggleLike(post.id)"
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+                  [ngClass]="post.liked
+                    ? [currentThemeData.textPrimary || '', 'bg-opacity-10', currentThemeData.accentBg || '']
+                    : [currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
+            <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+            <span>Me gusta</span>
+          </button>
+
+          <button (click)="toggleComments(post.id)"
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
+            <i class="fas fa-comment"></i>
+            <span>Comentar</span>
+          </button>
+
+          <button (click)="openShareModal(post.id, $event)"
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '']">
+            <i class="fas fa-share"></i>
+            <span>Compartir</span>
+          </button>
+        </div>
+
+        <!-- COMMENTS SECTION (EXPANDABLE) -->
+        <div *ngIf="post.showComments" class="border-t" [ngClass]="currentTheme.borderColor || ''">
+
+          <!-- LOADING COMMENTS -->
+          <div *ngIf="post.loadingComments" class="px-4 py-12 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2"
+                 [ngClass]="'border-' + currentThemeData.textPrimary?.replace('text-', '')"></div>
+            <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
+              Cargando comentarios...
+            </p>
+          </div>
+
+          <!-- COMMENTS LIST -->
+          <div *ngIf="!post.loadingComments && post.comments.length > 0"
+               class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
+            <div *ngFor="let comment of post.comments; trackBy: trackByCommentId"
+                 class="flex gap-2.5 animate-fade-in">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+                   [style.background]="comment.avatarColor">
+                {{ comment.avatar }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="rounded-2xl px-4 py-2.5 shadow-sm break-words" [ngClass]="currentTheme.cardBg || ''">
+                  <p class="font-bold text-sm" [ngClass]="currentTheme.textPrimaryClass || ''">
+                    {{ comment.author }}
+                  </p>
+                  <p class="text-sm mt-1 leading-relaxed" [ngClass]="currentTheme.textPrimaryClass || ''">
+                    {{ comment.text }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-3 mt-1.5 px-3 text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  <span>{{ comment.time }}</span>
+                  <button class="hover:underline font-semibold">Me gusta</button>
+                  <button class="hover:underline font-semibold hidden sm:inline">Responder</button>
+                  <button *ngIf="comment.usuario_id === usuarioActualId"
+                          (click)="eliminarComentario(post.id, comment.id)"
+                          class="hover:underline font-semibold text-red-500 ml-auto">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NO COMMENTS MESSAGE -->
+          <div *ngIf="!post.loadingComments && post.comments.length === 0" class="px-4 py-12 text-center">
+            <i class="fas fa-comments text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+            <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass || ''">
+              No hay comentarios aún
+            </p>
+            <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+              Sé el primero en comentar
+            </p>
+          </div>
+
+          <!-- COMMENT INPUT -->
+          <div class="px-4 py-3 border-t" [ngClass]="[currentTheme.borderColor || '', currentTheme.cardBg || '']">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+                   [ngClass]="currentThemeData.avatarBg || ''">
+                {{ obtenerIniciales(usuarioActual?.nombre_completo || 'TU') }}
+              </div>
+              <input type="text"
+                     [(ngModel)]="commentInputs[post.id]"
+                     (keypress)="onCommentKeyPress($event, post.id)"
+                     placeholder="Escribe un comentario..."
+                     class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
+                     [ngClass]="[currentTheme.bodyClass || '', currentTheme.textPrimaryClass || '']"
+                     [style.--tw-ring-color]="getThemeRingColor()">
+              <button (click)="addComment(post.id)"
+                      [disabled]="!commentInputs[post.id]?.trim()"
+                      class="transition-all p-2 rounded-full"
+                      [ngClass]="commentInputs[post.id]?.trim()
+                        ? [currentThemeData.textPrimary || '', 'active:scale-95', 'hover:bg-opacity-10', currentThemeData.accentBg]
+                        : [currentTheme.textSecondaryClass || '', 'cursor-not-allowed', 'opacity-50']">
+                <i class="fas fa-paper-plane text-lg"></i>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- NO COMMENTS MESSAGE -->
-      <div *ngIf="!post.loadingComments && post.comments.length === 0" class="px-4 py-12 text-center">
-        <i class="fas fa-comments text-4xl mb-3" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
-        <p class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass || ''">
-          No hay comentarios aún
-        </p>
-        <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
-          Sé el primero en comentar
-        </p>
+      <!-- EMPTY STATE -->
+      <div *ngIf="!isLoading && posts.length === 0" class="text-center py-12">
+        <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+        <p class="text-gray-600 font-medium">No hay publicaciones</p>
       </div>
 
-      <!-- COMMENT INPUT -->
-      <div class="px-4 py-3 border-t" [ngClass]="[currentTheme.borderColor || '', currentTheme.cardBg || '']">
-        <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
-               [ngClass]="currentThemeData.avatarBg || ''">
-            TU
+    </main>
+
+    <!-- ============================================ -->
+    <!-- SIDEBAR DERECHO: USUARIOS ACTIVOS Y SUGERIDOS -->
+    <!-- ============================================ -->
+    <aside class="hidden lg:block lg:col-span-3">
+      <div class="sticky top-20 space-y-4">
+
+        <!-- USUARIOS ACTIVOS -->
+        <div class="rounded-xl shadow-sm border p-4" [ngClass]="currentTheme.cardBg || ''">
+          <h3 class="font-bold mb-3 flex items-center gap-2" [ngClass]="currentTheme.textPrimaryClass || ''">
+            <i class="fas fa-circle text-green-500 text-xs animate-pulse"></i>
+            Activos ahora
+          </h3>
+          
+          <div class="space-y-3">
+            <div *ngFor="let usuario of usuariosActivos"
+                 class="flex items-center gap-3 p-2 rounded-lg transition"
+                 [ngClass]="currentThemeData.hoverBackground">
+              
+              <div class="relative">
+                <div *ngIf="usuario.foto_perfil_url; else iniciales"
+                     class="w-10 h-10 rounded-full bg-cover bg-center"
+                     [ngStyle]="{'background-image': 'url(' + usuario.foto_perfil_url + ')'}">
+                </div>
+                <ng-template #iniciales>
+                  <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                       [style.background]="generarColorAvatar(usuario.id)">
+                    {{ obtenerIniciales(usuario.nombre_completo) }}
+                  </div>
+                </ng-template>
+                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2"
+                     [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'border-gray-800' : 'border-white'"></div>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuario.nombre_completo }}
+                </p>
+                <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  @{{ usuario.nombre_usuario }}
+                </p>
+              </div>
+
+              <button class="text-xs font-semibold px-3 py-1 rounded-full transition"
+                      [ngClass]="currentThemeData.accentBg ? currentThemeData.accentBg + ' text-white' : 'bg-blue-500 text-white hover:bg-blue-600'">
+                Chat
+              </button>
+            </div>
           </div>
-          <input type="text"
-                 [(ngModel)]="commentInputs[post.id]"
-                 (keypress)="onCommentKeyPress($event, post.id)"
-                 placeholder="Escribe un comentario..."
-                 class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
-                 [ngClass]="[currentTheme.bodyClass || '', currentTheme.textPrimaryClass || '']"
-                 [style.--tw-ring-color]="getThemeRingColor()">
-          <button (click)="addComment(post.id)"
-                  [disabled]="!commentInputs[post.id]?.trim()"
-                  class="transition-all p-2 rounded-full"
-                  [ngClass]="commentInputs[post.id]?.trim()
-                    ? [currentThemeData.textPrimary || '', 'active:scale-95', 'hover:bg-opacity-10', currentThemeData.accentBg]
-                    : [currentTheme.textSecondaryClass || '', 'cursor-not-allowed', 'opacity-50']">
-            <i class="fas fa-paper-plane text-lg"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- EMPTY STATE -->
-  <div *ngIf="!isLoading && posts.length === 0" class="text-center py-12">
-    <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
-    <p class="text-gray-600 font-medium">No hay publicaciones</p>
+          <div *ngIf="usuariosActivos.length === 0" class="text-center py-6">
+            <i class="fas fa-user-slash text-3xl mb-2" [ngClass]="currentTheme.textSecondaryClass"></i>
+            <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass">
+              No hay usuarios activos
+            </p>
+          </div>
+        </div>
+
+        <!-- SUGERENCIAS -->
+        <div class="rounded-xl shadow-sm border p-4" [ngClass]="currentTheme.cardBg || ''">
+          <h3 class="font-bold mb-3 flex items-center gap-2" [ngClass]="currentTheme.textPrimaryClass || ''">
+            <i class="fas fa-user-plus"></i>
+            Sugerencias
+          </h3>
+          
+          <div class="space-y-3">
+            <div *ngFor="let usuario of usuariosSugeridos"
+                 class="flex items-start gap-3 p-2 rounded-lg transition"
+                 [ngClass]="currentThemeData.hoverBackground">
+              
+              <div *ngIf="usuario.foto_perfil_url; else inicialesSugerido"
+                   class="w-10 h-10 rounded-full bg-cover bg-center flex-shrink-0"
+                   [ngStyle]="{'background-image': 'url(' + usuario.foto_perfil_url + ')'}">
+              </div>
+              <ng-template #inicialesSugerido>
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                     [style.background]="generarColorAvatar(usuario.id)">
+                  {{ obtenerIniciales(usuario.nombre_completo) }}
+                </div>
+              </ng-template>
+
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuario.nombre_completo }}
+                </p>
+                <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  {{ usuario.razon }}
+                </p>
+              </div>
+
+              <button (click)="seguirUsuario(usuario.id)"
+                      class="text-xs font-semibold px-3 py-1 rounded-full transition flex-shrink-0"
+                      [ngClass]="currentThemeData.accentBg ? currentThemeData.accentBg + ' text-white hover:opacity-90' : 'bg-orange-500 text-white hover:bg-orange-600'">
+                Seguir
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="usuariosSugeridos.length === 0" class="text-center py-6">
+            <i class="fas fa-users text-3xl mb-2" [ngClass]="currentTheme.textSecondaryClass"></i>
+            <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass">
+              No hay sugerencias
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
   </div>
 </div>
 
@@ -245,7 +457,7 @@
 </app-detalle-post>
 
 <!-- ============================================ -->
-<!-- MODAL "NO ME INTERESA" ✅ NUEVO -->
+<!-- MODAL "NO ME INTERESA" -->
 <!-- ============================================ -->
 <div *ngIf="showNoInteresaModal"
      class="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4"

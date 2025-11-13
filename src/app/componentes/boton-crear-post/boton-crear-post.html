@@ -45,10 +45,37 @@
         </div>
       </div>
 
-      <!-- Mensaje de error -->
-      <div *ngIf="mensajeError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
-        <i class="fas fa-exclamation-circle"></i>
-        <span>{{ mensajeError }}</span>
+      <!-- ✅ MENSAJE DE CENSURA/ERROR/ADVERTENCIA -->
+      <div *ngIf="mensajeError" 
+           class="px-4 py-3 rounded-xl flex items-start gap-3 border"
+           [ngClass]="errorAlertClass">
+        <span class="text-lg flex-shrink-0 mt-0.5">{{ errorIcon }}</span>
+        <div class="flex-1">
+          <p class="font-semibold leading-tight">{{ mensajeError }}</p>
+          
+          <!-- 🚫 Detalles específicos de censura -->
+          <div *ngIf="tipoError === 'censura'" class="mt-2 text-sm space-y-1">
+            <p class="font-medium opacity-90">Razones del rechazo:</p>
+            <ul class="list-disc list-inside opacity-90 space-y-0.5">
+              <li>Revisa que tu contenido no contenga lenguaje ofensivo</li>
+              <li>Asegúrate de no incluir contenido discriminatorio o de bullying</li>
+              <li>Verifica que tus imágenes sean apropiadas para una plataforma educativa</li>
+            </ul>
+            <p class="mt-2 font-medium">💡 Tip: Intenta reformular tu publicación manteniendo su esencia educativa</p>
+          </div>
+
+          <!-- ⚠️ Detalles de advertencia (requiere revisión) -->
+          <div *ngIf="tipoError === 'warning'" class="mt-2 text-sm opacity-90">
+            <p>Tu publicación está siendo revisada por un moderador. Se aprobará en breve.</p>
+          </div>
+        </div>
+        
+        <!-- Botón cerrar alerta -->
+        <button (click)="mensajeError = ''" 
+                class="text-lg flex-shrink-0 opacity-70 hover:opacity-100 transition"
+                title="Cerrar alerta">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
 
       <!-- Textarea -->
@@ -73,89 +100,87 @@
         </button>
       </div>
 
-      <!-- Selector de Categoría - INLINE con tema adaptado -->
       <!-- Selector de Categoría -->
-<div *ngIf="mostrarSelectorCategoria"
-     class="category-selector-container border-2 rounded-xl p-4 space-y-3"
-     [ngClass]="currentTheme.borderColor"
-     [style.background-color]="'var(--picker-bg-color)'"
-     [style.border-color]="'var(--picker-border-color)'">
+      <div *ngIf="mostrarSelectorCategoria"
+           class="category-selector-container border-2 rounded-xl p-4 space-y-3"
+           [ngClass]="currentTheme.borderColor"
+           [style.background-color]="'var(--picker-bg-color)'"
+           [style.border-color]="'var(--picker-border-color)'">
 
-  <!-- Header unificado -->
-  <div class="flex items-center justify-between mb-2 picker-header">
-    <div class="font-semibold flex items-center gap-2 picker-title">
-      <i class="fas fa-tag text-xl" [ngClass]="currentTheme.accentColor"></i>
-      <span class="picker-text">Selecciona una categoría</span>
-    </div>
-    <button (click)="toggleSelectorCategoria()" 
-            class="transition hover:scale-110 picker-close-btn">
-      <i class="fas fa-times text-xl"></i>
-    </button>
-  </div>
-
-  <!-- Contenedor scrollable de categorías -->
-  <div class="max-h-48 overflow-y-auto pr-2 -mr-2">
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-2">
-      <button
-        *ngFor="let categoria of categorias"
-        (click)="seleccionarCategoria(categoria.value)"
-        type="button"
-        class="category-selector w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition"
-        [ngClass]="{
-          'ring-2 shadow-md': categoriaSeleccionada === categoria.value
-        }"
-        [class]="(categoriaSeleccionada === categoria.value ? currentTheme.bgPrimary.replace('bg-', 'ring-') : '')"
-        [style.background-color]="categoriaSeleccionada === categoria.value ? 'var(--hover-bg-color)' : (currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#1e293b' : '#ffffff')">
-        <div [class]="categoria.color + ' w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0'">
-          <i class="fas fa-tag text-xs"></i>
+        <!-- Header unificado -->
+        <div class="flex items-center justify-between mb-2 picker-header">
+          <div class="font-semibold flex items-center gap-2 picker-title">
+            <i class="fas fa-tag text-xl" [ngClass]="currentTheme.accentColor"></i>
+            <span class="picker-text">Selecciona una categoría</span>
+          </div>
+          <button (click)="toggleSelectorCategoria()" 
+                  class="transition hover:scale-110 picker-close-btn">
+            <i class="fas fa-times text-xl"></i>
+          </button>
         </div>
-        <span class="font-medium text-sm flex-1 text-left truncate"
-              [style.color]="'var(--picker-text-color)'">{{ categoria.label }}</span>
-        <i *ngIf="categoriaSeleccionada === categoria.value" class="fas fa-check flex-shrink-0" [ngClass]="currentTheme.accentColor"></i>
-      </button>
-    </div>
-  </div>
-</div>
 
-<!-- Selector de Emojis -->
-<div *ngIf="mostrarEmojiPicker"
-     class="emoji-picker-container border-2 rounded-xl p-4 space-y-3"
-     [ngClass]="currentTheme.borderColor"
-     [style.background-color]="'var(--picker-bg-color)'"
-     [style.border-color]="'var(--picker-border-color)'">
+        <!-- Contenedor scrollable de categorías -->
+        <div class="max-h-48 overflow-y-auto pr-2 -mr-2">
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-2">
+            <button
+              *ngFor="let categoria of categorias"
+              (click)="seleccionarCategoria(categoria.value)"
+              type="button"
+              class="category-selector w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition"
+              [ngClass]="{
+                'ring-2 shadow-md': categoriaSeleccionada === categoria.value
+              }"
+              [class]="(categoriaSeleccionada === categoria.value ? currentTheme.bgPrimary.replace('bg-', 'ring-') : '')"
+              [style.background-color]="categoriaSeleccionada === categoria.value ? 'var(--hover-bg-color)' : (currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#1e293b' : '#ffffff')">
+              <div [class]="categoria.color + ' w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0'">
+                <i class="fas fa-tag text-xs"></i>
+              </div>
+              <span class="font-medium text-sm flex-1 text-left truncate"
+                    [style.color]="'var(--picker-text-color)'">{{ categoria.label }}</span>
+              <i *ngIf="categoriaSeleccionada === categoria.value" class="fas fa-check flex-shrink-0" [ngClass]="currentTheme.accentColor"></i>
+            </button>
+          </div>
+        </div>
+      </div>
 
-  <!-- Header unificado (mismo estilo que categorías) -->
-  <div class="flex items-center justify-between mb-2 picker-header">
-    <div class="font-semibold flex items-center gap-2 picker-title">
-      <i class="fas fa-smile text-xl" [ngClass]="currentTheme.accentColor"></i>
-      <span class="picker-text">Selecciona un emoji</span>
-    </div>
-    <button (click)="toggleEmojiPicker()" 
-            class="transition hover:scale-110 picker-close-btn">
-      <i class="fas fa-times text-xl"></i>
-    </button>
-  </div>
+      <!-- Selector de Emojis -->
+      <div *ngIf="mostrarEmojiPicker"
+           class="emoji-picker-container border-2 rounded-xl p-4 space-y-3"
+           [ngClass]="currentTheme.borderColor"
+           [style.background-color]="'var(--picker-bg-color)'"
+           [style.border-color]="'var(--picker-border-color)'">
 
-  <!-- Contenido -->
-  <div class="rounded-lg p-3 max-h-48 overflow-y-auto"
-       [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#1e293b' : '#f9fafb'">
-    <div class="grid grid-cols-8 gap-1">
-      <button
-        *ngFor="let emoji of emojis"
-        (click)="agregarEmoji(emoji.character)"
-        type="button"
-        class="text-2xl rounded p-2 transition active:scale-95 hover:scale-110"
-        [title]="emoji.unicodeName">
-        {{ emoji.character }}
-      </button>
-    </div>
-    <div *ngIf="!emojisCargados" class="text-center py-4"
-         [style.color]="'var(--picker-text-color)'">
-      <i class="fas fa-spinner fa-spin"></i> Cargando emojis...
-    </div>
-  </div>
-</div>
+        <!-- Header unificado (mismo estilo que categorías) -->
+        <div class="flex items-center justify-between mb-2 picker-header">
+          <div class="font-semibold flex items-center gap-2 picker-title">
+            <i class="fas fa-smile text-xl" [ngClass]="currentTheme.accentColor"></i>
+            <span class="picker-text">Selecciona un emoji</span>
+          </div>
+          <button (click)="toggleEmojiPicker()" 
+                  class="transition hover:scale-110 picker-close-btn">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
 
+        <!-- Contenido -->
+        <div class="rounded-lg p-3 max-h-48 overflow-y-auto"
+             [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#1e293b' : '#f9fafb'">
+          <div class="grid grid-cols-8 gap-1">
+            <button
+              *ngFor="let emoji of emojis"
+              (click)="agregarEmoji(emoji.character)"
+              type="button"
+              class="text-2xl rounded p-2 transition active:scale-95 hover:scale-110"
+              [title]="emoji.unicodeName">
+              {{ emoji.character }}
+            </button>
+          </div>
+          <div *ngIf="!emojisCargados" class="text-center py-4"
+               [style.color]="'var(--picker-text-color)'">
+            <i class="fas fa-spinner fa-spin"></i> Cargando emojis...
+          </div>
+        </div>
+      </div>
 
       <!-- Opciones -->
       <div [ngClass]="currentTheme.borderColor" class="flex items-center gap-4 pt-4 border-t">

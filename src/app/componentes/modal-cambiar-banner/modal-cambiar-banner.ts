@@ -20,7 +20,6 @@ export class ModalCambiarBanner {
 
   @Output() close = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<File>();
-  @Output() eliminar = new EventEmitter<void>();
 
   archivoBanner: File | null = null;
   previsualizacionBanner: string | null = null;
@@ -92,13 +91,7 @@ export class ModalCambiarBanner {
     this.guardar.emit(this.archivoBanner);
   }
 
-  onEliminar(): void {
-    if (!confirm('¿Estás seguro de que deseas eliminar tu foto de portada?')) {
-      return;
-    }
-    
-    this.eliminar.emit();
-  }
+  
 
   onCerrar(): void {
     this.close.emit();

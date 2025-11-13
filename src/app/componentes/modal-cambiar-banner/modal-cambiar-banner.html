@@ -73,15 +73,7 @@
           {{ previsualizacionBanner ? 'Cambiar Imagen' : 'Seleccionar Imagen' }}
         </button>
 
-        <button 
-          *ngIf="getCoverImage() && !previsualizacionBanner"
-          type="button"
-          (click)="onEliminar()"
-          [disabled]="guardando"
-          class="w-full py-3 rounded-lg font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2 border border-red-300 text-red-600 hover:bg-red-50">
-          <i class="fas fa-trash"></i>
-          Eliminar Portada Actual
-        </button>
+   
       </div>
 
       <!-- Información Adicional -->

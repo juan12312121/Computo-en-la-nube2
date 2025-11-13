@@ -16,6 +16,9 @@ export interface Publicacion {
   foto_perfil_url?: string;
   fecha_creacion: string;
   oculto: number;
+  requiere_revision?: number;
+  analisis_censura?: any;
+  advertencia?: string;
 }
 
 export interface Categoria {
@@ -28,7 +31,16 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message: string;
-  mensaje?: string; // Para compatibilidad con backend
+  mensaje?: string;
+  errors?: any;
+}
+
+export interface ErrorCensura {
+  motivo: string;
+  detalles?: {
+    contenido: string[];
+    imagen: string[];
+  };
 }
 
 @Injectable({
@@ -47,7 +59,9 @@ export class PublicacionesService {
     console.log('📍 API URL:', this.apiUrl);
   }
 
-  // Construir headers con token
+  /**
+   * Construir headers con token
+   */
   private getHeaders(): { headers?: HttpHeaders } {
     const token = localStorage.getItem('token');
     
@@ -65,14 +79,16 @@ export class PublicacionesService {
     return {};
   }
 
-  // ✅ Obtener categorías disponibles
+  /**
+   * Obtener categorías disponibles
+   * GET /api/publicaciones/categorias
+   */
   obtenerCategorias(): Observable<ApiResponse<Categoria[]>> {
     console.log('📂 Obteniendo categorías...');
     return this.http.get<ApiResponse<Categoria[]>>(`${this.apiUrl}/categorias`).pipe(
       tap(response => console.log('✅ Categorías obtenidas:', response)),
       catchError(error => {
         console.error('❌ Error al obtener categorías:', error);
-        // Devolver categorías por defecto si falla
         return of({
           success: true,
           data: this.getCategoriasDefault(),
@@ -82,24 +98,56 @@ export class PublicacionesService {
     );
   }
 
-  // Crear publicación
+  /**
+   * Crear publicación (con validación de censura)
+   * POST /api/publicaciones
+   * 
+   * Puede retornar:
+   * - 201: Publicación creada exitosamente
+   * - 403: Contenido rechazado por censura
+   * - 400: Validación fallida
+   */
   crearPublicacion(publicacion: FormData): Observable<ApiResponse<Publicacion>> {
     console.log('📝 Creando publicación...');
     
-    // Para FormData no usar Content-Type en headers
     const token = localStorage.getItem('token');
     const headers = token ? { headers: new HttpHeaders({ 'Authorization': `Bearer ${token}` }) } : {};
     
     return this.http.post<ApiResponse<Publicacion>>(this.apiUrl, publicacion, headers).pipe(
-      tap(response => console.log('✅ Publicación creada:', response)),
+      tap(response => {
+        console.log('✅ Publicación creada:', response);
+        if (response.data?.advertencia) {
+          console.warn('⚠️ Advertencia:', response.data.advertencia);
+        }
+      }),
       catchError(error => {
+        // Manejo de error 403 (Contenido rechazado)
+        if (error.status === 403) {
+          console.error('❌ Contenido rechazado por censura:', error.error);
+          const errorCensura: ErrorCensura = error.error.errors || {
+            motivo: error.error.message || 'Tu publicación contiene contenido inapropiado'
+          };
+          
+          const respuestaError: ApiResponse<any> = {
+            success: false,
+            data: null,
+            message: `CENSURA: ${errorCensura.motivo}`,
+            errors: errorCensura
+          };
+          
+          throw respuestaError;
+        }
+        
         console.error('❌ Error al crear publicación:', error);
         throw error;
       })
     );
   }
 
-  // Obtener feed general - CON MEJOR MANEJO DE ERRORES
+  /**
+   * Obtener publicaciones (feed general)
+   * GET /api/publicaciones
+   */
   obtenerPublicaciones(): Observable<ApiResponse<Publicacion[]>> {
     console.log('🔄 Obteniendo publicaciones...');
     console.log('📡 URL:', this.apiUrl);
@@ -123,7 +171,6 @@ export class PublicacionesService {
           url: error.url
         });
         
-        // En lugar de fallar, devolver respuesta vacía para que el componente maneje
         return of({
           success: false,
           data: [],
@@ -133,7 +180,10 @@ export class PublicacionesService {
     );
   }
 
-  // Obtener publicación por ID
+  /**
+   * Obtener una publicación por ID
+   * GET /api/publicaciones/:id
+   */
   obtenerPublicacion(id: number): Observable<ApiResponse<Publicacion>> {
     console.log('🔍 Obteniendo publicación ID:', id);
     return this.http.get<ApiResponse<Publicacion>>(`${this.apiUrl}/${id}`, this.getHeaders()).pipe(
@@ -145,7 +195,10 @@ export class PublicacionesService {
     );
   }
 
-  // Obtener mis publicaciones
+  /**
+   * Obtener mis publicaciones
+   * GET /api/publicaciones/mis-publicaciones
+   */
   obtenerMisPublicaciones(): Observable<ApiResponse<Publicacion[]>> {
     console.log('👤 Obteniendo mis publicaciones...');
     return this.http.get<ApiResponse<Publicacion[]>>(`${this.apiUrl}/mis-publicaciones`, this.getHeaders()).pipe(
@@ -157,7 +210,10 @@ export class PublicacionesService {
     );
   }
 
-  // Obtener publicaciones de otro usuario
+  /**
+   * Obtener publicaciones de otro usuario
+   * GET /api/publicaciones/usuario/:usuarioId
+   */
   obtenerPublicacionesUsuario(usuarioId: number): Observable<ApiResponse<Publicacion[]>> {
     console.log('👥 Obteniendo publicaciones del usuario:', usuarioId);
     return this.http.get<ApiResponse<Publicacion[]>>(`${this.apiUrl}/usuario/${usuarioId}`, this.getHeaders()).pipe(
@@ -169,7 +225,14 @@ export class PublicacionesService {
     );
   }
 
-  // Actualizar publicación
+  /**
+   * Actualizar publicación (con validación de censura)
+   * PUT /api/publicaciones/:id
+   * 
+   * Puede retornar:
+   * - 200: Publicación actualizada
+   * - 403: Contenido rechazado por censura
+   */
   actualizarPublicacion(id: number, publicacion: FormData): Observable<ApiResponse<Publicacion>> {
     console.log('✏️ Actualizando publicación ID:', id);
     
@@ -179,13 +242,33 @@ export class PublicacionesService {
     return this.http.put<ApiResponse<Publicacion>>(`${this.apiUrl}/${id}`, publicacion, headers).pipe(
       tap(response => console.log('✅ Publicación actualizada:', response)),
       catchError(error => {
+        // Manejo de error 403 (Contenido rechazado)
+        if (error.status === 403) {
+          console.error('❌ Contenido actualizado rechazado por censura:', error.error);
+          const errorCensura: ErrorCensura = error.error.errors || {
+            motivo: error.error.message || 'Tu contenido actualizado es inapropiado'
+          };
+          
+          const respuestaError: ApiResponse<any> = {
+            success: false,
+            data: null,
+            message: `CENSURA: ${errorCensura.motivo}`,
+            errors: errorCensura
+          };
+          
+          throw respuestaError;
+        }
+        
         console.error('❌ Error al actualizar publicación:', error);
         throw error;
       })
     );
   }
 
-  // Eliminar publicación
+  /**
+   * Eliminar publicación
+   * DELETE /api/publicaciones/:id
+   */
   eliminarPublicacion(id: number): Observable<ApiResponse<null>> {
     console.log('🗑️ Eliminando publicación ID:', id);
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`, this.getHeaders()).pipe(
@@ -197,7 +280,9 @@ export class PublicacionesService {
     );
   }
 
-  // Helper: Crear FormData
+  /**
+   * Helper: Crear FormData para publicación
+   */
   crearFormData(datos: {
     contenido: string;
     categoria?: string;
@@ -217,7 +302,9 @@ export class PublicacionesService {
     return formData;
   }
 
-  // Helper: Obtener el color de una categoría
+  /**
+   * Helper: Obtener el color de una categoría
+   */
   obtenerColorCategoria(categoria: string): string {
     const colores: { [key: string]: string } = {
       'General': 'bg-orange-500',
@@ -233,7 +320,9 @@ export class PublicacionesService {
     return colores[categoria] || 'bg-orange-500';
   }
 
-  // Helper privado: Categorías por defecto
+  /**
+   * Helper: Categorías por defecto
+   */
   private getCategoriasDefault(): Categoria[] {
     return [
       { value: 'General', label: 'General', color: 'bg-orange-500' },
@@ -248,7 +337,9 @@ export class PublicacionesService {
     ];
   }
 
-  // Helper: Verificar conectividad con el backend
+  /**
+   * Helper: Verificar conectividad con backend
+   */
   verificarConexion(): Observable<boolean> {
     console.log('🔌 Verificando conexión con backend...');
     return this.http.get<ApiResponse<Categoria[]>>(`${this.apiUrl}/categorias`).pipe(
@@ -258,5 +349,29 @@ export class PublicacionesService {
         return of(false as any);
       })
     ) as Observable<boolean>;
+  }
+
+  /**
+   * Helper: Extraer mensaje de error de censura
+   */
+  extraerMensajeCensura(error: any): string {
+    if (error.message?.includes('CENSURA:')) {
+      return error.message;
+    }
+    
+    if (error.errors?.motivo) {
+      return `CENSURA: ${error.errors.motivo}`;
+    }
+    
+    return 'Tu publicación contiene contenido inapropiado';
+  }
+
+  /**
+   * Helper: Verificar si es error de censura
+   */
+  esErrorCensura(error: any): boolean {
+    return error?.message?.includes('CENSURA:') || 
+           error?.errors?.motivo !== undefined ||
+           error?.message?.includes('inapropiado');
   }
 }

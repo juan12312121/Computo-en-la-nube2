@@ -36,6 +36,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   emojisCargados = false;
   publicando = false;
   mensajeError = '';
+  tipoError: 'error' | 'warning' | 'censura' = 'error';
 
   // ✅ Categorías
   categorias: Categoria[] = [];
@@ -91,60 +92,48 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   private aplicarTema(theme: Theme) {
     const hostElement = this.elementRef.nativeElement;
     
-    // Aplicar el ID del tema como data-theme
     this.renderer.setAttribute(hostElement, 'data-theme', theme.id);
     
-    // Aplicar variables CSS personalizadas basadas en las propiedades del tema
     const primaryColor = this.extractPrimaryColor(theme);
     const accentColor = this.extractAccentColor(theme);
     const pickerBgColor = this.getPickerBgColor(theme);
     const pickerBorderColor = this.getPickerBorderColor(theme);
     const pickerTextColor = this.getPickerTextColor(theme);
     
-    // Establecer variables CSS
     this.renderer.setStyle(hostElement, '--primary-color', primaryColor);
     this.renderer.setStyle(hostElement, '--accent-color', accentColor);
     this.renderer.setStyle(hostElement, '--picker-bg-color', pickerBgColor);
     this.renderer.setStyle(hostElement, '--picker-border-color', pickerBorderColor);
     this.renderer.setStyle(hostElement, '--picker-text-color', pickerTextColor);
     
-    // Variables para backgrounds basadas en el tema
     if (theme.bodyClass.includes('bg-gray-50') || theme.bodyClass.includes('bg-green-50') || 
         theme.bodyClass.includes('bg-orange-50') || theme.bodyClass.includes('bg-sky-50') ||
         theme.bodyClass.includes('bg-pink-50') || theme.bodyClass.includes('bg-violet-50') ||
         theme.bodyClass.includes('bg-slate-100')) {
-      // Temas claros
       this.renderer.setStyle(hostElement, '--scrollbar-track-bg', '#f1f5f9');
-      this.renderer.setStyle(hostElement, '--hover-bg-color', `${primaryColor}1a`); // 10% opacity
-      this.renderer.setStyle(hostElement, '--active-bg-color', `${primaryColor}33`); // 20% opacity
+      this.renderer.setStyle(hostElement, '--hover-bg-color', `${primaryColor}1a`);
+      this.renderer.setStyle(hostElement, '--active-bg-color', `${primaryColor}33`);
     } else if (theme.bodyClass.includes('bg-slate-950') || theme.bodyClass.includes('bg-black') || 
                theme.bodyClass.includes('bg-zinc-900')) {
-      // Temas oscuros
       this.renderer.setStyle(hostElement, '--scrollbar-track-bg', '#374151');
-      this.renderer.setStyle(hostElement, '--hover-bg-color', `${primaryColor}26`); // 15% opacity
-      this.renderer.setStyle(hostElement, '--active-bg-color', `${primaryColor}40`); // 25% opacity
+      this.renderer.setStyle(hostElement, '--hover-bg-color', `${primaryColor}26`);
+      this.renderer.setStyle(hostElement, '--active-bg-color', `${primaryColor}40`);
     } else {
-      // Temas especiales (candy, chaos)
       this.renderer.setStyle(hostElement, '--scrollbar-track-bg', '#f1f5f9');
       this.renderer.setStyle(hostElement, '--hover-bg-color', `${primaryColor}1a`);
       this.renderer.setStyle(hostElement, '--active-bg-color', `${primaryColor}33`);
     }
   }
 
-  // ✅ Obtener color de fondo del picker según el tema
   private getPickerBgColor(theme: Theme): string {
-    // Temas oscuros
     if (theme.id === 'midnight') return '#0f172a';
     if (theme.id === 'neon') return '#111827';
     if (theme.id === 'toxic') return '#18181b';
-    // Temas especiales
     if (theme.id === 'candy') return '#fdf4ff';
     if (theme.id === 'chaos') return '#fef9c3';
-    // Temas claros
     return '#ffffff';
   }
 
-  // ✅ Obtener color del borde del picker según el tema
   private getPickerBorderColor(theme: Theme): string {
     const borderMap: { [key: string]: string } = {
       'midnight': '#334155',
@@ -162,22 +151,16 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     return borderMap[theme.id] || '#e5e7eb';
   }
 
-  // ✅ Obtener color del texto del picker según el tema
   private getPickerTextColor(theme: Theme): string {
-    // Temas oscuros tienen texto claro
     if (theme.id === 'midnight') return '#e2e8f0';
     if (theme.id === 'neon') return '#22d3ee';
     if (theme.id === 'toxic') return '#84cc16';
-    // Temas especiales
     if (theme.id === 'candy') return '#831843';
     if (theme.id === 'chaos') return '#1e3a8a';
-    // Temas claros tienen texto oscuro
     return '#1f2937';
   }
 
-  // ✅ Extraer color primario del tema
   private extractPrimaryColor(theme: Theme): string {
-    // Mapeo de colores Tailwind a valores hex
     const colorMap: { [key: string]: string } = {
       'orange-500': '#f97316',
       'orange-600': '#ea580c',
@@ -200,18 +183,15 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       'yellow-400': '#facc15'
     };
 
-    // Buscar en bgPrimary
     for (const [tailwindClass, hexColor] of Object.entries(colorMap)) {
       if (theme.bgPrimary?.includes(tailwindClass)) {
         return hexColor;
       }
     }
 
-    // Fallback
     return '#f97316';
   }
 
-  // ✅ Extraer color de acento del tema
   private extractAccentColor(theme: Theme): string {
     const colorMap: { [key: string]: string } = {
       'teal-400': '#2dd4bf',
@@ -227,18 +207,15 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       'green-500': '#22c55e'
     };
 
-    // Buscar en textSecondary o checkIcon
     for (const [tailwindClass, hexColor] of Object.entries(colorMap)) {
       if (theme.textSecondary?.includes(tailwindClass) || theme.checkIcon?.includes(tailwindClass)) {
         return hexColor;
       }
     }
 
-    // Fallback
     return '#2dd4bf';
   }
 
-  // ✅ Cargar categorías desde el backend
   cargarCategorias() {
     this.publicacionesService.obtenerCategorias().subscribe({
       next: (response) => {
@@ -246,7 +223,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ Error al cargar categorías:', error);
-        // Categorías de fallback
         this.categorias = [
           { value: 'General', label: 'General', color: 'bg-orange-500' },
           { value: 'Tecnología', label: 'Tecnología', color: 'bg-teal-500' },
@@ -262,7 +238,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ Toggle selector de categoría
   toggleSelectorCategoria() {
     this.mostrarSelectorCategoria = !this.mostrarSelectorCategoria;
     if (this.mostrarSelectorCategoria) {
@@ -271,18 +246,15 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ Seleccionar categoría
   seleccionarCategoria(categoria: string) {
     this.categoriaSeleccionada = categoria;
     this.mostrarSelectorCategoria = false;
   }
 
-  // ✅ Obtener categoría actual completa
   get categoriaActual(): Categoria | undefined {
     return this.categorias.find(c => c.value === this.categoriaSeleccionada);
   }
 
-  // ✅ GETTERS para datos del usuario
   get userName(): string {
     return this.currentUser?.nombre_completo || 'Usuario';
   }
@@ -311,7 +283,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       this.emojisCargados = true;
     } catch (error) {
       console.error('Error cargando emojis:', error);
-      // Fallback emojis si la API falla
       this.emojis = [
         { character: '😀', unicodeName: 'grinning face' },
         { character: '😂', unicodeName: 'face with tears of joy' },
@@ -367,7 +338,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
 
   agregarEmoji(emoji: string) {
     this.postContent += emoji;
-    // El emoji picker permanece abierto después de seleccionar un emoji
   }
 
   closeModal() {
@@ -392,6 +362,9 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     this.selectedFile = null;
   }
 
+  /**
+   * 📝 Publicar post con manejo de errores de censura
+   */
   publicarPost() {
     if (!this.postContent.trim()) {
       return;
@@ -399,6 +372,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
 
     this.publicando = true;
     this.mensajeError = '';
+    this.tipoError = 'error';
 
     const formData = this.publicacionesService.crearFormData({
       contenido: this.postContent.trim(),
@@ -408,6 +382,15 @@ export class BotonCrearPost implements OnInit, OnDestroy {
 
     this.publicacionesService.crearPublicacion(formData).subscribe({
       next: (response) => {
+        console.log('✅ Publicación creada exitosamente', response);
+
+        // Si hay advertencia (requiere revisión)
+        if (response.data?.advertencia) {
+          this.tipoError = 'warning';
+          this.mensajeError = `⚠️ ${response.data.advertencia}`;
+          console.warn('⚠️ Advertencia:', response.data.advertencia);
+        }
+
         // Resetear formulario
         this.postContent = '';
         this.selectedImage = null;
@@ -421,13 +404,64 @@ export class BotonCrearPost implements OnInit, OnDestroy {
 
         // Emitir evento de éxito
         this.postCreado.emit();
-        this.closeModal();
+        
+        // Cerrar modal después de 1.5 segundos si no hay advertencia
+        if (!response.data?.advertencia) {
+          setTimeout(() => this.closeModal(), 1500);
+        }
       },
       error: (error) => {
         console.error('❌ Error al crear publicación:', error);
-        this.mensajeError = error.error?.message || 'Error al publicar. Intenta de nuevo.';
+
+        // ✅ MANEJO DE ERROR DE CENSURA (403)
+        if (this.publicacionesService.esErrorCensura(error)) {
+          this.tipoError = 'censura';
+          this.mensajeError = this.publicacionesService.extraerMensajeCensura(error);
+          
+          // Mostrar detalles específicos de la censura
+          if (error.errors?.detalles) {
+            console.error('📋 Detalles de censura:', {
+              contenido: error.errors.detalles.contenido,
+              imagen: error.errors.detalles.imagen
+            });
+          }
+        } else {
+          this.tipoError = 'error';
+          this.mensajeError = error.error?.message || 'Error al publicar. Intenta de nuevo.';
+        }
+
         this.publicando = false;
       }
     });
+  }
+
+  /**
+   * 🎨 Obtener clase CSS según el tipo de error
+   */
+  get errorAlertClass(): string {
+    switch (this.tipoError) {
+      case 'censura':
+        return 'bg-red-50 border-red-200 text-red-700';
+      case 'warning':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+      case 'error':
+      default:
+        return 'bg-red-50 border-red-200 text-red-700';
+    }
+  }
+
+  /**
+   * 🎨 Obtener icono según el tipo de error
+   */
+  get errorIcon(): string {
+    switch (this.tipoError) {
+      case 'censura':
+        return '🚫';
+      case 'warning':
+        return '⚠️';
+      case 'error':
+      default:
+        return '❌';
+    }
   }
 }
