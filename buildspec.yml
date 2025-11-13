@@ -7,11 +7,18 @@ phases:
     commands:
       - echo "Instalando Angular CLI y dependencias..."
       - npm install -g @angular/cli
-      - npm install
+      - npm ci --legacy-peer-deps
+  pre_build:
+    commands:
+      - echo "Verificando versión de Node y Angular..."
+      - node -v
+      - npm -v
+      - npx ng version
   build:
     commands:
-      - echo "Compilando proyecto Angular en producción..."
+      - echo "Compilando proyecto Angular en modo producción..."
       - npx ng build --configuration production
+
 artifacts:
   files:
     - '**/*'
