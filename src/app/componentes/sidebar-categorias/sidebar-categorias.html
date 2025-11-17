@@ -1,0 +1,54 @@
+<div class="sidebar-card rounded-xl shadow-sm border p-4" [ngClass]="cardBg">
+  <!-- Header -->
+  <h3 class="font-bold mb-3 flex items-center gap-2" [ngClass]="textPrimaryClass">
+    <i class="fas fa-tag"></i>
+    Categorías
+  </h3>
+  
+  <!-- Lista de categorías -->
+  <div class="space-y-2">
+    <button *ngFor="let cat of categorias"
+            (click)="seleccionar(cat.filtro)"
+            class="categoria-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition group"
+            [ngClass]="categoriaSeleccionada === cat.filtro 
+              ? [accentBg, 'text-white shadow-md'] 
+              : [textSecondaryClass, hoverBackground]">
+      
+      <!-- Icono -->
+      <i class="fas transition-transform duration-200" 
+         [ngClass]="[
+           cat.icon, 
+           categoriaSeleccionada === cat.filtro ? 'text-white' : cat.color
+         ]"></i>
+      
+      <!-- Nombre de categoría -->
+      <span class="flex-1 text-left">{{ cat.nombre }}</span>
+      
+      <!-- Contador de publicaciones -->
+      <span *ngIf="!cargandoContadores" 
+            class="text-xs px-2 py-0.5 rounded-full font-semibold transition"
+            [ngClass]="categoriaSeleccionada === cat.filtro 
+              ? 'bg-white bg-opacity-20 text-white' 
+              : 'bg-gray-200 text-gray-600'">
+        {{ obtenerContador(cat.filtro) }}
+      </span>
+      
+      <!-- Loading skeleton para contador -->
+      <div *ngIf="cargandoContadores" 
+           class="h-5 w-8 bg-gray-300 animate-pulse rounded-full"></div>
+      
+      <!-- Check mark cuando está seleccionada -->
+      <i *ngIf="categoriaSeleccionada === cat.filtro" 
+         class="fas fa-check text-white"></i>
+    </button>
+  </div>
+
+  <!-- Estado vacío si no hay categorías -->
+  <div *ngIf="categorias.length === 0" 
+       class="text-center py-6">
+    <i class="fas fa-folder-aopen text-3xl mb-2" [ngClass]="textSecondaryClass"></i>
+    <p class="text-sm" [ngClass]="textSecondaryClass">
+      No hay categorías disponibles
+    </p>
+  </div>
+</div>

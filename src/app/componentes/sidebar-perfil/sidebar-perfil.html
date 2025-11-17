@@ -1,0 +1,73 @@
+<div class="sidebar-card rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition cursor-pointer"
+     [ngClass]="cardBg"
+     (click)="irAPerfil($event)">
+  
+  <!-- Portada -->
+  <div class="h-16 relative"
+       [ngStyle]="usuario?.foto_portada_url 
+         ? {'background-image': 'url(' + usuario.foto_portada_url + ')', 'background-size': 'cover', 'background-position': 'center'} 
+         : {'background': 'linear-gradient(to right, #f97316, #ec4899)'}">
+  </div>
+  
+  <!-- Contenido -->
+  <div class="px-4 pb-4 -mt-8 relative">
+    <!-- Avatar -->
+    <div *ngIf="usuario?.foto_perfil_url; else avatarIniciales"
+         class="w-16 h-16 rounded-full border-4 shadow-lg bg-cover bg-center"
+         [ngStyle]="{'background-image': 'url(' + usuario.foto_perfil_url + ')'}"
+         [ngClass]="borderClass">
+    </div>
+    <ng-template #avatarIniciales>
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl border-4 shadow-lg"
+           [ngClass]="borderClass">
+        {{ obtenerIniciales(usuario?.nombre_completo || 'Usuario') }}
+      </div>
+    </ng-template>
+
+    <h3 class="font-bold mt-3 truncate" [ngClass]="textPrimaryClass">
+      {{ usuario?.nombre_completo || 'Mi Perfil' }}
+    </h3>
+    <p class="text-sm truncate" [ngClass]="textSecondaryClass">
+      @{{ usuario?.nombre_usuario || 'usuario' }}
+    </p>
+
+    <!-- Stats con skeleton loading -->
+    <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t" [ngClass]="borderColor">
+      <!-- Posts -->
+      <div class="text-center">
+        <div class="font-bold text-lg" [ngClass]="textPrimaryClass">
+          <span *ngIf="!cargandoEstadisticas; else loading">{{ totalPosts }}</span>
+        </div>
+        <div class="text-xs" [ngClass]="textSecondaryClass">Posts</div>
+      </div>
+      
+      <!-- Seguidores -->
+      <div class="text-center">
+        <div class="font-bold text-lg" [ngClass]="textPrimaryClass">
+          <span *ngIf="!cargandoEstadisticas; else loading">{{ totalSeguidores }}</span>
+        </div>
+        <div class="text-xs" [ngClass]="textSecondaryClass">Seguidores</div>
+      </div>
+      
+      <!-- Siguiendo -->
+      <div class="text-center">
+        <div class="font-bold text-lg" [ngClass]="textPrimaryClass">
+          <span *ngIf="!cargandoEstadisticas; else loading">{{ totalSiguiendo }}</span>
+        </div>
+        <div class="text-xs" [ngClass]="textSecondaryClass">Siguiendo</div>
+      </div>
+    </div>
+
+    <!-- Loading skeleton -->
+    <ng-template #loading>
+      <div class="h-5 w-8 bg-gray-300 animate-pulse rounded mx-auto"></div>
+    </ng-template>
+
+    <!-- Botón Ver Perfil -->
+    <button class="w-full mt-4 py-2 rounded-lg font-semibold text-sm transition text-white hover:opacity-90"
+            [ngClass]="accentBg"
+            (click)="irAPerfil($event)">
+      <i class="fas fa-user mr-2"></i>Ver mi perfil
+    </button>
+  </div>
+</div>

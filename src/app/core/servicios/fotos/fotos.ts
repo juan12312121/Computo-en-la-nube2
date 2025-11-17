@@ -60,6 +60,27 @@ interface BackendResponse {
   };
 }
 
+// 🆕 NUEVAS INTERFACES PARA LOS ENDPOINTS SIMPLES
+interface FotoPerfilSimpleResponse {
+  success: boolean;
+  data: {
+    id: number;
+    nombre_completo: string;
+    nombre_usuario: string;
+    foto_perfil_url: string | null;
+  };
+}
+
+interface FotosBatchResponse {
+  success: boolean;
+  data: Array<{
+    id: number;
+    nombre_completo: string;
+    nombre_usuario: string;
+    foto_perfil_url: string | null;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -81,10 +102,14 @@ export class FotosService {
   private formatearUrlS3(url: string, tipo: 'perfil' | 'portada' | 'publicacion'): string {
     if (!url) return '';
     
+    console.log('🔧 Formateando URL:', { original: url, tipo });
+    
     // Si ya apunta a S3, normalizarla por si tiene rutas incorrectas
     if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
       // Corregir /perfiles/ a /perfil/ si existe
-      return url.replace('/perfiles/', '/perfil/');
+      const urlCorregida = url.replace('/perfiles/', '/perfil/');
+      console.log('✅ URL S3 corregida:', urlCorregida);
+      return urlCorregida;
     }
     
     // Si es una URL del servidor API, extraer solo la ruta
@@ -93,7 +118,9 @@ export class FotosService {
       if (match) {
         // Corregir /perfiles/ a /perfil/ si existe
         const rutaCorregida = match[0].replace('/perfiles/', '/perfil/');
-        return `${this.s3BaseUrl}${rutaCorregida}`;
+        const urlCompleta = `${this.s3BaseUrl}${rutaCorregida}`;
+        console.log('✅ URL transformada de API a S3:', urlCompleta);
+        return urlCompleta;
       }
     }
     
@@ -107,13 +134,19 @@ export class FotosService {
         carpeta = 'portadas';
       }
       
-      return `${this.s3BaseUrl}/uploads/${carpeta}/${url}`;
+      const urlCompleta = `${this.s3BaseUrl}/uploads/${carpeta}/${url}`;
+      console.log('✅ URL construida desde nombre:', urlCompleta);
+      return urlCompleta;
     }
     
     // Si es una ruta relativa, construir URL completa
     const cleanPath = url.replace(/^\/+/, '').replace('/perfiles/', '/perfil/');
-    return `${this.s3BaseUrl}/${cleanPath}`;
+    const urlCompleta = `${this.s3BaseUrl}/${cleanPath}`;
+    console.log('✅ URL construida desde ruta relativa:', urlCompleta);
+    return urlCompleta;
   }
+
+  // ========== MÉTODOS EXISTENTES ==========
 
   obtenerMisFotos(): Observable<Photo[]> {
     console.log('========================================');
@@ -241,5 +274,121 @@ export class FotosService {
     console.log('========================================');
 
     return fotos;
+  }
+
+  // ========== 🆕 NUEVOS MÉTODOS PARA COMENTARIOS ==========
+
+  /**
+   * Obtiene la foto de perfil de un usuario específico
+   * Endpoint: GET /api/fotos/usuario/:usuario_id/foto-perfil-simple
+   */
+  obtenerFotoPerfil(usuarioId: number): Observable<FotoPerfilSimpleResponse> {
+    console.log('📸 [obtenerFotoPerfil] Solicitando foto del usuario:', usuarioId);
+    
+    return this.http.get<FotoPerfilSimpleResponse>(
+      `${this.apiUrl}/usuario/${usuarioId}/foto-perfil-simple`
+    ).pipe(
+      tap(response => {
+        console.log('📦 [obtenerFotoPerfil] Respuesta raw:', {
+          success: response.success,
+          usuario: response.data?.nombre_completo,
+          foto_url_original: response.data?.foto_perfil_url
+        });
+      }),
+      map(response => {
+        // 🔥 APLICAR FORMATEO A LA URL
+        if (response.success && response.data && response.data.foto_perfil_url) {
+          const urlOriginal = response.data.foto_perfil_url;
+          const urlFormateada = this.formatearUrlS3(urlOriginal, 'perfil');
+          
+          console.log('✅ [obtenerFotoPerfil] URL formateada:', {
+            usuario_id: usuarioId,
+            nombre: response.data.nombre_completo,
+            url_original: urlOriginal,
+            url_formateada: urlFormateada
+          });
+          
+          // Devolver respuesta con URL formateada
+          return {
+            ...response,
+            data: {
+              ...response.data,
+              foto_perfil_url: urlFormateada
+            }
+          };
+        }
+        
+        console.log('⚠️ [obtenerFotoPerfil] Usuario sin foto:', usuarioId);
+        return response;
+      })
+    );
+  }
+
+  /**
+   * Obtiene fotos de perfil de múltiples usuarios en una sola petición
+   * Endpoint: POST /api/fotos/usuarios/fotos-batch
+   * @param usuariosIds Array de IDs de usuarios (máx 50)
+   */
+  obtenerFotosBatch(usuariosIds: number[]): Observable<FotosBatchResponse> {
+    console.log('📸 [obtenerFotosBatch] Solicitando fotos de', usuariosIds.length, 'usuarios');
+    
+    // Validación: limitar a 50 usuarios
+    const idsLimitados = usuariosIds.slice(0, 50);
+    
+    if (idsLimitados.length !== usuariosIds.length) {
+      console.warn('⚠️ [obtenerFotosBatch] IDs limitados de', usuariosIds.length, 'a', idsLimitados.length);
+    }
+    
+    return this.http.post<FotosBatchResponse>(
+      `${this.apiUrl}/usuarios/fotos-batch`,
+      { usuarios_ids: idsLimitados }
+    ).pipe(
+      tap(response => {
+        console.log('📦 [obtenerFotosBatch] Respuesta raw:', {
+          success: response.success,
+          solicitados: idsLimitados.length,
+          recibidos: response.data?.length || 0,
+          con_foto: response.data?.filter(u => u.foto_perfil_url).length || 0
+        });
+      }),
+      map(response => {
+        // 🔥 APLICAR FORMATEO A TODAS LAS URLs
+        if (response.success && response.data && Array.isArray(response.data)) {
+          console.log('🔧 [obtenerFotosBatch] Formateando URLs...');
+          
+          const dataFormateada = response.data.map(usuario => {
+            if (usuario.foto_perfil_url) {
+              const urlOriginal = usuario.foto_perfil_url;
+              const urlFormateada = this.formatearUrlS3(urlOriginal, 'perfil');
+              
+              console.log(`✅ Usuario ${usuario.id} (${usuario.nombre_completo}):`, {
+                url_original: urlOriginal,
+                url_formateada: urlFormateada
+              });
+              
+              return {
+                ...usuario,
+                foto_perfil_url: urlFormateada
+              };
+            }
+            
+            console.log(`⚠️ Usuario ${usuario.id} (${usuario.nombre_completo}): Sin foto`);
+            return usuario;
+          });
+          
+          console.log('✅ [obtenerFotosBatch] Formateo completado:', {
+            total: dataFormateada.length,
+            con_foto: dataFormateada.filter(u => u.foto_perfil_url).length
+          });
+          
+          return {
+            ...response,
+            data: dataFormateada
+          };
+        }
+        
+        return response;
+      })
+    );
   }
 }

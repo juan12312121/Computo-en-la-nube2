@@ -100,6 +100,46 @@
         </button>
       </div>
 
+      <!-- 🆕 VISTA PREVIA DE DOCUMENTOS ADJUNTOS -->
+      <div *ngIf="documentosAdjuntos.length > 0" class="space-y-2">
+        <div class="flex items-center justify-between">
+          <p [ngClass]="currentTheme.textPrimaryClass" class="font-semibold text-sm">
+            <i class="fas fa-paperclip mr-1"></i>
+            Documentos adjuntos ({{ documentosAdjuntos.length }}/{{ MAX_DOCUMENTOS }})
+          </p>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-2">
+          <div *ngFor="let doc of documentosAdjuntos; let i = index"
+               class="flex items-center gap-3 p-3 rounded-lg border transition hover:shadow-md"
+               [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
+            
+            <!-- Icono del documento -->
+            <div class="flex-shrink-0">
+              <i [class]="'fas ' + doc.icono + ' text-2xl ' + doc.color"></i>
+            </div>
+
+            <!-- Info del documento -->
+            <div class="flex-1 min-w-0">
+              <p [ngClass]="currentTheme.textPrimaryClass" class="font-medium text-sm truncate">
+                {{ doc.nombre }}
+              </p>
+              <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs">
+                {{ formatearTamano(doc.file.size) }}
+              </p>
+            </div>
+
+            <!-- Botón eliminar -->
+            <button
+              (click)="eliminarDocumento(i)"
+              [disabled]="publicando"
+              class="flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full w-8 h-8 flex items-center justify-center transition disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fas fa-trash text-sm"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Selector de Categoría -->
       <div *ngIf="mostrarSelectorCategoria"
            class="category-selector-container border-2 rounded-xl p-4 space-y-3"
@@ -190,6 +230,26 @@
           <i class="fas fa-image text-xl"></i>
           <span class="font-medium">Foto</span>
           <input type="file" accept="image/*" (change)="onImageSelect($event)" class="hidden" [disabled]="publicando">
+        </label>
+
+        <!-- 🆕 BOTÓN DE DOCUMENTOS -->
+        <label
+          class="flex items-center gap-2 cursor-pointer transition"
+          [ngClass]="[
+            currentTheme.textSecondaryClass, 
+            currentTheme.hoverText, 
+            publicando || !puedeAgregarDocumentos ? 'pointer-events-none opacity-50' : '',
+            documentosAdjuntos.length > 0 ? currentTheme.accentColor : ''
+          ]">
+          <i class="fas fa-paperclip text-xl"></i>
+          <span class="font-medium">Docs ({{ documentosAdjuntos.length }}/{{ MAX_DOCUMENTOS }})</span>
+          <input 
+            type="file" 
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.csv,.txt" 
+            (change)="onDocumentosSelect($event)" 
+            class="hidden" 
+            [disabled]="publicando || !puedeAgregarDocumentos"
+            multiple>
         </label>
 
         <button

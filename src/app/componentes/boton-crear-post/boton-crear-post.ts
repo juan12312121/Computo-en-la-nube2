@@ -6,6 +6,15 @@ import { AutenticacionService, Usuario } from '../../core/servicios/autenticacio
 import { Categoria, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 
+// 🆕 Interface para documentos adjuntos
+interface DocumentoAdjunto {
+  file: File;
+  preview: string;
+  icono: string;
+  color: string;
+  nombre: string;
+}
+
 @Component({
   selector: 'app-boton-crear-post',
   standalone: true,
@@ -31,6 +40,11 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   postContent = '';
   selectedImage: string | null = null;
   selectedFile: File | null = null;
+  
+  // 🆕 Documentos adjuntos
+  documentosAdjuntos: DocumentoAdjunto[] = [];
+  readonly MAX_DOCUMENTOS = 5;
+  
   mostrarEmojiPicker = false;
   emojis: any[] = [];
   emojisCargados = false;
@@ -362,8 +376,132 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     this.selectedFile = null;
   }
 
+  // 🆕 ==================== FUNCIONES PARA DOCUMENTOS ====================
+
   /**
-   * 📝 Publicar post con manejo de errores de censura
+   * Maneja la selección de documentos
+   */
+  onDocumentosSelect(event: any) {
+    const files: FileList = event.target.files;
+    
+    if (!files || files.length === 0) return;
+
+    // Validar cantidad máxima
+    if (this.documentosAdjuntos.length + files.length > this.MAX_DOCUMENTOS) {
+      this.mensajeError = `Solo puedes adjuntar hasta ${this.MAX_DOCUMENTOS} documentos`;
+      this.tipoError = 'warning';
+      setTimeout(() => this.mensajeError = '', 3000);
+      return;
+    }
+
+    // Procesar cada archivo
+    Array.from(files).forEach(file => {
+      // Validar tipo de archivo
+      if (!this.esArchivoPermitido(file)) {
+        this.mensajeError = `Archivo no permitido: ${file.name}. Solo PDF, Word, Excel, PowerPoint, ZIP, RAR, CSV, TXT`;
+        this.tipoError = 'warning';
+        setTimeout(() => this.mensajeError = '', 4000);
+        return;
+      }
+
+      // Validar tamaño (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        this.mensajeError = `El archivo ${file.name} supera los 10MB`;
+        this.tipoError = 'warning';
+        setTimeout(() => this.mensajeError = '', 3000);
+        return;
+      }
+
+      const { icono, color } = this.obtenerIconoYColor(file.type);
+
+      const documento: DocumentoAdjunto = {
+        file,
+        preview: URL.createObjectURL(file),
+        icono,
+        color,
+        nombre: file.name
+      };
+
+      this.documentosAdjuntos.push(documento);
+    });
+
+    // Resetear input
+    event.target.value = '';
+  }
+
+  /**
+   * Elimina un documento de la lista
+   */
+  eliminarDocumento(index: number) {
+    // Liberar URL del preview
+    URL.revokeObjectURL(this.documentosAdjuntos[index].preview);
+    this.documentosAdjuntos.splice(index, 1);
+  }
+
+  /**
+   * Valida si el tipo de archivo es permitido
+   */
+  private esArchivoPermitido(file: File): boolean {
+    const tiposPermitidos = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/zip',
+      'application/x-rar-compressed',
+      'text/csv',
+      'text/plain'
+    ];
+
+    return tiposPermitidos.includes(file.type);
+  }
+
+  /**
+   * Obtiene el icono y color según el tipo de archivo
+   */
+  private obtenerIconoYColor(tipo: string): { icono: string; color: string } {
+    const mapa: { [key: string]: { icono: string; color: string } } = {
+      'application/pdf': { icono: 'fa-file-pdf', color: 'text-red-500' },
+      'application/msword': { icono: 'fa-file-word', color: 'text-blue-500' },
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { icono: 'fa-file-word', color: 'text-blue-500' },
+      'application/vnd.ms-excel': { icono: 'fa-file-excel', color: 'text-green-500' },
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { icono: 'fa-file-excel', color: 'text-green-500' },
+      'application/vnd.ms-powerpoint': { icono: 'fa-file-powerpoint', color: 'text-orange-500' },
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': { icono: 'fa-file-powerpoint', color: 'text-orange-500' },
+      'application/zip': { icono: 'fa-file-archive', color: 'text-purple-500' },
+      'application/x-rar-compressed': { icono: 'fa-file-archive', color: 'text-purple-500' },
+      'text/csv': { icono: 'fa-file-csv', color: 'text-yellow-500' },
+      'text/plain': { icono: 'fa-file-code', color: 'text-indigo-500' }
+    };
+
+    return mapa[tipo] || { icono: 'fa-file', color: 'text-gray-500' };
+  }
+
+  /**
+   * Formatea el tamaño del archivo
+   */
+  formatearTamano(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Verifica si se puede agregar más documentos
+   */
+  get puedeAgregarDocumentos(): boolean {
+    return this.documentosAdjuntos.length < this.MAX_DOCUMENTOS;
+  }
+
+  // 🆕 ==================== FIN FUNCIONES DOCUMENTOS ====================
+
+  /**
+   * 📝 Publicar post con imagen y documentos
    */
   publicarPost() {
     if (!this.postContent.trim()) {
@@ -374,10 +512,26 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     this.mensajeError = '';
     this.tipoError = 'error';
 
-    const formData = this.publicacionesService.crearFormData({
+    // Crear FormData con contenido, categoría, imagen y documentos
+    const formData = new FormData();
+    formData.append('contenido', this.postContent.trim());
+    formData.append('categoria', this.categoriaSeleccionada);
+
+    // Agregar imagen si existe
+    if (this.selectedFile) {
+      formData.append('imagen', this.selectedFile);
+    }
+
+    // 🆕 Agregar documentos
+    this.documentosAdjuntos.forEach(doc => {
+      formData.append('documentos', doc.file);
+    });
+
+    console.log('📤 Enviando publicación con:', {
       contenido: this.postContent.trim(),
       categoria: this.categoriaSeleccionada,
-      imagen: this.selectedFile || undefined
+      tieneImagen: !!this.selectedFile,
+      cantidadDocumentos: this.documentosAdjuntos.length
     });
 
     this.publicacionesService.crearPublicacion(formData).subscribe({
@@ -395,6 +549,8 @@ export class BotonCrearPost implements OnInit, OnDestroy {
         this.postContent = '';
         this.selectedImage = null;
         this.selectedFile = null;
+        this.documentosAdjuntos.forEach(doc => URL.revokeObjectURL(doc.preview));
+        this.documentosAdjuntos = [];
         this.mostrarEmojiPicker = false;
         this.mostrarSelectorCategoria = false;
         this.categoriaSeleccionada = 'General';

@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { AutenticacionService } from '../autenticacion/autenticacion';
 
 // Interfaces
@@ -15,6 +15,12 @@ export interface Comentario {
   nombre_completo: string;
   foto_perfil_url?: string;
   foto_perfil_s3?: string;
+  // ✅ Metadata de censura (opcional, viene del backend)
+  _censura?: {
+    fue_censurado: boolean;
+    nivel: string;
+    palabras_censuradas: number;
+  };
 }
 
 export interface ComentarioRequest {
@@ -44,6 +50,16 @@ export interface ComentariosListResponse {
   };
 }
 
+/**
+ * ✅ NUEVA: Información sobre resultado de censura
+ */
+export interface ResultadoCensura {
+  fue_censurado: boolean;
+  nivel: string;
+  palabras_censuradas: number;
+  mensaje_usuario?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -62,13 +78,12 @@ export class ComentariosService {
       this.apiUrl = 'http://3.146.83.30:3000/api/comentarios';
     }
 
-    console.log('🔧 ComentariosService inicializado');
+    console.log('🔧 ComentariosService inicializado con soporte de censura');
     console.log('📍 API URL:', this.apiUrl);
   }
 
   /**
    * Obtiene los headers con el token de autenticación
-   * @returns HttpHeaders con el token
    */
   private getHeaders(): HttpHeaders {
     const token = this.autenticacionService.getToken();
@@ -79,20 +94,65 @@ export class ComentariosService {
   }
 
   /**
-   * Crear un nuevo comentario
-   * @param datos - Datos del comentario (publicacion_id, texto)
-   * @returns Observable con la respuesta del servidor
+   * ✅ NUEVA: Generar mensaje amigable según nivel de censura
    */
-  crear(datos: ComentarioRequest): Observable<ComentarioResponse> {
+  private generarMensajeCensura(censura: ResultadoCensura): string {
+    if (!censura.fue_censurado) {
+      return '✅ Comentario publicado exitosamente';
+    }
+
+    const palabras = censura.palabras_censuradas;
+    
+    switch (censura.nivel) {
+      case 'bajo':
+        return `💬 Tu comentario fue publicado. Se moderaron ${palabras} palabra${palabras > 1 ? 's' : ''} para mantener un ambiente respetuoso.`;
+      
+      case 'medio':
+        return `⚠️ Tu comentario fue publicado con moderación. ${palabras} palabra${palabras > 1 ? 's' : ''} no permitida${palabras > 1 ? 's' : ''} fue${palabras > 1 ? 'ron' : ''} censurada${palabras > 1 ? 's' : ''}.`;
+      
+      case 'alto':
+        return `🚨 Tu comentario fue publicado con moderación significativa. Por favor, recuerda mantener un lenguaje respetuoso en la plataforma.`;
+      
+      default:
+        return `💬 Tu comentario fue publicado con moderación automática.`;
+    }
+  }
+
+  /**
+   * ✅ MEJORADO: Crear comentario con detección de censura
+   */
+  crear(datos: ComentarioRequest): Observable<ComentarioResponse & { censura?: ResultadoCensura }> {
     console.log('📝 Creando comentario para publicación:', datos.publicacion_id);
     
-    return this.http.post<ComentarioResponse>(
+    return this.http.post<any>(
       this.apiUrl, 
       datos, 
       { headers: this.getHeaders() }
     ).pipe(
       map(response => {
-        console.log('✅ Comentario creado:', response);
+        console.log('✅ Respuesta del servidor:', response);
+
+        // Extraer información de censura si existe
+        const censura = response.data?._censura;
+        
+        if (censura && censura.fue_censurado) {
+          console.log('🔒 Comentario censurado:', {
+            nivel: censura.nivel,
+            palabras: censura.palabras_censuradas
+          });
+
+          // Agregar mensaje amigable para el usuario
+          const resultado: ResultadoCensura = {
+            ...censura,
+            mensaje_usuario: this.generarMensajeCensura(censura)
+          };
+
+          return {
+            ...response,
+            censura: resultado
+          };
+        }
+
         return response;
       }),
       catchError(error => {
@@ -104,12 +164,6 @@ export class ComentariosService {
 
   /**
    * Obtener comentarios de una publicación específica
-   * ✅ CORREGIDO: Extrae el array de comentarios de la respuesta
-   * 
-   * @param publicacionId - ID de la publicación
-   * @param limit - Cantidad de comentarios a obtener (default: 50)
-   * @param offset - Desde qué comentario empezar (default: 0)
-   * @returns Observable con lista de comentarios (ARRAY PURO)
    */
   obtenerPorPublicacion(
     publicacionId: number, 
@@ -133,17 +187,13 @@ export class ComentariosService {
       map(response => {
         console.log('📦 Respuesta recibida:', response);
         
-        // ✅ VALIDAR ESTRUCTURA
         if (!response.success) {
           console.warn('⚠️ Respuesta no exitosa:', response.mensaje);
           return [];
         }
 
-        // ✅ EXTRAER COMENTARIOS DEL OBJETO
         const comentariosArray = response.data?.comentarios;
         
-        console.log('🔍 Tipo de comentariosArray:', typeof comentariosArray, 'Es array:', Array.isArray(comentariosArray));
-
         if (!Array.isArray(comentariosArray)) {
           console.warn('⚠️ comentarios no es array:', comentariosArray);
           return [];
@@ -154,17 +204,13 @@ export class ComentariosService {
       }),
       catchError(error => {
         console.error('❌ Error obteniendo comentarios:', error);
-        return of([]); // Devolver array vacío en caso de error
+        return of([]);
       })
     );
   }
 
   /**
    * Obtener comentarios de un usuario específico
-   * @param usuarioId - ID del usuario
-   * @param limit - Cantidad de comentarios a obtener (default: 50)
-   * @param offset - Desde qué comentario empezar (default: 0)
-   * @returns Observable con lista de comentarios (ARRAY PURO)
    */
   obtenerPorUsuario(
     usuarioId: number, 
@@ -196,8 +242,6 @@ export class ComentariosService {
 
   /**
    * Obtener un comentario específico por ID
-   * @param id - ID del comentario
-   * @returns Observable con el comentario
    */
   obtenerPorId(id: number): Observable<ComentarioResponse> {
     console.log('🔍 Obteniendo comentario ID:', id);
@@ -214,21 +258,39 @@ export class ComentariosService {
   }
 
   /**
-   * Actualizar un comentario
-   * @param id - ID del comentario
-   * @param datos - Nuevos datos del comentario (texto)
-   * @returns Observable con la respuesta del servidor
+   * ✅ MEJORADO: Actualizar comentario con detección de censura
    */
-  actualizar(id: number, datos: ComentarioUpdateRequest): Observable<ComentarioResponse> {
+  actualizar(id: number, datos: ComentarioUpdateRequest): Observable<ComentarioResponse & { censura?: ResultadoCensura }> {
     console.log('✏️ Actualizando comentario ID:', id);
 
-    return this.http.put<ComentarioResponse>(
+    return this.http.put<any>(
       `${this.apiUrl}/${id}`, 
       datos,
       { headers: this.getHeaders() }
     ).pipe(
       map(response => {
         console.log('✅ Comentario actualizado:', response);
+
+        // Extraer información de censura
+        const censura = response.data?._censura;
+        
+        if (censura && censura.fue_censurado) {
+          console.log('🔒 Actualización censurada:', {
+            nivel: censura.nivel,
+            palabras: censura.palabras_censuradas
+          });
+
+          const resultado: ResultadoCensura = {
+            ...censura,
+            mensaje_usuario: this.generarMensajeCensura(censura)
+          };
+
+          return {
+            ...response,
+            censura: resultado
+          };
+        }
+
         return response;
       }),
       catchError(error => {
@@ -240,8 +302,6 @@ export class ComentariosService {
 
   /**
    * Eliminar un comentario
-   * @param id - ID del comentario
-   * @returns Observable con la respuesta del servidor
    */
   eliminar(id: number): Observable<ComentarioResponse> {
     console.log('🗑️ Eliminando comentario ID:', id);
@@ -263,10 +323,6 @@ export class ComentariosService {
 
   /**
    * Cargar más comentarios (para infinite scroll)
-   * @param publicacionId - ID de la publicación
-   * @param comentariosActuales - Array de comentarios actuales
-   * @param limit - Cantidad de comentarios a cargar
-   * @returns Observable con los nuevos comentarios
    */
   cargarMasComentarios(
     publicacionId: number, 
@@ -277,5 +333,24 @@ export class ComentariosService {
 
     const offset = comentariosActuales.length;
     return this.obtenerPorPublicacion(publicacionId, limit, offset);
+  }
+
+  /**
+   * ✅ NUEVA: Validar comentario antes de enviar (opcional)
+   * Permite al usuario saber si su comentario podría ser censurado
+   */
+  validarTextoAntesDeComentar(texto: string): { valido: boolean; advertencia?: string } {
+    // Validaciones básicas del lado del cliente
+    if (!texto || texto.trim().length === 0) {
+      return { valido: false, advertencia: 'El comentario no puede estar vacío' };
+    }
+
+    if (texto.length > 1000) {
+      return { valido: false, advertencia: 'El comentario no puede exceder 1000 caracteres' };
+    }
+
+    // ⚠️ Nota: La censura real se hace en el servidor
+    // Aquí solo validamos formato
+    return { valido: true };
   }
 }

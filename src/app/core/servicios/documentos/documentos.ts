@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 export interface Documento {
   id: number;
   usuario_id: number;
+  publicacion_id?: number | null; // 🆕 Campo nuevo
   documento_url: string | null;
   documento_s3: string;
   nombre_archivo: string;
@@ -42,9 +43,13 @@ export class DocumentosService {
   }
 
   /**
-   * Sube un nuevo documento
+   * Sube un nuevo documento (con o sin vinculación a publicación)
    */
-  subirDocumento(archivo: File, nombreCustom?: string): Observable<ApiResponse<Documento>> {
+  subirDocumento(
+    archivo: File, 
+    nombreCustom?: string, 
+    publicacionId?: number // 🆕 Parámetro opcional
+  ): Observable<ApiResponse<Documento>> {
     const formData = new FormData();
     formData.append('documento', archivo);
     
@@ -52,9 +57,46 @@ export class DocumentosService {
       formData.append('nombre_archivo_custom', nombreCustom);
     }
 
+    // 🆕 Vincular a publicación al subir
+    if (publicacionId) {
+      formData.append('publicacion_id', publicacionId.toString());
+    }
+
     return this.http.post<ApiResponse<Documento>>(
       this.apiUrl,
       formData,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  /**
+   * 🆕 Obtiene documentos de una publicación específica
+   */
+  obtenerDocumentosPorPublicacion(publicacionId: number): Observable<ApiResponse<Documento[]>> {
+    return this.http.get<ApiResponse<Documento[]>>(
+      `${this.apiUrl}/publicacion/${publicacionId}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  /**
+   * 🆕 Vincula un documento existente a una publicación
+   */
+  vincularDocumentoAPublicacion(documentoId: number, publicacionId: number): Observable<ApiResponse<Documento>> {
+    return this.http.patch<ApiResponse<Documento>>(
+      `${this.apiUrl}/${documentoId}/vincular`,
+      { publicacion_id: publicacionId },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  /**
+   * 🆕 Desvincula un documento de su publicación
+   */
+  desvincularDocumento(documentoId: number): Observable<ApiResponse<Documento>> {
+    return this.http.patch<ApiResponse<Documento>>(
+      `${this.apiUrl}/${documentoId}/desvincular`,
+      {},
       { headers: this.getHeaders() }
     );
   }
@@ -93,6 +135,7 @@ export class DocumentosService {
       nombre_archivo_custom?: string;
       icono?: string;
       color?: string;
+      publicacion_id?: number; // 🆕 Puede actualizar la vinculación
     }
   ): Observable<ApiResponse<Documento>> {
     const formData = new FormData();
@@ -108,6 +151,9 @@ export class DocumentosService {
     }
     if (datos.color) {
       formData.append('color', datos.color);
+    }
+    if (datos.publicacion_id !== undefined) {
+      formData.append('publicacion_id', datos.publicacion_id.toString());
     }
 
     return this.http.put<ApiResponse<Documento>>(
@@ -159,13 +205,17 @@ export class DocumentosService {
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/zip', // 🆕
+      'application/x-rar-compressed', // 🆕
+      'text/csv', // 🆕
+      'text/plain' // 🆕
     ];
 
     if (!tiposPermitidos.includes(file.type)) {
       return {
         valido: false,
-        mensaje: 'Solo se permiten archivos: PDF, Word, Excel y PowerPoint'
+        mensaje: 'Solo se permiten archivos: PDF, Word, Excel, PowerPoint, ZIP, RAR, CSV y TXT'
       };
     }
 
@@ -179,5 +229,25 @@ export class DocumentosService {
     }
 
     return { valido: true, mensaje: 'Archivo válido' };
+  }
+
+  /**
+   * 🆕 Descarga un documento
+   */
+  descargarDocumento(url: string, nombreArchivo: string): void {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombreArchivo;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  /**
+   * 🆕 Verifica si un documento está vinculado a una publicación
+   */
+  estaVinculado(documento: Documento): boolean {
+    return documento.publicacion_id !== null && documento.publicacion_id !== undefined;
   }
 }

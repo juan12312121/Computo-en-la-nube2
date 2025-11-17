@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, Subscription, takeUntil } from 'rxjs';
@@ -14,8 +14,15 @@ import { PublicacionesService } from '../../core/servicios/publicaciones/publica
 import { ReportesService } from '../../core/servicios/reportes/reportes';
 import { SeguidorService } from '../../core/servicios/seguidores/seguidores';
 import { Theme, ThemeService } from '../../core/servicios/temas';
+import { FotosService } from '../../core/servicios/fotos/fotos';
+import { SidebarPerfil } from '../../componentes/sidebar-perfil/sidebar-perfil';
+import { SidebarCategorias } from '../../componentes/sidebar-categorias/sidebar-categorias';
+import { SidebarUsuariosActivos } from '../../componentes/sidebar-usuarios-activos/sidebar-usuarios-activos';
+import { AppSidebarSugerencias } from '../../componentes/app-sidebar-sugerencias/app-sidebar-sugerencias';
+import { AppModalNoInteresa } from '../../componentes/app-modal-no-interesa/app-modal-no-interesa';
+import { ModalReporte } from '../../componentes/modal-reporte/modal-reporte';
+import { ModalCompartir } from '../../componentes/modal-compartir/modal-compartir';
 
-// ========== INTERFACES ==========
 interface Comment {
   id: number;
   author: string;
@@ -24,6 +31,21 @@ interface Comment {
   time: string;
   avatarColor: string;
   usuario_id?: number;
+  foto_perfil_url?: string | null;
+  usandoIniciales?: boolean;
+}
+
+interface Documento {
+  id: number;
+  usuario_id: number;
+  publicacion_id: number;
+  documento_s3: string;
+  nombre_archivo: string;
+  tamano_archivo: number;
+  tipo_archivo: string;
+  icono: string;
+  color: string;
+  fecha_creacion: string;
 }
 
 interface Post {
@@ -47,6 +69,7 @@ interface Post {
   totalComments?: number;
   likeLoading?: boolean;
   showOptions?: boolean;
+  documentos?: Documento[];
 }
 
 interface User {
@@ -58,7 +81,6 @@ interface User {
   isFollowing: boolean;
 }
 
-// ========== CONSTANTES ==========
 const AVATAR_COLORS = [
   'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
   'linear-gradient(to bottom right, #f97316, #ea580c)',
@@ -80,7 +102,7 @@ const THEME_COLORS: { [key: string]: string } = {
 const SHARE_URLS: { [key: string]: (url: string, text: string) => string } = {
   whatsapp: (url, text) => `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`,
   facebook: (url) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-  twitter: (url, text) => `https://twitter.twitter/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+  twitter: (url, text) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
   linkedin: (url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
   telegram: (url, text) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
   email: (url, text) => `mailto:?subject=${encodeURIComponent('Mira esta publicación')}&body=${encodeURIComponent(text + '\n\n' + url)}`
@@ -89,18 +111,20 @@ const SHARE_URLS: { [key: string]: (url: string, text: string) => string } = {
 @Component({
   selector: 'app-principal',
   standalone: true,
-  imports: [CommonModule, FormsModule, Navbar, DetallePost],
+  imports: [
+    CommonModule, FormsModule, Navbar, DetallePost, SidebarPerfil, SidebarCategorias,
+    SidebarUsuariosActivos, AppSidebarSugerencias, AppModalNoInteresa, ModalReporte, ModalCompartir
+  ],
   templateUrl: './principal.html',
   styleUrls: ['./principal.css']
 })
 export class Principal implements OnInit, OnDestroy {
-  // ========== ESTADO ==========
+  @ViewChild(AppSidebarSugerencias) sidebarSugerencias?: AppSidebarSugerencias;
+
   posts: Post[] = [];
   users: User[] = [];
   currentTheme!: Theme;
   usuarioActualId: number | null = null;
-
-  // ========== UI STATE ==========
   showCreateModal = false;
   showPostDetailModal = false;
   showShareModal = false;
@@ -113,53 +137,46 @@ export class Principal implements OnInit, OnDestroy {
   isLoading = true;
   errorMessage = '';
   linkCopied = false;
-
-  // ========== FORM STATE ==========
   commentInputs: { [key: number]: string } = {};
-selectedTab: 'redes' = 'redes';
   
-  // ========== REPORTES ==========
+  comentarioCensuradoMensaje: { [key: number]: string } = {};
+  mostrandoAlertaCensura: { [key: number]: boolean } = {};
+  nivelCensura: { [key: number]: string } = {};
+  
   reportMotivo: string = '';
   reportDescripcion: string = '';
   reportLoading = false;
   reportSuccess = false;
   reportError = '';
-
-  // ========== NO ME INTERESA ==========
   noInteresaLoading = false;
   noInteresaSuccess = false;
   noInteresaError = '';
-  
-  // ========== OCULTAR ==========
   ocultarLoading = false;
-
-
   usuarioActual: any = null;
-usuariosActivos: any[] = [];
-usuariosSugeridos: any[] = [];
-categoriasDisponibles = [
-  { nombre: 'Tecnología', icon: 'fa-laptop-code', color: 'text-blue-500', filtro: 'Tecnología' },
-  { nombre: 'Deportes', icon: 'fa-futbol', color: 'text-green-500', filtro: 'Deportes' },
-  { nombre: 'Arte', icon: 'fa-palette', color: 'text-purple-500', filtro: 'Arte' },
-  { nombre: 'Ciencia', icon: 'fa-flask', color: 'text-teal-500', filtro: 'Ciencia' },
-  { nombre: 'Música', icon: 'fa-music', color: 'text-pink-500', filtro: 'Música' },
-  { nombre: 'Gaming', icon: 'fa-gamepad', color: 'text-indigo-500', filtro: 'Gaming' }
-];
-categoriaSeleccionada: string | null = null;
-
-  // ========== CACHE LOCAL ==========
+  usuariosActivos: any[] = [];
+  
+  categoriasDisponibles = [
+    { nombre: 'General', icon: 'fa-home', color: 'text-orange-500', filtro: 'General' },
+    { nombre: 'Tecnología', icon: 'fa-laptop-code', color: 'text-blue-500', filtro: 'Tecnología' },
+    { nombre: 'Ciencias', icon: 'fa-flask', color: 'text-purple-500', filtro: 'Ciencias' },
+    { nombre: 'Artes y Cultura', icon: 'fa-palette', color: 'text-pink-500', filtro: 'Artes y Cultura' },
+    { nombre: 'Deportes', icon: 'fa-futbol', color: 'text-green-500', filtro: 'Deportes' },
+    { nombre: 'Salud y Bienestar', icon: 'fa-heartbeat', color: 'text-green-500', filtro: 'Salud y Bienestar' },
+    { nombre: 'Vida Universitaria', icon: 'fa-graduation-cap', color: 'text-orange-600', filtro: 'Vida Universitaria' },
+    { nombre: 'Opinión', icon: 'fa-comments', color: 'text-indigo-500', filtro: 'Opinión' },
+    { nombre: 'Entrevistas', icon: 'fa-microphone', color: 'text-yellow-500', filtro: 'Entrevistas' }
+  ];
+  categoriaSeleccionada: string | null = null;
   publicacionesOcultas = new Set<number>();
   publicacionesNoInteresan = new Set<number>();
-
-  // ========== PRIVADO ==========
-  private seguidosIds = new Set<number>();
+  fotosPerfilCache = new Map<number, string | null>();
+  seguidosIds = new Set<number>();
   private themeSubscription?: Subscription;
   private destroy$ = new Subject<void>();
   public readonly apiBaseUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'http://3.146.83.30:3000';
-    public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
-
+  public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
   constructor(
     private themeService: ThemeService,
@@ -171,40 +188,39 @@ categoriaSeleccionada: string | null = null;
     private reportesService: ReportesService,
     private publicacionesOcultasService: PublicacionesOcultasService,
     private noMeInteresaService: NoMeInteresaService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private fotosService: FotosService
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
   }
 
-  // ========== LIFECYCLE HOOKS ==========
   ngOnInit(): void {
-  this.themeSubscription = this.themeService.currentTheme$
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(theme => {
-      this.currentTheme = theme;
-    });
+    this.themeSubscription = this.themeService.currentTheme$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(theme => {
+        this.currentTheme = theme;
+      });
 
-  this.usuarioActualId = this.obtenerUsuarioActualId();
-  this.inicializarFeed();
+    this.usuarioActualId = this.obtenerUsuarioActualId();
+    this.cargarDatosUsuarioActual();
+    this.cargarUsuariosActivosEstatico();
+    this.inicializarFeed();
 
-  // ✅ DETECTAR parámetro de post en la URL
-  this.route.params
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(params => {
-      const postId = params['id'];
-      if (postId) {
-        console.log('📍 Post ID detectado en URL:', postId);
-        this.abrirPostDesdeURL(Number(postId));
-      }
-    });
-}
+    this.route.params
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const postId = params['id'];
+        if (postId) {
+          this.abrirPostDesdeURL(Number(postId));
+        }
+      });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  // ========== INICIALIZACIÓN ==========
   private async inicializarFeed(): Promise<void> {
     this.isLoading = true;
     try {
@@ -217,7 +233,7 @@ categoriaSeleccionada: string | null = null;
         this.verificarLikesDelUsuario();
       }
     } catch (error) {
-      console.error('❌ Error al inicializar feed:', error);
+      console.error('Error al inicializar feed:', error);
       this.errorMessage = 'Error al cargar el contenido';
       this.cargarDatosEjemplo();
     } finally {
@@ -228,7 +244,6 @@ categoriaSeleccionada: string | null = null;
   private cargarMarcasUsuario(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.autenticacionService.isAuthenticated()) {
-        console.log('⚠️ Usuario no autenticado, saltando carga de marcas');
         return resolve();
       }
 
@@ -240,146 +255,73 @@ categoriaSeleccionada: string | null = null;
         if (completadas === total) resolve();
       };
 
-      // Cargar publicaciones ocultas
       this.publicacionesOcultasService.obtenerPublicacionesOcultas()
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
             if (response.success && Array.isArray(response.data)) {
-              this.publicacionesOcultas = new Set(
-                response.data.map(p => p.id)
-              );
-              console.log('✅ Publicaciones ocultas cargadas:', this.publicacionesOcultas.size);
+              this.publicacionesOcultas = new Set(response.data.map(p => p.id));
             }
             verificarCompleto();
           },
-          error: (error) => {
-            console.error('❌ Error al cargar publicaciones ocultas:', error);
-            verificarCompleto();
-          }
+          error: () => verificarCompleto()
         });
 
-      // Cargar publicaciones "No me interesa"
       this.noMeInteresaService.obtenerPublicacionesNoInteresan()
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
             if (response.success && Array.isArray(response.data)) {
-              this.publicacionesNoInteresan = new Set(
-                response.data.map(p => p.id)
-              );
-              console.log('✅ Publicaciones "No me interesa" cargadas:', this.publicacionesNoInteresan.size);
+              this.publicacionesNoInteresan = new Set(response.data.map(p => p.id));
             }
             verificarCompleto();
           },
-          error: (error) => {
-            console.error('❌ Error al cargar publicaciones "No me interesa":', error);
-            verificarCompleto();
-          }
+          error: () => verificarCompleto()
         });
     });
   }
 
-
-  /**
- * Abrir modal de detalle de post cuando se accede desde URL directa
- */
-private abrirPostDesdeURL(postId: number): void {
-  // Función recursiva que espera hasta que los posts estén cargados
-  const intentarAbrir = (intentos = 0) => {
-    if (intentos > 20) {
-      console.error('❌ Timeout: No se pudo cargar el post', postId);
-      return;
-    }
-
-    const post = this.posts.find(p => p.id === postId);
-    
-    if (post) {
-      console.log('✅ Post encontrado, abriendo detalle:', postId);
-      // Pequeño delay para asegurar que el DOM esté listo
-      setTimeout(() => {
-        this.openPostDetail(postId);
-      }, 100);
-    } else if (!this.isLoading) {
-      // Si ya terminó de cargar y no encontró el post
-      console.warn('⚠️ Post no encontrado en el feed:', postId);
-    } else {
-      // Reintentar después de 200ms
-      setTimeout(() => intentarAbrir(intentos + 1), 200);
-    }
-  };
-
-  intentarAbrir();
-}
+  private abrirPostDesdeURL(postId: number): void {
+    const intentarAbrir = (intentos = 0) => {
+      if (intentos > 20) return;
+      const post = this.posts.find(p => p.id === postId);
+      if (post) {
+        setTimeout(() => this.openPostDetail(postId), 100);
+      } else if (this.isLoading) {
+        setTimeout(() => intentarAbrir(intentos + 1), 200);
+      }
+    };
+    intentarAbrir();
+  }
 
   private cargarFeed(): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('🔄 Iniciando carga de feed...');
-      
       this.publicacionesService.obtenerPublicaciones()
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
-            console.log('📦 Respuesta obtenerPublicaciones:', {
-              success: res.success,
-              dataType: typeof res.data,
-              isArray: Array.isArray(res.data),
-              cantidad: Array.isArray(res.data) ? res.data.length : 'N/A',
-              message: res.message
-            });
-
-            if (!res.success) {
-              console.warn('⚠️ Respuesta no exitosa:', res.message);
-              this.posts = [];
-              this.cargarDatosEjemplo();
-              return resolve();
-            }
-
-            if (!Array.isArray(res.data)) {
-              console.warn('⚠️ res.data no es un array:', {
-                tipo: typeof res.data,
-                valor: res.data
-              });
+            console.log('📦 Respuesta completa del backend:', res);
+            
+            if (!res.success || !Array.isArray(res.data)) {
               this.posts = [];
               this.cargarDatosEjemplo();
               return resolve();
             }
 
             if (res.data.length === 0) {
-              console.log('ℹ️ Sin publicaciones disponibles');
               this.posts = [];
               return resolve();
             }
 
             try {
-              console.log('✅ Convirtiendo', res.data.length, 'publicaciones...');
-              
-              // Filtrar publicaciones ocultas y marcadas "No me interesa"
               const publicacionesFiltradas = res.data.filter(pub => {
-                const estaOculta = this.publicacionesOcultas.has(pub.id);
-                const noInteresa = this.publicacionesNoInteresan.has(pub.id);
-                
-                if (estaOculta) {
-                  console.log(`🚫 Publicación ${pub.id} oculta - No se mostrará`);
-                }
-                if (noInteresa) {
-                  console.log(`👎 Publicación ${pub.id} marcada como "No me interesa" - No se mostrará`);
-                }
-                
-                return !estaOculta && !noInteresa;
+                return !this.publicacionesOcultas.has(pub.id) && !this.publicacionesNoInteresan.has(pub.id);
               });
-
-              console.log(`📊 Publicaciones filtradas: ${res.data.length} → ${publicacionesFiltradas.length}`);
 
               const postsConvertidos = this.convertirPublicacionesAPosts(publicacionesFiltradas);
               this.posts = this.organizarPosts(postsConvertidos);
-              
-              console.log('✅ Feed cargado correctamente:', {
-                totalPosts: this.posts.length,
-                categorias: [...new Set(this.posts.map(p => p.category))]
-              });
             } catch (error) {
-              console.error('❌ Error al procesar publicaciones:', error);
+              console.error('❌ Error procesando posts:', error);
               this.posts = [];
               this.cargarDatosEjemplo();
             }
@@ -387,12 +329,7 @@ private abrirPostDesdeURL(postId: number): void {
             resolve();
           },
           error: (err) => {
-            console.error('❌ Error HTTP al cargar feed:', {
-              status: err.status,
-              statusText: err.statusText,
-              message: err.message,
-              url: err.url
-            });
+            console.error('❌ Error cargando feed:', err);
             this.cargarDatosEjemplo();
             reject(err);
           }
@@ -418,26 +355,24 @@ private abrirPostDesdeURL(postId: number): void {
   }
 
   private convertirPublicacionesAPosts(pubs: any[]): Post[] {
-    if (!Array.isArray(pubs)) {
-      console.warn('⚠️ convertirPublicacionesAPosts recibió no-array:', typeof pubs);
-      return [];
-    }
-
-    if (pubs.length === 0) {
-      console.log('ℹ️ Array de publicaciones vacío');
-      return [];
-    }
-
-    console.log('🔄 Convirtiendo', pubs.length, 'publicaciones a formato Post...');
+    if (!Array.isArray(pubs) || pubs.length === 0) return [];
 
     return pubs.map((p, index) => {
       try {
         const pubAny = p as any;
         
-        if (!p.id || !p.usuario_id) {
-          console.warn(`⚠️ Publicación ${index} sin datos críticos:`, p);
-          return null;
-        }
+        if (!p.id || !p.usuario_id) return null;
+
+        // 🔥 IMPORTANTE: Extraer correctamente los conteos del backend
+        const totalLikes = pubAny.total_likes ?? pubAny.likes ?? 0;
+        const totalComentarios = pubAny.total_comentarios ?? pubAny.comentarios ?? 0;
+        const totalCompartidos = pubAny.total_compartidos ?? pubAny.compartidos ?? 0;
+
+        console.log(`✅ Post ${p.id}:`, {
+          total_likes: totalLikes,
+          total_comentarios: totalComentarios,
+          total_compartidos: totalCompartidos
+        });
 
         const postConvertido: Post = {
           id: p.id,
@@ -448,23 +383,24 @@ private abrirPostDesdeURL(postId: number): void {
           image: this.normalizarUrlImagen(p.imagen_s3 || p.imagen_url || ''),
           category: p.categoria || 'General',
           categoryColor: p.color_categoria || this.publicacionesService.obtenerColorCategoria(p.categoria || 'General'),
-          likes: pubAny.total_likes || 0,
+          likes: totalLikes,
           liked: false,
-          shares: pubAny.total_compartidos || 0,
+          shares: totalCompartidos,
           avatarColor: this.generarColorAvatar(p.usuario_id),
           comments: [],
           showComments: false,
           usuarioId: p.usuario_id,
           loadingComments: false,
           commentsLoaded: false,
-          totalComments: pubAny.total_comentarios || 0,
+          totalComments: totalComentarios,
           likeLoading: false,
-          showOptions: false
+          showOptions: false,
+          documentos: p.documentos || []
         };
 
         return postConvertido;
       } catch (error) {
-        console.error(`❌ Error convirtiendo publicación ${index}:`, error, p);
+        console.error('❌ Error convirtiendo post:', error);
         return null;
       }
     }).filter(p => p !== null) as Post[];
@@ -472,31 +408,20 @@ private abrirPostDesdeURL(postId: number): void {
 
   private cargarSeguidos(): Promise<void> {
     return new Promise(resolve => {
-      if (!this.usuarioActualId) {
-        console.log('⚠️ No hay usuario actual, saltando carga de seguidos');
-        return resolve();
-      }
-
-      console.log('👥 Cargando seguidos del usuario:', this.usuarioActualId);
+      if (!this.usuarioActualId) return resolve();
 
       this.seguidorService.listarSeguidos(this.usuarioActualId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
-            console.log('📦 Respuesta listarSeguidos:', response);
-
             if (response.success && response.data && response.data.seguidos) {
               this.seguidosIds = new Set(response.data.seguidos.map(u => u.id));
-              console.log('✅ Seguidos cargados:', this.seguidosIds.size);
             } else {
-              console.warn('⚠️ Respuesta sin seguidos:', response);
               this.seguidosIds = new Set();
             }
-
             resolve();
           },
-          error: (error) => {
-            console.error('❌ Error al cargar seguidos:', error);
+          error: () => {
             this.seguidosIds = new Set();
             resolve();
           }
@@ -505,27 +430,13 @@ private abrirPostDesdeURL(postId: number): void {
   }
 
   private cargarUsuarios(): void {
-    if (!this.usuarioActualId) {
-      console.log('⚠️ No hay usuario actual, saltando carga de usuarios');
-      return;
-    }
-
-    console.log('👥 Cargando lista de usuarios seguidos...');
+    if (!this.usuarioActualId) return;
 
     this.seguidorService.listarSeguidos(this.usuarioActualId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          console.log('📦 Respuesta usuarios seguidos:', response);
-
-          if (!response.success) {
-            console.warn('⚠️ Respuesta no exitosa');
-            this.users = [];
-            return;
-          }
-
-          if (!response.data) {
-            console.warn('⚠️ response.data es null/undefined');
+          if (!response.success || !response.data) {
             this.users = [];
             return;
           }
@@ -539,24 +450,16 @@ private abrirPostDesdeURL(postId: number): void {
               avatarColor: this.generarColorAvatar(u.id),
               isFollowing: true
             }));
-
-            console.log('✅ Usuarios cargados:', this.users.length);
           } else {
-            console.log('ℹ️ Sin usuarios seguidos');
             this.users = [];
           }
         },
-        error: (error) => {
-          console.error('❌ Error al cargar usuarios:', {
-            status: error.status,
-            message: error.message
-          });
+        error: () => {
           this.users = [];
         }
       });
   }
 
-  // ========== LIKES ==========
   private verificarLikesDelUsuario(): void {
     this.posts.forEach(post => {
       this.likesService.verificarLike(post.id)
@@ -570,7 +473,7 @@ private abrirPostDesdeURL(postId: number): void {
               }
             }
           },
-          error: (error) => console.error(`❌ Error al verificar like del post ${post.id}:`, error)
+          error: () => {}
         });
     });
   }
@@ -594,10 +497,7 @@ private abrirPostDesdeURL(postId: number): void {
     this.likesService.toggleLike(postId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            console.log('✅ Like actualizado:', response.data.liked);
-          }
+        next: () => {
           post.likeLoading = false;
         },
         error: (error) => {
@@ -614,34 +514,76 @@ private abrirPostDesdeURL(postId: number): void {
       });
   }
 
-  // ========== COMENTARIOS ==========
+  private cargarFotosPerfilBatch(usuariosIds: number[]): void {
+    const idsNoEnCache = usuariosIds.filter(id => !this.fotosPerfilCache.has(id));
+    if (idsNoEnCache.length === 0) return;
+
+    this.fotosService.obtenerFotosBatch(idsNoEnCache)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            response.data.forEach(usuario => {
+              this.fotosPerfilCache.set(usuario.id, usuario.foto_perfil_url);
+            });
+          }
+        },
+        error: () => {}
+      });
+  }
+
+  private obtenerFotoPerfil(usuarioId: number): string | null {
+    if (this.fotosPerfilCache.has(usuarioId)) {
+      return this.fotosPerfilCache.get(usuarioId) || null;
+    }
+    
+    this.fotosService.obtenerFotoPerfil(usuarioId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.fotosPerfilCache.set(usuarioId, response.data.foto_perfil_url);
+          }
+        },
+        error: () => {
+          this.fotosPerfilCache.set(usuarioId, null);
+        }
+      });
+
+    return null;
+  }
+
   cargarComentarios(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post || post.commentsLoaded || post.loadingComments) return;
 
     post.loadingComments = true;
-    
-    console.log('📥 Cargando comentarios para post:', postId);
 
     this.comentariosService.obtenerPorPublicacion(postId, 50, 0)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (comentarios) => {
-          console.log('✅ Comentarios recibidos:', comentarios.length);
-
           if (Array.isArray(comentarios) && comentarios.length > 0) {
-            post.comments = comentarios.map(c => ({
-              id: c.id,
-              author: c.nombre_completo || c.nombre_usuario || 'Usuario',
-              avatar: this.obtenerIniciales(c.nombre_completo || c.nombre_usuario || 'U'),
-              text: c.texto,
-              time: this.formatearTiempo(c.fecha_creacion),
-              avatarColor: this.generarColorAvatar(c.usuario_id),
-              usuario_id: c.usuario_id
-            }));
+            const usuariosComentarios = [...new Set(comentarios.map(c => c.usuario_id))];
+            this.cargarFotosPerfilBatch(usuariosComentarios);
+
+            post.comments = comentarios.map(c => {
+              const fotoPerfil = this.obtenerFotoPerfil(c.usuario_id);
+              
+              return {
+                id: c.id,
+                author: c.nombre_completo || c.nombre_usuario || 'Usuario',
+                avatar: this.obtenerIniciales(c.nombre_completo || c.nombre_usuario || 'U'),
+                text: c.texto,
+                time: this.formatearTiempo(c.fecha_creacion),
+                avatarColor: this.generarColorAvatar(c.usuario_id),
+                usuario_id: c.usuario_id,
+                foto_perfil_url: fotoPerfil,
+                usandoIniciales: !fotoPerfil
+              };
+            });
             post.totalComments = comentarios.length;
           } else {
-            console.log('ℹ️ Sin comentarios');
             post.comments = [];
             post.totalComments = 0;
           }
@@ -649,8 +591,7 @@ private abrirPostDesdeURL(postId: number): void {
           post.commentsLoaded = true;
           post.loadingComments = false;
         },
-        error: (error) => {
-          console.error('❌ Error al cargar comentarios:', error);
+        error: () => {
           post.comments = [];
           post.commentsLoaded = true;
           post.loadingComments = false;
@@ -661,8 +602,10 @@ private abrirPostDesdeURL(postId: number): void {
   toggleComments(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
+    
     post.showComments = !post.showComments;
-    if (post.showComments && !post.commentsLoaded) {
+    
+    if (post.showComments && !post.commentsLoaded && !post.loadingComments) {
       this.cargarComentarios(postId);
     }
   }
@@ -678,6 +621,18 @@ private abrirPostDesdeURL(postId: number): void {
           if (res.success && res.data) {
             const post = this.posts.find(p => p.id === postId);
             if (post) {
+              let fotoPerfilUrl: string | null = null;
+              
+              if (res.data.foto_perfil_url) {
+                fotoPerfilUrl = this.normalizarUrlFotoPerfil(res.data.foto_perfil_url);
+              } else if (res.data.foto_perfil_s3) {
+                fotoPerfilUrl = this.normalizarUrlFotoPerfil(res.data.foto_perfil_s3);
+              }
+              
+              if (fotoPerfilUrl && res.data.usuario_id) {
+                this.fotosPerfilCache.set(res.data.usuario_id, fotoPerfilUrl);
+              }
+              
               post.comments.unshift({
                 id: res.data.id,
                 author: res.data.nombre_completo || res.data.nombre_usuario || 'Tú',
@@ -685,15 +640,93 @@ private abrirPostDesdeURL(postId: number): void {
                 text: res.data.texto,
                 time: 'Ahora',
                 avatarColor: this.generarColorAvatar(res.data.usuario_id),
-                usuario_id: res.data.usuario_id
+                usuario_id: res.data.usuario_id,
+                foto_perfil_url: fotoPerfilUrl,
+                usandoIniciales: !fotoPerfilUrl
               });
+              
               this.commentInputs[postId] = '';
               post.totalComments = (post.totalComments || 0) + 1;
+
+              const censura = (res as any).censura;
+              
+              if (censura && censura.fue_censurado) {
+                this.mostrarAlertaCensura(postId, censura);
+              }
             }
           }
         },
-        error: () => alert('Error al publicar el comentario')
+        error: (error) => {
+          if (error.status === 401) {
+            alert('Debes iniciar sesión para comentar');
+          } else {
+            alert('Error al publicar el comentario. Intenta de nuevo.');
+          }
+        }
       });
+  }
+
+  private mostrarAlertaCensura(postId: number, censura: any): void {
+    this.comentarioCensuradoMensaje[postId] = censura.mensaje_usuario || 
+      '💬 Tu comentario fue publicado con moderación automática.';
+    
+    this.nivelCensura[postId] = censura.nivel || 'bajo';
+    this.mostrandoAlertaCensura[postId] = true;
+
+    let duracion = 4000;
+    
+    switch (censura.nivel) {
+      case 'bajo':
+        duracion = 3000;
+        break;
+      case 'medio':
+        duracion = 5000;
+        break;
+      case 'alto':
+        duracion = 7000;
+        break;
+    }
+
+    setTimeout(() => {
+      this.mostrandoAlertaCensura[postId] = false;
+      setTimeout(() => {
+        delete this.comentarioCensuradoMensaje[postId];
+        delete this.nivelCensura[postId];
+      }, 500);
+    }, duracion);
+  }
+
+  cerrarAlertaCensura(postId: number): void {
+    this.mostrandoAlertaCensura[postId] = false;
+    setTimeout(() => {
+      delete this.comentarioCensuradoMensaje[postId];
+      delete this.nivelCensura[postId];
+    }, 500);
+  }
+
+  obtenerColorCensura(nivel: string): string {
+    switch (nivel) {
+      case 'bajo':
+        return 'bg-blue-50 border-blue-300 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300';
+      case 'medio':
+        return 'bg-yellow-50 border-yellow-300 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300';
+      case 'alto':
+        return 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300';
+      default:
+        return 'bg-gray-50 border-gray-300 text-gray-800 dark:bg-gray-900/20 dark:border-gray-700 dark:text-gray-300';
+    }
+  }
+
+  obtenerIconoCensura(nivel: string): string {
+    switch (nivel) {
+      case 'bajo':
+        return '💬';case 'medio':
+        return '⚠️';
+      case 'alto':
+        return '🚨';
+      default:
+        return '💬';
+    }
   }
 
   eliminarComentario(postId: number, comentarioId: number): void {
@@ -719,11 +752,9 @@ private abrirPostDesdeURL(postId: number): void {
     if (event.key === 'Enter') this.addComment(postId);
   }
 
-  // ========== MENÚ DE OPCIONES ==========
   togglePostOptions(postId: number, event?: Event): void {
     event?.stopPropagation();
     
-    // Cerrar otros menús abiertos
     this.posts.forEach(p => {
       if (p.id !== postId) p.showOptions = false;
     });
@@ -738,7 +769,6 @@ private abrirPostDesdeURL(postId: number): void {
     this.posts.forEach(p => p.showOptions = false);
   }
 
-  // ========== OCULTAR PUBLICACIÓN ==========
   ocultarPublicacion(postId: number, event?: Event): void {
     event?.stopPropagation();
 
@@ -750,7 +780,6 @@ private abrirPostDesdeURL(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
 
-    // Confirmar acción
     const mensaje = post.usuarioId === this.usuarioActualId
       ? '¿Ocultar esta publicación? NADIE podrá verla (ni tú en el feed)'
       : '¿Ocultar esta publicación? Solo tú dejarás de verla';
@@ -760,8 +789,6 @@ private abrirPostDesdeURL(postId: number): void {
     this.ocultarLoading = true;
     this.closePostOptions();
 
-    console.log('🚫 Ocultando publicación:', postId);
-
     this.publicacionesOcultasService.ocultarPublicacion(postId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -769,12 +796,8 @@ private abrirPostDesdeURL(postId: number): void {
           this.ocultarLoading = false;
 
           if (response.success) {
-            console.log('✅ Publicación ocultada exitosamente');
-            
-            // Agregar a cache local
             this.publicacionesOcultas.add(postId);
             
-            // Remover del feed con animación
             const postElement = document.querySelector(`[data-post-id="${postId}"]`);
             if (postElement) {
               postElement.classList.add('animate-fade-out');
@@ -785,7 +808,6 @@ private abrirPostDesdeURL(postId: number): void {
               this.posts = this.posts.filter(p => p.id !== postId);
             }
 
-            // Mostrar mensaje de éxito
             alert(post.usuarioId === this.usuarioActualId
               ? '✅ Tu publicación ha sido ocultada. Podrás verla en "Mis publicaciones ocultas"'
               : '✅ Publicación ocultada. No volverá a aparecer en tu feed');
@@ -795,7 +817,6 @@ private abrirPostDesdeURL(postId: number): void {
         },
         error: (error) => {
           this.ocultarLoading = false;
-          console.error('❌ Error al ocultar publicación:', error);
           
           if (error.status === 401) {
             alert('Debes iniciar sesión');
@@ -806,7 +827,6 @@ private abrirPostDesdeURL(postId: number): void {
       });
   }
 
-  // ========== NO ME INTERESA ==========
   openNoInteresaModal(postId: number, event?: Event): void {
     event?.stopPropagation();
 
@@ -818,7 +838,6 @@ private abrirPostDesdeURL(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
 
-    // No permitir marcar propias publicaciones
     if (post.usuarioId === this.usuarioActualId) {
       alert('No puedes marcar tus propias publicaciones como "No me interesa"');
       return;
@@ -851,8 +870,6 @@ private abrirPostDesdeURL(postId: number): void {
     this.noInteresaLoading = true;
     this.noInteresaError = '';
 
-    console.log('👎 Marcando como "No me interesa":', this.noInteresaPostId);
-
     this.noMeInteresaService.marcarNoInteresa(this.noInteresaPostId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -860,13 +877,10 @@ private abrirPostDesdeURL(postId: number): void {
           this.noInteresaLoading = false;
 
           if (response.success) {
-            console.log('✅ Marcado como "No me interesa":', response.data);
             this.noInteresaSuccess = true;
 
-            // Agregar a cache local
             this.publicacionesNoInteresan.add(this.noInteresaPostId!);
 
-            // Remover del feed con animación
             const postElement = document.querySelector(`[data-post-id="${this.noInteresaPostId}"]`);
             if (postElement) {
               postElement.classList.add('animate-fade-out');
@@ -877,7 +891,6 @@ private abrirPostDesdeURL(postId: number): void {
               this.posts = this.posts.filter(p => p.id !== this.noInteresaPostId);
             }
 
-            // Cerrar modal después de 2 segundos
             setTimeout(() => {
               this.closeNoInteresaModal();
             }, 2000);
@@ -887,7 +900,6 @@ private abrirPostDesdeURL(postId: number): void {
         },
         error: (error) => {
           this.noInteresaLoading = false;
-          console.error('❌ Error al marcar "No me interesa":', error);
 
           if (error.status === 401) {
             this.noInteresaError = 'Debes iniciar sesión';
@@ -902,20 +914,17 @@ private abrirPostDesdeURL(postId: number): void {
       });
   }
 
-  // ========== REPORTES ==========
   openReportModal(postId: number, event?: Event): void {
     event?.stopPropagation();
     
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
 
-    // No permitir reportar propias publicaciones
     if (post.usuarioId === this.usuarioActualId) {
       alert('No puedes reportar tus propias publicaciones');
       return;
     }
 
-    // Validar autenticación
     if (!this.autenticacionService.isAuthenticated()) {
       alert('Debes iniciar sesión para reportar publicaciones');
       return;
@@ -949,7 +958,6 @@ private abrirPostDesdeURL(postId: number): void {
       return;
     }
 
-    // Validar que el motivo sea válido
     if (!this.reportesService.esMotivosValido(this.reportMotivo)) {
       this.reportError = 'Motivo inválido';
       return;
@@ -964,8 +972,6 @@ private abrirPostDesdeURL(postId: number): void {
       descripcion: this.reportDescripcion.trim() || undefined
     };
 
-    console.log('📝 Enviando reporte:', reportRequest);
-
     this.reportesService.crearReporte(reportRequest)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -973,7 +979,6 @@ private abrirPostDesdeURL(postId: number): void {
           this.reportLoading = false;
           
           if (response.success) {
-            console.log('✅ Reporte creado exitosamente:', response.data);
             this.reportSuccess = true;
             
             setTimeout(() => {
@@ -981,12 +986,10 @@ private abrirPostDesdeURL(postId: number): void {
             }, 2000);
           } else {
             this.reportError = response.message || response.mensaje || 'Error al crear el reporte';
-            console.error('❌ Error en respuesta:', this.reportError);
           }
         },
         error: (error) => {
           this.reportLoading = false;
-          console.error('❌ Error al crear reporte:', error);
           
           if (error.status === 401) {
             this.reportError = 'Debes iniciar sesión';
@@ -1005,14 +1008,11 @@ private abrirPostDesdeURL(postId: number): void {
     return this.reportesService.obtenerMotivosValidos();
   }
 
-  // ========== COMPARTIR ==========
   openShareModal(postId: number, event?: Event): void {
     event?.stopPropagation();
     this.sharePostId = postId;
     this.showShareModal = true;
-
     this.linkCopied = false;
-    this.selectedTab = 'redes';
     this.closePostOptions();
     document.body.style.overflow = 'hidden';
   }
@@ -1023,37 +1023,27 @@ private abrirPostDesdeURL(postId: number): void {
     document.body.style.overflow = 'auto';
   }
 
+  shareToSocial(platform: string): void {
+    const post = this.posts.find(p => p.id === this.sharePostId);
+    if (!post) return;
 
- shareToSocial(platform: string): void {
-  const post = this.posts.find(p => p.id === this.sharePostId);
-  if (!post) return;
+    const url = `http://3.146.83.30:4200/principal/post/${post.id}`;
+    const shareUrl = SHARE_URLS[platform]?.(url, post.content || '');
 
-  const url = `http://3.146.83.30:4200/principal/post/${post.id}`;  // ✅ ACTUALIZADO
-  const shareUrl = SHARE_URLS[platform]?.(url, post.content || '');
-
-  if (shareUrl) {
-    window.open(shareUrl, '_blank');
-    post.shares++;
-  }
-}
-
-copyLink(): void {
-  const url = `http://3.146.83.30:4200/principal/post/${this.sharePostId}`;  // ✅ ACTUALIZADO
-  navigator.clipboard.writeText(url).then(() => {
-    this.linkCopied = true;
-    setTimeout(() => this.linkCopied = false, 2000);
-  });
-}
-
-
-  onShareBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).classList.contains('share-modal-backdrop')) {
-      this.closeShareModal();
+    if (shareUrl) {
+      window.open(shareUrl, '_blank');
+      post.shares++;
     }
   }
 
+  copyLink(): void {
+    const url = `http://3.146.83.30:4200/principal/post/${this.sharePostId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      this.linkCopied = true;
+      setTimeout(() => this.linkCopied = false, 2000);
+    });
+  }
 
-  // ========== MODALS ==========
   openCreateModal(): void {
     this.showCreateModal = true;
   }
@@ -1063,10 +1053,17 @@ copyLink(): void {
   }
 
   openPostDetail(postId: number): void {
-    this.selectedPost = this.posts.find(p => p.id === postId) || null;
+    const post = this.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    this.selectedPost = post;
     this.showPostDetailModal = true;
     this.closePostOptions();
     document.body.style.overflow = 'hidden';
+
+    if (!post.commentsLoaded && !post.loadingComments) {
+      this.cargarComentarios(postId);
+    }
   }
 
   closePostDetail(): void {
@@ -1075,7 +1072,97 @@ copyLink(): void {
     document.body.style.overflow = 'auto';
   }
 
-  // ========== UTILIDADES ==========
+  private cargarDatosUsuarioActual(): void {
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      try {
+        this.usuarioActual = JSON.parse(userStr);
+        
+        if (this.usuarioActual?.id) {
+          this.cargarFotosPerfilBatch([this.usuarioActual.id]);
+        }
+      } catch (error) {}
+    }
+  }
+
+  private cargarUsuariosActivosEstatico(): void {
+    this.usuariosActivos = [
+      {
+        id: 2,
+        nombre_usuario: 'elasaltacunas',
+        nombre_completo: 'Jesus Ayala',
+        foto_perfil_url: null,
+        carrera: 'Licenciatura en levantar culitos en el gym',
+        total_seguidores: 45,
+        estaConectado: true
+      },
+      {
+        id: 3,
+        nombre_usuario: 'Juan',
+        nombre_completo: 'Campos',
+        foto_perfil_url: null,
+        carrera: 'Ingeniería en Software',
+        total_seguidores: 23,
+        estaConectado: true
+      }
+    ];
+  }
+
+  filtrarPorCategoria(categoria: string): void {
+    this.categoriaSeleccionada = 
+      this.categoriaSeleccionada === categoria ? null : categoria;
+  }
+
+  get postsFiltrados(): Post[] {
+    if (!this.categoriaSeleccionada) {
+      return this.posts;
+    }
+    
+    const filtrados = this.posts.filter(post =>
+      post.category.toLowerCase() === this.categoriaSeleccionada!.toLowerCase()
+    );
+    
+    return filtrados;
+  }
+
+  seguirUsuario(usuarioId: number): void {
+    if (!this.autenticacionService.isAuthenticated()) {
+      alert('Debes iniciar sesión para seguir usuarios');
+      return;
+    }
+
+    this.seguidorService.seguir(usuarioId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.seguidosIds.add(usuarioId);
+            
+            setTimeout(() => {
+              if (this.sidebarSugerencias) {
+                this.sidebarSugerencias.recargarSugerencias();
+              }
+            }, 1000);
+            
+            alert('✅ Ahora sigues a este usuario');
+          } else {
+            alert('Error al seguir usuario: ' + (response.message || 'Intenta de nuevo'));
+          }
+        },
+        error: (error) => {
+          if (error.status === 401) {
+            alert('Debes iniciar sesión');
+          } else if (error.error?.mensaje) {
+            alert(error.error.mensaje);
+          } else {
+            alert('Error al seguir usuario. Intenta de nuevo.');
+          }
+        }
+      });
+  }
+
+  onSugerenciasCargadas(cantidad: number): void {}
+
   public obtenerUsuarioActualId(): number | null {
     const user = localStorage.getItem('currentUser');
     if (!user) return null;
@@ -1108,36 +1195,72 @@ copyLink(): void {
     return new Date(fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
 
-private normalizarUrlImagen(url: string): string | null {
-  if (!url || url.includes('/undefined')) return null;
-  
-  // Si ya es URL completa de S3, devolverla tal cual
-  if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+  private normalizarUrlImagen(url: string): string | null {
+    if (!url || url.includes('/undefined')) return null;
+    
+    if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+      return url;
+    }
+    
+    if (url.startsWith('http')) {
+      return url;
+    }
+    
+    if (url.startsWith('/uploads/')) {
+      return `${this.apiBaseUrl}${url}`;
+    }
+    
+    if (!url.includes('/')) {
+      return `${this.apiBaseUrl}/uploads/publicaciones/${url}`;
+    }
+    
+    if (this.apiBaseUrl) {
+      return `${this.apiBaseUrl}${url}`;
+    }
+    
     return url;
   }
-  
-  // Si es URL HTTP/HTTPS completa, devolverla
-  if (url.startsWith('http')) {
-    return url;
+
+  private normalizarUrlFotoPerfil(url: string): string | null {
+    if (!url || url.includes('/undefined')) {
+      return null;
+    }
+    
+    if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+      const urlCorregida = url.replace('/perfiles/', '/perfil/');
+      return urlCorregida;
+    }
+    
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      const match = url.match(/\/uploads\/.+$/);
+      if (match) {
+        const rutaCorregida = match[0].replace('/perfiles/', '/perfil/');
+        const urlCompleta = `${this.s3BaseUrl}${rutaCorregida}`;
+        return urlCompleta;
+      }
+    }
+    
+    if (url.startsWith('perfiles/') || url.startsWith('perfil/')) {
+      const rutaCorregida = url.replace('perfiles/', 'perfil/');
+      const urlCompleta = `${this.s3BaseUrl}/uploads/${rutaCorregida}`;
+      return urlCompleta;
+    }
+    
+    if (url.startsWith('/uploads/')) {
+      const rutaCorregida = url.replace('/perfiles/', '/perfil/');
+      const urlCompleta = `${this.s3BaseUrl}${rutaCorregida}`;
+      return urlCompleta;
+    }
+    
+    if (!url.includes('/')) {
+      const urlCompleta = `${this.s3BaseUrl}/uploads/perfil/${url}`;
+      return urlCompleta;
+    }
+    
+    const rutaCorregida = url.replace(/^\/+/, '').replace('/perfiles/', '/perfil/');
+    const urlCompleta = `${this.s3BaseUrl}/${rutaCorregida}`;
+    return urlCompleta;
   }
-  
-  // Si es ruta relativa como /uploads/..., construir URL completa
-  if (url.startsWith('/uploads/')) {
-    return `${this.apiBaseUrl}${url}`;
-  }
-  
-  // Si es solo nombre de archivo, asumimos que está en /uploads/publicaciones/
-  if (!url.includes('/')) {
-    return `${this.apiBaseUrl}/uploads/publicaciones/${url}`;
-  }
-  
-  // Si es otra ruta relativa
-  if (this.apiBaseUrl) {
-    return `${this.apiBaseUrl}${url}`;
-  }
-  
-  return url;
-}
 
   public generarColorAvatar(id: number): string {
     return AVATAR_COLORS[id % AVATAR_COLORS.length];
@@ -1200,90 +1323,26 @@ private normalizarUrlImagen(url: string): string | null {
     return user.id;
   }
 
-
-  // ========== MÉTODOS SIDEBARS (NUEVO) ==========
-private cargarDatosUsuarioActual(): void {
-  const userStr = localStorage.getItem('currentUser');
-  if (userStr) {
-    try {
-      this.usuarioActual = JSON.parse(userStr);
-      console.log('✅ Usuario actual cargado:', this.usuarioActual);
-    } catch (error) {
-      console.error('❌ Error al parsear usuario actual:', error);
-    }
+  formatearTamanoArchivo(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
-}
 
-private cargarUsuariosActivosEstatico(): void {
-  // Datos estáticos de ejemplo
-  this.usuariosActivos = [
-    {
-      id: 2,
-      nombre_usuario: 'elasaltacunas',
-      nombre_completo: 'Jesus Ayala',
-      foto_perfil_url: null,
-      carrera: 'Licenciatura en levantar culitos en el gym',
-      total_seguidores: 45,
-      estaConectado: true
-    },
-    {
-      id: 3,
-      nombre_usuario: 'Juan',
-      nombre_completo: 'Campos',
-      foto_perfil_url: null,
-      carrera: 'Ingeniería en Software',
-      total_seguidores: 23,
-      estaConectado: true
-    }
-  ];
-  console.log('✅ Usuarios activos cargados (estático):', this.usuariosActivos.length);
-}
-
-private cargarUsuariosSugeridosEstatico(): void {
-  // Datos estáticos de ejemplo
-  this.usuariosSugeridos = [
-    {
-      id: 4,
-      nombre_usuario: 'maria_tech',
-      nombre_completo: 'María González',
-      foto_perfil_url: null,
-      carrera: 'Ingeniería en Sistemas',
-      total_seguidores: 156,
-      razon: 'Sigue a 3 de tus amigos'
-    },
-    {
-      id: 5,
-      nombre_usuario: 'carlos_dev',
-      nombre_completo: 'Carlos Ramírez',
-      foto_perfil_url: null,
-      carrera: 'Desarrollo Web',
-      total_seguidores: 89,
-      razon: 'Popular en tu red'
-    }
-  ];
-  console.log('✅ Usuarios sugeridos cargados (estático):', this.usuariosSugeridos.length);
-}
-
-filtrarPorCategoria(categoria: string): void {
-  this.categoriaSeleccionada = this.categoriaSeleccionada === categoria ? null : categoria;
-  
-  if (this.categoriaSeleccionada) {
-    console.log('🔍 Filtrando por categoría:', categoria);
-    // TODO: Implementar filtro real cuando conectes con la API
-  } else {
-    console.log('🔍 Mostrando todas las categorías');
+  obtenerExtensionArchivo(nombreArchivo: string): string {
+    const extension = nombreArchivo.split('.').pop()?.toUpperCase();
+    return extension || 'FILE';
   }
-}
 
-navegarAPerfil(): void {
-  console.log('👤 Navegando a perfil del usuario:', this.usuarioActualId);
-  // TODO: Implementar navegación cuando tengas las rutas
-  alert('Navegación a perfil en desarrollo');
-}
-
-seguirUsuario(usuarioId: number): void {
-  console.log('➕ Siguiendo usuario:', usuarioId);
-  // TODO: Implementar cuando conectes con la API
-  alert('Funcionalidad de seguir en desarrollo');
-}
+  descargarDocumento(url: string, nombreArchivo: string): void {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombreArchivo;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }

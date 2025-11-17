@@ -1,0 +1,101 @@
+ <div *ngIf="isVisible"
+         class="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4"
+         (click)="cerrar.emit()">
+      <div class="rounded-2xl max-w-md w-full shadow-2xl"
+           [ngClass]="cardBg"
+           onclick="event.stopPropagation()">
+
+        <!-- HEADER -->
+        <div class="px-6 pt-6 pb-4 border-b" [ngClass]="borderColor">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold flex items-center gap-2" [ngClass]="textPrimaryClass">
+              <i class="fas fa-flag text-red-500"></i>
+              Reportar publicación
+            </h2>
+            <button (click)="cerrar.emit()"
+                    class="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-70 transition"
+                    [ngClass]="textSecondaryClass">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="px-6 py-4 space-y-4">
+
+          <!-- ERROR MESSAGE -->
+          <div *ngIf="error" 
+               class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex items-start gap-2">
+            <i class="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- SUCCESS MESSAGE -->
+          <div *ngIf="success" 
+               class="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700 text-sm flex items-start gap-2 animate-pulse">
+            <i class="fas fa-check-circle mt-0.5 flex-shrink-0"></i>
+            <span>¡Reporte enviado exitosamente! Gracias por ayudarnos a mantener la comunidad segura.</span>
+          </div>
+
+          <!-- MOTIVO SELECT -->
+          <div *ngIf="!success">
+            <label class="block text-sm font-semibold mb-2" [ngClass]="textPrimaryClass">
+              Motivo del reporte *
+            </label>
+            <select [ngModel]="motivo"
+                    (ngModelChange)="motivoChange.emit($event)"
+                    class="w-full rounded-lg px-4 py-3 text-sm border-2 outline-none focus:ring-2 transition-all bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
+                    [ngClass]="'border-gray-300'"
+                    [style.--tw-ring-color]="ringColor">
+              <option value="">Selecciona un motivo...</option>
+              <option *ngFor="let m of motivosValidos" [value]="m">
+                {{ m }}
+              </option>
+            </select>
+            <p class="text-xs mt-1" [ngClass]="textSecondaryClass">
+              Elige el motivo que mejor describa por qué reportas esta publicación
+            </p>
+          </div>
+
+          <!-- DESCRIPCIÓN TEXTAREA -->
+          <div *ngIf="!success">
+            <label class="block text-sm font-semibold mb-2" [ngClass]="textPrimaryClass">
+              Descripción (opcional)
+            </label>
+            <textarea [ngModel]="descripcion"
+                      (ngModelChange)="descripcionChange.emit($event)"
+                      placeholder="Proporciona más detalles sobre el reporte (máximo 500 caracteres)..."
+                      maxlength="500"
+                      rows="4"
+                      class="w-full rounded-lg px-4 py-3 text-sm border-2 outline-none focus:ring-2 transition-all resize-none bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
+                      [ngClass]="'border-gray-300'"
+                      [style.--tw-ring-color]="ringColor">
+            </textarea>
+            <p class="text-xs mt-1 flex items-center justify-between"
+               [ngClass]="textSecondaryClass">
+              <span>Detalles adicionales opcionales</span>
+              <span>{{ descripcion.length }}/500</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- FOOTER/BUTTONS -->
+        <div class="px-6 py-4 border-t flex gap-3" [ngClass]="borderColor">
+          <button (click)="cerrar.emit()"
+                  class="flex-1 px-4 py-2.5 rounded-lg font-semibold transition"
+                  [ngClass]="btnCancelar">
+            Cancelar
+          </button>
+          <button (click)="enviarReporte.emit()"
+                  [disabled]="loading || !motivo || success"
+                  class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-white transition flex items-center justify-center gap-2"
+                  [ngClass]="loading || !motivo || success
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600 active:scale-95'">
+            <i *ngIf="loading" class="fas fa-spinner animate-spin"></i>
+            <i *ngIf="!loading && !success" class="fas fa-paper-plane"></i>
+            <span>{{ loading ? 'Enviando...' : success ? 'Enviado' : 'Enviar reporte' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>

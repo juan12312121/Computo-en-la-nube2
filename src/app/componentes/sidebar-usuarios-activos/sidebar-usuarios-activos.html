@@ -1,0 +1,45 @@
+<div class="rounded-xl shadow-sm border p-4" [ngClass]="cardBg">
+  <h3 class="font-bold mb-3 flex items-center gap-2" [ngClass]="textPrimaryClass">
+    <i class="fas fa-circle text-green-500 text-xs animate-pulse"></i>
+    Activos ahora
+  </h3>
+  
+  <div class="space-y-3">
+    <div *ngFor="let usuario of usuarios"
+         (click)="irAPerfil(usuario.id)"
+         class="flex items-center gap-3 p-2 rounded-lg transition cursor-pointer hover:opacity-80"
+         [ngClass]="hoverBackground">
+      
+      <div class="relative flex-shrink-0">
+        <div *ngIf="usuario.foto_perfil_url; else iniciales"
+             class="w-10 h-10 rounded-full bg-cover bg-center"
+             [ngStyle]="{'background-image': 'url(' + usuario.foto_perfil_url + ')'}">
+        </div>
+        <ng-template #iniciales>
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+               [style.background]="generarColorAvatar(usuario.id)">
+            {{ obtenerIniciales(usuario.nombre_completo) }}
+          </div>
+        </ng-template>
+        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2"
+             [ngClass]="borderClass"></div>
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm truncate" [ngClass]="textPrimaryClass">
+          {{ usuario.nombre_completo }}
+        </p>
+        <p class="text-xs truncate" [ngClass]="textSecondaryClass">
+          @{{ usuario.nombre_usuario }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="usuarios.length === 0" class="text-center py-6">
+    <i class="fas fa-user-slash text-3xl mb-2" [ngClass]="textSecondaryClass"></i>
+    <p class="text-sm" [ngClass]="textSecondaryClass">
+      No hay usuarios activos
+    </p>
+  </div>
+</div>
