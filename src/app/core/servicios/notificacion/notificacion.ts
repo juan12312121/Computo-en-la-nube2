@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Injectable, NgZone } from '@angular/core';
+import { Observable, Subject, tap } from 'rxjs';
 import { AutenticacionService } from '../autenticacion/autenticacion';
 
 // ============================================
@@ -52,15 +52,32 @@ export interface ContadorResponse {
 })
 export class NotificacionesService {
   private apiUrl: string;
+  private baseUrl: string;
+  
+  // ============================================
+  // 🆕 SSE - Server-Sent Events
+  // ============================================
+  private eventSource: EventSource | null = null;
+  private nuevaNotificacionSubject = new Subject<Notificacion>();
+  private contadorSubject = new Subject<number>();
+  private conexionSSESubject = new Subject<boolean>();
+
+  // Observables públicos para suscribirse
+  public nuevaNotificacion$ = this.nuevaNotificacionSubject.asObservable();
+  public contador$ = this.contadorSubject.asObservable();
+  public conexionSSE$ = this.conexionSSESubject.asObservable();
 
   constructor(
     private http: HttpClient,
-    private autenticacionService: AutenticacionService
+    private autenticacionService: AutenticacionService,
+    private ngZone: NgZone
   ) {
     const host = window.location.hostname;
-    this.apiUrl = host === 'localhost' || host === '127.0.0.1'
-      ? 'http://localhost:3000/api/notificaciones'
-      : 'http://3.146.83.30:3000/api/notificaciones';
+    this.baseUrl = host === 'localhost' || host === '127.0.0.1'
+      ? 'http://localhost:3000'
+      : 'http://3.146.83.30:3000';
+    
+    this.apiUrl = `${this.baseUrl}/api/notificaciones`;
     
     console.log('🔧 NotificacionesService inicializado');
     console.log('📍 API URL:', this.apiUrl);
@@ -77,6 +94,142 @@ export class NotificacionesService {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
+  }
+
+  /**
+   * ========================================
+   * 🆕 SSE - CONECTAR A NOTIFICACIONES EN TIEMPO REAL
+   * ========================================
+   */
+  conectarSSE(usuarioId: number): void {
+    // Si ya hay una conexión activa, cerrarla primero
+    if (this.eventSource) {
+      console.log('⚠️ Cerrando conexión SSE existente...');
+      this.desconectarSSE();
+    }
+
+    const token = this.autenticacionService.getToken();
+    
+    if (!token) {
+      console.error('❌ No hay token disponible para SSE');
+      return;
+    }
+
+    // ✅ Pasar el token como query parameter porque EventSource no soporta headers
+    const sseUrl = `${this.apiUrl}/stream/${usuarioId}?token=${encodeURIComponent(token)}`;
+    
+    console.log('🔌 Conectando a SSE para usuario:', usuarioId);
+
+    // Crear EventSource con el token en la URL
+    this.eventSource = new EventSource(sseUrl);
+
+    // Evento: Conexión establecida
+    this.eventSource.addEventListener('connected', (event: any) => {
+      this.ngZone.run(() => {
+        console.log('✅ Conectado a SSE:', JSON.parse(event.data));
+        this.conexionSSESubject.next(true);
+      });
+    });
+
+    // Evento: Nueva notificación
+    this.eventSource.addEventListener('nueva_notificacion', (event: any) => {
+      this.ngZone.run(() => {
+        const notificacion: Notificacion = JSON.parse(event.data);
+        console.log('🔔 Nueva notificación recibida:', notificacion);
+        this.nuevaNotificacionSubject.next(notificacion);
+        
+        // Opcional: Mostrar notificación del navegador
+        this.mostrarNotificacionNavegador(notificacion);
+      });
+    });
+
+    // Evento: Actualizar contador
+    this.eventSource.addEventListener('actualizar_contador', (event: any) => {
+      this.ngZone.run(() => {
+        const { total } = JSON.parse(event.data);
+        console.log('🔢 Contador actualizado:', total);
+        this.contadorSubject.next(total);
+      });
+    });
+
+    // Manejo de errores
+    this.eventSource.onerror = (error) => {
+      this.ngZone.run(() => {
+        console.error('❌ Error en SSE:', error);
+        this.conexionSSESubject.next(false);
+        
+        // Intentar reconectar después de 5 segundos
+        setTimeout(() => {
+          console.log('🔄 Intentando reconectar SSE...');
+          this.conectarSSE(usuarioId);
+        }, 5000);
+      });
+    };
+
+    // Detectar cuando se abre la conexión
+    this.eventSource.onopen = () => {
+      this.ngZone.run(() => {
+        console.log('🌐 Conexión SSE abierta');
+      });
+    };
+  }
+
+  /**
+   * ========================================
+   * 🆕 SSE - DESCONECTAR
+   * ========================================
+   */
+  desconectarSSE(): void {
+    if (this.eventSource) {
+      console.log('🔌 Desconectando SSE...');
+      this.eventSource.close();
+      this.eventSource = null;
+      this.conexionSSESubject.next(false);
+    }
+  }
+
+  /**
+   * ========================================
+   * 🆕 MOSTRAR NOTIFICACIÓN DEL NAVEGADOR
+   * ========================================
+   */
+  private mostrarNotificacionNavegador(notificacion: Notificacion): void {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const iconos: { [key: string]: string } = {
+        'like': '❤️',
+        'comment': '💬',
+        'follow': '👥'
+      };
+      
+      new Notification(`${iconos[notificacion.tipo]} ${notificacion.nombre_completo}`, {
+        body: notificacion.mensaje,
+        icon: notificacion.foto_perfil_url || notificacion.foto_perfil_s3 || '/assets/default-avatar.png',
+        tag: `notificacion-${notificacion.id}`
+      });
+    }
+  }
+
+  /**
+   * ========================================
+   * 🆕 SOLICITAR PERMISO PARA NOTIFICACIONES
+   * ========================================
+   */
+  async solicitarPermisoNotificaciones(): Promise<boolean> {
+    if (!('Notification' in window)) {
+      console.log('⚠️ Este navegador no soporta notificaciones');
+      return false;
+    }
+
+    if (Notification.permission === 'granted') {
+      return true;
+    }
+
+    if (Notification.permission !== 'denied') {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    }
+
+    return false;
   }
 
   /**

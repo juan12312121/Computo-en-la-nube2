@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { DetallePost } from '../../componentes/detalle-post/detalle-post';
 import { Navbar } from '../../componentes/navbar/navbar';
@@ -189,7 +189,8 @@ export class Principal implements OnInit, OnDestroy {
     private publicacionesOcultasService: PublicacionesOcultasService,
     private noMeInteresaService: NoMeInteresaService,
     private route: ActivatedRoute,
-    private fotosService: FotosService
+    private fotosService: FotosService,
+    private router: Router
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
   }
@@ -363,16 +364,9 @@ export class Principal implements OnInit, OnDestroy {
         
         if (!p.id || !p.usuario_id) return null;
 
-        // 🔥 IMPORTANTE: Extraer correctamente los conteos del backend
         const totalLikes = pubAny.total_likes ?? pubAny.likes ?? 0;
         const totalComentarios = pubAny.total_comentarios ?? pubAny.comentarios ?? 0;
         const totalCompartidos = pubAny.total_compartidos ?? pubAny.compartidos ?? 0;
-
-        console.log(`✅ Post ${p.id}:`, {
-          total_likes: totalLikes,
-          total_comentarios: totalComentarios,
-          total_compartidos: totalCompartidos
-        });
 
         const postConvertido: Post = {
           id: p.id,
@@ -404,6 +398,68 @@ export class Principal implements OnInit, OnDestroy {
         return null;
       }
     }).filter(p => p !== null) as Post[];
+  }
+
+  // 🆕 MÉTODO NUEVO: Recibe la publicación creada desde el componente hijo
+  onPublicacionCreada(publicacionData: any): void {
+    console.log('📨 Publicación recibida en Principal:', publicacionData);
+    
+    if (publicacionData) {
+      this.agregarNuevaPublicacion(publicacionData);
+    }
+    
+    // Cerrar el modal
+    this.showCreateModal = false;
+  }
+
+  // 🆕 MÉTODO NUEVO: Agregar publicación al feed en tiempo real
+  private agregarNuevaPublicacion(publicacionData: any): void {
+    try {
+      console.log('➕ Agregando nueva publicación al feed:', publicacionData);
+
+      // Convertir la publicación del backend al formato Post
+      const nuevaPublicacion: Post = {
+        id: publicacionData.id,
+        author: publicacionData.nombre_completo || publicacionData.nombre_usuario || 'Usuario',
+        avatar: this.obtenerIniciales(publicacionData.nombre_completo || publicacionData.nombre_usuario || 'U'),
+        time: 'Ahora',
+        content: publicacionData.contenido || '',
+        image: this.normalizarUrlImagen(publicacionData.imagen_s3 || publicacionData.imagen_url || ''),
+        category: publicacionData.categoria || 'General',
+        categoryColor: publicacionData.color_categoria || this.publicacionesService.obtenerColorCategoria(publicacionData.categoria || 'General'),
+        likes: 0,
+        liked: false,
+        shares: 0,
+        avatarColor: this.generarColorAvatar(publicacionData.usuario_id),
+        comments: [],
+        showComments: false,
+        usuarioId: publicacionData.usuario_id,
+        loadingComments: false,
+        commentsLoaded: false,
+        totalComments: 0,
+        likeLoading: false,
+        showOptions: false,
+        documentos: publicacionData.documentos || []
+      };
+
+      // Agregar al inicio del array de posts (más reciente primero)
+      this.posts.unshift(nuevaPublicacion);
+
+      console.log('✅ Publicación agregada exitosamente. Total posts:', this.posts.length);
+
+      // Cargar foto de perfil si está disponible
+      if (publicacionData.usuario_id) {
+        this.cargarFotosPerfilBatch([publicacionData.usuario_id]);
+      }
+
+      // Scroll suave hacia arriba para mostrar la nueva publicación
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+
+    } catch (error) {
+      console.error('❌ Error agregando nueva publicación:', error);
+    }
   }
 
   private cargarSeguidos(): Promise<void> {
@@ -480,7 +536,7 @@ export class Principal implements OnInit, OnDestroy {
 
   toggleLike(postId: number): void {
     if (!this.autenticacionService.isAuthenticated()) {
-      alert('Debes iniciar sesión para dar like');
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -506,9 +562,7 @@ export class Principal implements OnInit, OnDestroy {
           post.likeLoading = false;
 
           if (error.status === 401) {
-            alert('Debes iniciar sesión para dar like');
-          } else {
-            alert('Error al actualizar like. Intenta de nuevo.');
+            this.router.navigate(['/login']);
           }
         }
       });
@@ -614,6 +668,11 @@ export class Principal implements OnInit, OnDestroy {
     const text = this.commentInputs[postId]?.trim();
     if (!text) return;
 
+    if (!this.autenticacionService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
     this.comentariosService.crear({ publicacion_id: postId, texto: text })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -658,9 +717,7 @@ export class Principal implements OnInit, OnDestroy {
         },
         error: (error) => {
           if (error.status === 401) {
-            alert('Debes iniciar sesión para comentar');
-          } else {
-            alert('Error al publicar el comentario. Intenta de nuevo.');
+            this.router.navigate(['/login']);
           }
         }
       });
@@ -720,7 +777,8 @@ export class Principal implements OnInit, OnDestroy {
   obtenerIconoCensura(nivel: string): string {
     switch (nivel) {
       case 'bajo':
-        return '💬';case 'medio':
+        return '💬';
+      case 'medio':
         return '⚠️';
       case 'alto':
         return '🚨';
@@ -773,7 +831,7 @@ export class Principal implements OnInit, OnDestroy {
     event?.stopPropagation();
 
     if (!this.autenticacionService.isAuthenticated()) {
-      alert('Debes iniciar sesión para ocultar publicaciones');
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -819,7 +877,7 @@ export class Principal implements OnInit, OnDestroy {
           this.ocultarLoading = false;
           
           if (error.status === 401) {
-            alert('Debes iniciar sesión');
+            this.router.navigate(['/login']);
           } else {
             alert('Error al ocultar publicación. Intenta de nuevo.');
           }
@@ -831,7 +889,7 @@ export class Principal implements OnInit, OnDestroy {
     event?.stopPropagation();
 
     if (!this.autenticacionService.isAuthenticated()) {
-      alert('Debes iniciar sesión para usar esta función');
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -926,7 +984,7 @@ export class Principal implements OnInit, OnDestroy {
     }
 
     if (!this.autenticacionService.isAuthenticated()) {
-      alert('Debes iniciar sesión para reportar publicaciones');
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -1127,7 +1185,7 @@ export class Principal implements OnInit, OnDestroy {
 
   seguirUsuario(usuarioId: number): void {
     if (!this.autenticacionService.isAuthenticated()) {
-      alert('Debes iniciar sesión para seguir usuarios');
+      this.router.navigate(['/login']);
       return;
     }
 
@@ -1151,7 +1209,7 @@ export class Principal implements OnInit, OnDestroy {
         },
         error: (error) => {
           if (error.status === 401) {
-            alert('Debes iniciar sesión');
+            this.router.navigate(['/login']);
           } else if (error.error?.mensaje) {
             alert(error.error.mensaje);
           } else {

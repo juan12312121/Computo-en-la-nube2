@@ -1,4 +1,4 @@
-<!-- secciones-grid.html -->
+<!-- secciones-grid.html - CORREGIDO -->
 <div class="space-y-4">
   <!-- Header con botón para crear nueva sección -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -28,15 +28,15 @@
       <div class="flex items-center justify-between mb-4">
         <div [ngClass]="'bg-gradient-to-br ' + section.color" 
              class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-white text-xl sm:text-2xl shadow-lg group-hover:scale-110 transition">
-          <i [class]="'fas ' + section.icon"></i>
+          <i [class]="'fas ' + section.icono"></i>
         </div>
         <span [ngClass]="currentTheme.textSecondaryClass" 
               class="text-xs sm:text-sm font-bold bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
-          {{ section.posts }} {{ section.posts === 1 ? 'publicación' : 'publicaciones' }}
+          {{ section.total_posts }} {{ section.total_posts === 1 ? 'publicación' : 'publicaciones' }}
         </span>
       </div>
       <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-black text-base sm:text-lg group-hover:opacity-70 transition">
-        {{ section.name }}
+        {{ section.nombre }}
       </h3>
     </div>
   </div>
@@ -69,14 +69,14 @@
         <div class="flex items-center gap-3 sm:gap-4">
           <div [ngClass]="'bg-gradient-to-br ' + selectedSection.color" 
                class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl shadow-lg">
-            <i [class]="'fas ' + selectedSection.icon"></i>
+            <i [class]="'fas ' + selectedSection.icono"></i>
           </div>
           <div>
             <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
-              {{ selectedSection.name }}
+              {{ selectedSection.nombre }}
             </h2>
             <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm">
-              {{ selectedSection.posts }} {{ selectedSection.posts === 1 ? 'publicación' : 'publicaciones' }}
+              {{ selectedSection.total_posts }} {{ selectedSection.total_posts === 1 ? 'publicación' : 'publicaciones' }}
             </p>
           </div>
         </div>
@@ -98,8 +98,55 @@
           </button>
         </div>
 
+        <!-- CARGANDO PUBLICACIONES -->
+        <div *ngIf="cargandoPublicaciones" class="text-center py-8">
+          <i class="fas fa-spinner fa-spin text-3xl sm:text-4xl text-blue-500 mb-3"></i>
+          <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm sm:text-base">
+            Cargando publicaciones del grupo...
+          </p>
+        </div>
+
+        <!-- PUBLICACIONES DE LA SECCIÓN -->
+        <div *ngIf="!cargandoPublicaciones && publicaciones.length > 0" class="space-y-3">
+          <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-sm font-bold mb-3">
+            <i class="fas fa-clipboard-list mr-2"></i>
+            Publicaciones en este grupo
+          </h3>
+          <div *ngFor="let pub of publicaciones"
+               [ngClass]="currentTheme.cardBg"
+               class="border rounded-xl p-4 hover:shadow-md transition">
+            <!-- Header de la publicación -->
+            <div class="flex items-center gap-3 mb-3">
+              <img [src]="obtenerAvatarUrl(pub)" 
+                   [alt]="obtenerNombreAutor(pub)"
+                   class="w-10 h-10 rounded-full object-cover">
+              <div class="flex-1 min-w-0">
+                <p [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-sm truncate">
+                  {{ obtenerNombreAutor(pub) }}
+                </p>
+                <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs">
+                  {{ formatearFecha(pub.fecha_creacion) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Contenido de la publicación -->
+            <p [ngClass]="currentTheme.textPrimaryClass" class="text-sm mb-3 line-clamp-3">
+              {{ pub.contenido }}
+            </p>
+
+            <!-- Imagen si existe -->
+            <img *ngIf="pub.imagen_url" 
+                 [src]="obtenerImagenUrl(pub.imagen_url)" 
+                 [alt]="'Imagen de publicación'"
+                 class="w-full h-48 rounded-lg object-cover mb-3">
+
+         
+          </div>
+        </div>
+
         <!-- Sin publicaciones en la sección -->
-        <div class="text-center py-8">
+        <div *ngIf="!cargandoPublicaciones && publicaciones.length === 0" class="text-center py-8">
           <div class="text-4xl sm:text-5xl mb-3">📝</div>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm sm:text-base">
             Aún no hay publicaciones en este grupo
@@ -134,11 +181,26 @@
       </div>
 
       <div class="p-4 sm:p-6">
+        <!-- Mensajes de éxito/error -->
+        <div *ngIf="mensajeExito" class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg mb-4">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span class="text-sm sm:text-base">{{ mensajeExito }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="mensajeError" class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg mb-4">
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span class="text-sm sm:text-base">{{ mensajeError }}</span>
+          </div>
+        </div>
+
         <!-- Estado de carga -->
         <div *ngIf="cargandoPublicaciones" class="text-center py-8">
           <i class="fas fa-spinner fa-spin text-3xl sm:text-4xl text-blue-500 mb-3"></i>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm sm:text-base">
-            Cargando publicaciones...
+            Cargando tus publicaciones...
           </p>
         </div>
 
@@ -204,12 +266,15 @@
              class="text-center py-8">
           <div class="text-4xl sm:text-5xl mb-3">📭</div>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm sm:text-base">
-            No hay publicaciones disponibles
+            No tienes publicaciones disponibles
+          </p>
+          <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm mt-2">
+            Crea tu primera publicación para poder agregarla a un grupo
           </p>
         </div>
 
         <!-- Botón para confirmar selección -->
-        <div *ngIf="publicaciones.length > 0" class="mt-6 pt-6 border-t" [ngClass]="currentTheme.borderColor">
+        <div *ngIf="publicaciones.length > 0 && !agregandoPublicaciones" class="mt-6 pt-6 border-t" [ngClass]="currentTheme.borderColor">
           <div class="flex items-center justify-between mb-4">
             <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm">
               {{ publicacionesSeleccionadas.length }} {{ publicacionesSeleccionadas.length === 1 ? 'publicación seleccionada' : 'publicaciones seleccionadas' }}
@@ -227,20 +292,29 @@
             [disabled]="publicacionesSeleccionadas.length === 0"
             class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
             <i class="fas fa-check-circle mr-2"></i>
-            Agregar {{ publicacionesSeleccionadas.length > 0 ? '(' + publicacionesSeleccionadas.length + ')' : '' }} a {{ selectedSection?.name }}
+            Agregar {{ publicacionesSeleccionadas.length > 0 ? '(' + publicacionesSeleccionadas.length + ')' : '' }} a {{ selectedSection?.nombre }}
           </button>
+        </div>
+
+        <!-- Estado de agregando -->
+        <div *ngIf="agregandoPublicaciones" class="mt-6 pt-6 border-t" [ngClass]="currentTheme.borderColor">
+          <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-3"></i>
+            <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm">
+              Agregando publicaciones al grupo...
+            </p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal para crear sección -->
+  <!-- Modal para crear sección (sin cambios, ya está correcto) -->
   <div *ngIf="showCreateModal"
        (click)="onCreateModalBackdropClick($event)"
        class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div [ngClass]="currentTheme.cardBg" 
          class="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-      <!-- Header -->
       <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
            [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
         <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
@@ -255,9 +329,7 @@
         </button>
       </div>
 
-      <!-- Formulario -->
       <div class="p-4 sm:p-6 space-y-6">
-        <!-- Nombre del grupo -->
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-2">
             Nombre del grupo *
@@ -274,7 +346,6 @@
           </p>
         </div>
 
-        <!-- Selección de ícono -->
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-3">
             Ícono del grupo
@@ -294,7 +365,6 @@
           </div>
         </div>
 
-        <!-- Selección de color -->
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-3">
             Color del grupo
@@ -317,7 +387,6 @@
           </div>
         </div>
 
-        <!-- Vista previa -->
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-3">
             Vista previa
@@ -340,7 +409,6 @@
           </div>
         </div>
 
-        <!-- Mensaje de error -->
         <div *ngIf="errorCreacion" class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg">
           <div class="flex items-center">
             <i class="fas fa-exclamation-circle mr-2"></i>
@@ -348,7 +416,6 @@
           </div>
         </div>
 
-        <!-- Botones de acción -->
         <div class="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             (click)="closeCreateModal()"

@@ -57,6 +57,9 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   categoriaSeleccionada = 'General';
   mostrarSelectorCategoria = false;
 
+  @Output() publicacionCreada = new EventEmitter<any>();
+
+
   // ✅ Tema actual
   currentTheme: Theme;
 
@@ -503,93 +506,99 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   /**
    * 📝 Publicar post con imagen y documentos
    */
-  publicarPost() {
-    if (!this.postContent.trim()) {
-      return;
-    }
-
-    this.publicando = true;
-    this.mensajeError = '';
-    this.tipoError = 'error';
-
-    // Crear FormData con contenido, categoría, imagen y documentos
-    const formData = new FormData();
-    formData.append('contenido', this.postContent.trim());
-    formData.append('categoria', this.categoriaSeleccionada);
-
-    // Agregar imagen si existe
-    if (this.selectedFile) {
-      formData.append('imagen', this.selectedFile);
-    }
-
-    // 🆕 Agregar documentos
-    this.documentosAdjuntos.forEach(doc => {
-      formData.append('documentos', doc.file);
-    });
-
-    console.log('📤 Enviando publicación con:', {
-      contenido: this.postContent.trim(),
-      categoria: this.categoriaSeleccionada,
-      tieneImagen: !!this.selectedFile,
-      cantidadDocumentos: this.documentosAdjuntos.length
-    });
-
-    this.publicacionesService.crearPublicacion(formData).subscribe({
-      next: (response) => {
-        console.log('✅ Publicación creada exitosamente', response);
-
-        // Si hay advertencia (requiere revisión)
-        if (response.data?.advertencia) {
-          this.tipoError = 'warning';
-          this.mensajeError = `⚠️ ${response.data.advertencia}`;
-          console.warn('⚠️ Advertencia:', response.data.advertencia);
-        }
-
-        // Resetear formulario
-        this.postContent = '';
-        this.selectedImage = null;
-        this.selectedFile = null;
-        this.documentosAdjuntos.forEach(doc => URL.revokeObjectURL(doc.preview));
-        this.documentosAdjuntos = [];
-        this.mostrarEmojiPicker = false;
-        this.mostrarSelectorCategoria = false;
-        this.categoriaSeleccionada = 'General';
-        this.publicando = false;
-
-        document.body.classList.remove('emoji-picker-open');
-
-        // Emitir evento de éxito
-        this.postCreado.emit();
-        
-        // Cerrar modal después de 1.5 segundos si no hay advertencia
-        if (!response.data?.advertencia) {
-          setTimeout(() => this.closeModal(), 1500);
-        }
-      },
-      error: (error) => {
-        console.error('❌ Error al crear publicación:', error);
-
-        // ✅ MANEJO DE ERROR DE CENSURA (403)
-        if (this.publicacionesService.esErrorCensura(error)) {
-          this.tipoError = 'censura';
-          this.mensajeError = this.publicacionesService.extraerMensajeCensura(error);
-          
-          // Mostrar detalles específicos de la censura
-          if (error.errors?.detalles) {
-            console.error('📋 Detalles de censura:', {
-              contenido: error.errors.detalles.contenido,
-              imagen: error.errors.detalles.imagen
-            });
-          }
-        } else {
-          this.tipoError = 'error';
-          this.mensajeError = error.error?.message || 'Error al publicar. Intenta de nuevo.';
-        }
-
-        this.publicando = false;
-      }
-    });
+ publicarPost() {
+  if (!this.postContent.trim()) {
+    return;
   }
+
+  this.publicando = true;
+  this.mensajeError = '';
+  this.tipoError = 'error';
+
+  // Crear FormData con contenido, categoría, imagen y documentos
+  const formData = new FormData();
+  formData.append('contenido', this.postContent.trim());
+  formData.append('categoria', this.categoriaSeleccionada);
+
+  // Agregar imagen si existe
+  if (this.selectedFile) {
+    formData.append('imagen', this.selectedFile);
+  }
+
+  // Agregar documentos
+  this.documentosAdjuntos.forEach(doc => {
+    formData.append('documentos', doc.file);
+  });
+
+  console.log('📤 Enviando publicación con:', {
+    contenido: this.postContent.trim(),
+    categoria: this.categoriaSeleccionada,
+    tieneImagen: !!this.selectedFile,
+    cantidadDocumentos: this.documentosAdjuntos.length
+  });
+
+  this.publicacionesService.crearPublicacion(formData).subscribe({
+    next: (response) => {
+      console.log('✅ Publicación creada exitosamente', response);
+
+      // Si hay advertencia (requiere revisión)
+      if (response.data?.advertencia) {
+        this.tipoError = 'warning';
+        this.mensajeError = `⚠️ ${response.data.advertencia}`;
+        console.warn('⚠️ Advertencia:', response.data.advertencia);
+      }
+
+      // 🆕 NUEVO: Emitir la publicación completa hacia el padre
+      if (response.data) {
+        console.log('📤 Emitiendo publicación hacia Navbar:', response.data);
+        this.publicacionCreada.emit(response.data);
+      }
+
+      // Resetear formulario
+      this.postContent = '';
+      this.selectedImage = null;
+      this.selectedFile = null;
+      this.documentosAdjuntos.forEach(doc => URL.revokeObjectURL(doc.preview));
+      this.documentosAdjuntos = [];
+      this.mostrarEmojiPicker = false;
+      this.mostrarSelectorCategoria = false;
+      this.categoriaSeleccionada = 'General';
+      this.publicando = false;
+
+      document.body.classList.remove('emoji-picker-open');
+
+      // Emitir evento de éxito (para mantener compatibilidad)
+      this.postCreado.emit();
+      
+      // Cerrar modal después de 1.5 segundos si no hay advertencia
+      if (!response.data?.advertencia) {
+        setTimeout(() => this.closeModal(), 1500);
+      }
+    },
+    error: (error) => {
+      console.error('❌ Error al crear publicación:', error);
+
+      // Manejo de error de censura (403)
+      if (this.publicacionesService.esErrorCensura(error)) {
+        this.tipoError = 'censura';
+        this.mensajeError = this.publicacionesService.extraerMensajeCensura(error);
+        
+        // Mostrar detalles específicos de la censura
+        if (error.errors?.detalles) {
+          console.error('📋 Detalles de censura:', {
+            contenido: error.errors.detalles.contenido,
+            imagen: error.errors.detalles.imagen
+          });
+        }
+      } else {
+        this.tipoError = 'error';
+        this.mensajeError = error.error?.message || 'Error al publicar. Intenta de nuevo.';
+      }
+
+      this.publicando = false;
+    }
+  });
+}
 
   /**
    * 🎨 Obtener clase CSS según el tipo de error

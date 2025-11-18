@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Router } from '@angular/router';
-import { interval, Subject, Subscription } from 'rxjs';
-import { switchMap, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { Notificacion, NotificacionesService } from '../../core/servicios/notificacion/notificacion';
+import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
 import { Theme } from '../../core/servicios/temas';
 
 @Component({
@@ -18,7 +19,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   @Input() isMobile = false;
   @Output() close = new EventEmitter<void>();
 
-  // ✅ URLs Base
+  // URLs Base
   public readonly apiBaseUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'http://3.146.83.30:3000';
@@ -28,6 +29,10 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   showNotifications = false;
   cargando = false;
   error = false;
+
+  // 🆕 Estado SSE (SOLO VISUALIZACIÓN, no inicialización)
+  conexionSSE = false;
+  intentandoReconectar = false;
 
   // Datos
   notificaciones: Notificacion[] = [];
@@ -40,31 +45,235 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
 
   // Subscripciones
   private destroy$ = new Subject<void>();
-  private pollingSubscription?: Subscription;
+
+  // Sistema de limpieza automática
+  private readonly DIAS_PARA_AUTO_OCULTAR = 30;
+  private readonly STORAGE_KEY = 'notificaciones_ocultas';
+  private notificacionesOcultas: Set<number> = new Set();
 
   // Exponer encodeURIComponent al template
   encodeURIComponent = encodeURIComponent;
 
   constructor(
     private notificacionesService: NotificacionesService,
+    private autenticacionService: AutenticacionService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    console.log('🔔 Inicializando componente de notificaciones');
+    console.log('🔔 [NOTIFICACIONES] Inicializando componente');
     
     this.detectarMobile();
+    this.cargarNotificacionesOcultas();
+    this.limpiarNotificacionesAntiguas();
     this.actualizarContador();
-    this.iniciarPolling();
+    
+    // 🆕 SOLO SUSCRIBIRSE a eventos SSE (NO inicializar)
+    this.suscribirseEventosSSE();
   }
 
   ngOnDestroy(): void {
-    console.log('🔔 Destruyendo componente de notificaciones');
+    console.log('🔔 [NOTIFICACIONES] Destruyendo componente');
+    
+    // ❌ NO desconectar SSE aquí (se maneja en Navbar)
+    // this.notificacionesService.desconectarSSE();
+    
     this.destroy$.next();
     this.destroy$.complete();
-    this.pollingSubscription?.unsubscribe();
     this.restaurarScrollBody();
   }
+
+  // ============================================
+  // 🆕 SSE - SOLO SUSCRIPCIÓN A EVENTOS
+  // ============================================
+
+  /**
+   * Suscribirse a eventos SSE (YA INICIALIZADOS EN NAVBAR)
+   */
+  private suscribirseEventosSSE(): void {
+    console.log('📡 [NOTIFICACIONES] Suscribiéndose a eventos SSE...');
+    
+    // 1. Estado de conexión
+    this.notificacionesService.conexionSSE$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (conectado) => {
+          this.conexionSSE = conectado;
+          console.log(conectado ? '✅ [NOTIFICACIONES] SSE Conectado' : '❌ [NOTIFICACIONES] SSE Desconectado');
+          
+          if (!conectado) {
+            this.intentandoReconectar = true;
+          } else {
+            this.intentandoReconectar = false;
+          }
+        }
+      });
+
+    // 2. Nueva notificación recibida
+    this.notificacionesService.nuevaNotificacion$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (notificacion) => {
+          console.log('🔔 [NOTIFICACIONES] Nueva notificación en tiempo real:', notificacion);
+          
+          // Agregar al inicio de la lista
+          this.notificaciones.unshift(notificacion);
+          
+          // Actualizar contador si no está leída
+          if (!notificacion.leida) {
+            this.contadorNoLeidas++;
+          }
+          
+          // Mostrar feedback visual/sonoro
+          this.mostrarFeedbackNuevaNotificacion(notificacion);
+        }
+      });
+
+    // 3. Actualización de contador
+    this.notificacionesService.contador$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (total) => {
+          console.log('🔢 [NOTIFICACIONES] Contador actualizado por SSE:', total);
+          this.contadorNoLeidas = total;
+        }
+      });
+  }
+
+  /**
+   * Mostrar feedback cuando llega una nueva notificación
+   */
+  private mostrarFeedbackNuevaNotificacion(notificacion: Notificacion): void {
+    // Reproducir sonido (opcional)
+    this.reproducirSonidoNotificacion();
+    
+    // Animación visual si el panel está abierto
+    if (this.showNotifications) {
+      this.aplicarAnimacionNuevaNotificacion();
+    }
+    
+    // Toast o mensaje breve (opcional)
+    if (!this.showNotifications && this.isMobile) {
+      this.mostrarToastBreve(`${notificacion.nombre_completo}: ${notificacion.mensaje}`);
+    }
+  }
+
+  /**
+   * Reproducir sonido de notificación
+   */
+  private reproducirSonidoNotificacion(): void {
+    try {
+      // Crear un sonido corto usando Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('⚠️ No se pudo reproducir sonido de notificación');
+    }
+  }
+
+  /**
+   * Aplicar animación a nueva notificación
+   */
+  private aplicarAnimacionNuevaNotificacion(): void {
+    // Agregar clase de animación temporalmente
+    setTimeout(() => {
+      const primeraNotificacion = document.querySelector('.notificaciones .primera-notificacion');
+      if (primeraNotificacion) {
+        primeraNotificacion.classList.add('animate-pulse');
+        setTimeout(() => {
+          primeraNotificacion.classList.remove('animate-pulse');
+        }, 1000);
+      }
+    }, 100);
+  }
+
+  /**
+   * Mostrar toast breve (para móvil)
+   */
+  private mostrarToastBreve(mensaje: string): void {
+    // Implementar toast nativo o usar una librería
+    console.log('📱 Toast:', mensaje);
+  }
+
+  // ============================================
+  // SISTEMA DE LIMPIEZA Y OCULTACIÓN
+  // ============================================
+
+  private cargarNotificacionesOcultas(): void {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) {
+        const data = JSON.parse(stored);
+        this.notificacionesOcultas = new Set(data.ids || []);
+        console.log('📦 Notificaciones ocultas cargadas:', this.notificacionesOcultas.size);
+      }
+    } catch (error) {
+      console.error('❌ Error al cargar notificaciones ocultas:', error);
+      this.notificacionesOcultas = new Set();
+    }
+  }
+
+  private guardarNotificacionesOcultas(): void {
+    try {
+      const data = {
+        ids: Array.from(this.notificacionesOcultas),
+        timestamp: Date.now()
+      };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      console.log('💾 Notificaciones ocultas guardadas');
+    } catch (error) {
+      console.error('❌ Error al guardar notificaciones ocultas:', error);
+    }
+  }
+
+  private limpiarNotificacionesAntiguas(): void {
+    if (this.notificacionesOcultas.size > 1000) {
+      const arrayIds = Array.from(this.notificacionesOcultas);
+      this.notificacionesOcultas = new Set(arrayIds.slice(-1000));
+      this.guardarNotificacionesOcultas();
+      console.log('🧹 Limpieza de localStorage realizada');
+    }
+  }
+
+  private debeOcultarseAutomaticamente(notificacion: Notificacion): boolean {
+    const fechaNotificacion = new Date(notificacion.fecha_creacion);
+    const ahora = new Date();
+    const diasPasados = (ahora.getTime() - fechaNotificacion.getTime()) / (1000 * 60 * 60 * 24);
+    
+    return diasPasados > this.DIAS_PARA_AUTO_OCULTAR;
+  }
+
+  private filtrarNotificacionesVisibles(notificaciones: Notificacion[]): Notificacion[] {
+    return notificaciones.filter(notif => {
+      if (this.notificacionesOcultas.has(notif.id)) {
+        return false;
+      }
+      
+      if (this.debeOcultarseAutomaticamente(notif)) {
+        this.notificacionesOcultas.add(notif.id);
+        return false;
+      }
+      
+      return true;
+    });
+  }
+
+  // ============================================
+  // UI Y NAVEGACIÓN
+  // ============================================
 
   private detectarMobile(): void {
     this.isMobile = window.innerWidth <= 640;
@@ -76,7 +285,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     const wasMobile = this.isMobile;
     this.detectarMobile();
     
-    // Si cambió de móvil a desktop o viceversa, cerrar notificaciones
     if (wasMobile !== this.isMobile && this.showNotifications) {
       this.cerrarNotificaciones();
     }
@@ -112,24 +320,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     document.body.style.width = '';
   }
 
-  private iniciarPolling(): void {
-    this.pollingSubscription = interval(30000)
-      .pipe(
-        switchMap(() => this.notificacionesService.contarNoLeidas()),
-        takeUntil(this.destroy$)
-      )
-      .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.contadorNoLeidas = response.data.total;
-          }
-        },
-        error: (error) => {
-          console.error('❌ Error en polling de notificaciones:', error);
-        }
-      });
-  }
-
   private actualizarContador(): void {
     this.notificacionesService.contarNoLeidas()
       .pipe(takeUntil(this.destroy$))
@@ -154,12 +344,18 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          console.log(' Notificaciones recibidas:', response);
+          console.log('📥 Notificaciones recibidas:', response);
           
           if (response.success && response.data) {
-            this.notificaciones = response.data.notificaciones || [];
+            const todasLasNotificaciones = response.data.notificaciones || [];
+            this.notificaciones = this.filtrarNotificacionesVisibles(todasLasNotificaciones);
+            
+            if (todasLasNotificaciones.length !== this.notificaciones.length) {
+              this.guardarNotificacionesOcultas();
+            }
+            
             this.hayMas = this.notificaciones.length >= this.limit;
-            console.log('✅ Notificaciones cargadas:', this.notificaciones.length);
+            console.log('✅ Notificaciones visibles:', this.notificaciones.length);
           } else {
             this.notificaciones = [];
             this.hayMas = false;
@@ -168,7 +364,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
           this.cargando = false;
         },
         error: (error) => {
-          console.error('Error al cargar notificaciones:', error);
+          console.error('❌ Error al cargar notificaciones:', error);
           this.error = true;
           this.cargando = false;
         }
@@ -205,7 +401,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
             console.log('✅ Notificación marcada como leída:', notificacion.id);
           },
           error: (error) => {
-            console.error('Error al marcar como leída:', error);
+            console.error('❌ Error al marcar como leída:', error);
           }
         });
     }
@@ -230,7 +426,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error al marcar todas como leídas:', error);
+          console.error('❌ Error al marcar todas como leídas:', error);
           if (this.isMobile) {
             this.mostrarFeedback('Error al marcar como leídas ✗');
           }
@@ -238,32 +434,51 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
       });
   }
 
+  borrarTodo(): void {
+    if (this.notificaciones.length === 0) {
+      console.log('ℹ️ No hay notificaciones para borrar');
+      return;
+    }
+
+    this.notificaciones.forEach(notif => {
+      this.notificacionesOcultas.add(notif.id);
+    });
+
+    this.guardarNotificacionesOcultas();
+
+    const cantidadBorrada = this.notificaciones.length;
+    this.notificaciones = [];
+    
+    this.actualizarContador();
+
+    console.log(`🗑️ ${cantidadBorrada} notificaciones ocultadas para el usuario`);
+    
+    if (this.isMobile) {
+      this.mostrarFeedback('Notificaciones borradas ✓');
+    }
+
+    setTimeout(() => {
+      this.cerrarNotificaciones();
+    }, 500);
+  }
+
   eliminarNotificacion(notificacionId: number, event: MouseEvent): void {
     event.stopPropagation();
 
-    this.notificacionesService.eliminar(notificacionId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          const notif = this.notificaciones.find(n => n.id === notificacionId);
-          if (notif && !notif.leida) {
-            this.contadorNoLeidas = Math.max(0, this.contadorNoLeidas - 1);
-          }
-          
-          this.notificaciones = this.notificaciones.filter(n => n.id !== notificacionId);
-          console.log('✅ Notificación eliminada:', notificacionId);
-          
-          if (this.isMobile) {
-            this.mostrarFeedback('Notificación eliminada ✓');
-          }
-        },
-        error: (error) => {
-          console.error(' Error al eliminar notificación:', error);
-          if (this.isMobile) {
-            this.mostrarFeedback('Error al eliminar ✗');
-          }
-        }
-      });
+    this.notificacionesOcultas.add(notificacionId);
+    this.guardarNotificacionesOcultas();
+
+    const notif = this.notificaciones.find(n => n.id === notificacionId);
+    if (notif && !notif.leida) {
+      this.contadorNoLeidas = Math.max(0, this.contadorNoLeidas - 1);
+    }
+    
+    this.notificaciones = this.notificaciones.filter(n => n.id !== notificacionId);
+    console.log('✅ Notificación ocultada:', notificacionId);
+    
+    if (this.isMobile) {
+      this.mostrarFeedback('Notificación eliminada ✓');
+    }
   }
 
   manejarClicNotificacion(notificacion: Notificacion): void {
@@ -285,9 +500,13 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
         break;
 
       default:
-        console.log('Tipo de notificación no manejado:', notificacion.tipo);
+        console.log('ℹ️ Tipo de notificación no manejado:', notificacion.tipo);
     }
   }
+
+  // ============================================
+  // UTILIDADES
+  // ============================================
 
   obtenerMensajeCorto(mensaje: string): string {
     if (!mensaje) return '';
@@ -312,12 +531,10 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   }
 
   obtenerAvatar(notificacion: Notificacion): string {
-    // Priorizar foto de S3
     if (notificacion.foto_perfil_s3) {
       return notificacion.foto_perfil_s3;
     }
     
-    // Si hay URL de foto, usarla directamente
     if (notificacion.foto_perfil_url) {
       if (notificacion.foto_perfil_url.startsWith('http')) {
         return notificacion.foto_perfil_url;
@@ -326,7 +543,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
       return `${this.apiBaseUrl}${notificacion.foto_perfil_url}`;
     }
     
-    // Fallback: generar avatar con las iniciales
     return this.obtenerAvatarFallback(notificacion.nombre_completo);
   }
 
@@ -346,11 +562,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     this.showNotifications = false;
     this.restaurarScrollBody();
     this.close.emit();
-  }
-
-  verTodasLasNotificaciones(): void {
-    this.cerrarNotificaciones();
-    this.router.navigate(['/notificaciones']);
   }
 
   private mostrarFeedback(mensaje: string): void {
@@ -383,7 +594,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
 
   recargar(): void {
     if (this.cargando) {
-      console.log('Ya hay una recarga en progreso');
+      console.log('⏳ Ya hay una recarga en progreso');
       return;
     }
     

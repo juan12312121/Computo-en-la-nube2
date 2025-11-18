@@ -191,17 +191,18 @@
       </div>
     </div>
 
-    <!-- FOOTER -->
+    <!-- FOOTER - 🆕 BOTÓN BORRAR TODO -->
     <div 
       *ngIf="hayNotificaciones && !cargando"
       class="sticky bottom-0 px-4 py-3 border-t backdrop-blur-sm bg-opacity-95"
       [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
       <button
-        (click)="verTodasLasNotificaciones()"
-        class="w-full text-center text-sm font-medium py-2 rounded-lg transition-all touch-manipulation"
-        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
-        aria-label="Ver todas las notificaciones">
-        Ver todas las notificaciones
+        (click)="borrarTodo()"
+        class="w-full text-center text-sm font-medium py-2 rounded-lg transition-all touch-manipulation flex items-center justify-center gap-2 hover:bg-red-50 hover:text-red-600"
+        [ngClass]="currentTheme.textSecondaryClass || ''"
+        aria-label="Borrar todas las notificaciones">
+        <i class="fas fa-trash-alt text-sm"></i>
+        <span>Borrar todo</span>
       </button>
     </div>
   </div>
@@ -232,6 +233,17 @@
         title="Marcar todas como leídas"
         aria-label="Marcar todas como leídas">
         <i class="fas fa-check-double text-base"></i>
+      </button>
+
+      <!-- 🆕 Borrar todo (móvil) -->
+      <button
+        *ngIf="hayNotificaciones"
+        (click)="borrarTodo()"
+        class="p-2 rounded-lg transition-all active:scale-90 hover:text-red-500"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
+        title="Borrar todas"
+        aria-label="Borrar todas las notificaciones">
+        <i class="fas fa-trash-alt text-base"></i>
       </button>
 
       <!-- Cerrar -->

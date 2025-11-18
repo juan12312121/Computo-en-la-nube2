@@ -256,28 +256,33 @@ export class Perfil implements OnInit, OnDestroy {
   }
 
   private cargarSecciones(): void {
-    this.cargandoSecciones = true;
-    this.seccionesService.obtenerSecciones()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (secciones: ServiceSection[]) => {
-          console.log('✅ Secciones cargadas:', secciones);
-          this.sections = secciones.map(s => ({
-            id: s.id,
-            name: s.nombre,
-            icon: s.icono,
-            color: s.color,
-            posts: s.total_posts
-          }));
-          this.cargandoSecciones = false;
-        },
-        error: (error) => {
-          console.error('❌ Error al cargar secciones:', error);
-          this.sections = [];
-          this.cargandoSecciones = false;
-        }
-      });
-  }
+  this.cargandoSecciones = true;
+  this.seccionesService.obtenerSecciones()
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (secciones: ServiceSection[]) => {
+        console.log('✅ Secciones cargadas:', secciones);
+        
+        // ✅ Mapea pero mantén los nombres en español
+        this.sections = secciones.map(s => ({
+          id: s.id,
+          nombre: s.nombre,        // ✅ era: name
+          icono: s.icono,          // ✅ era: icon
+          color: s.color,
+          total_posts: s.total_posts, // ✅ era: posts
+          usuario_id: s.usuario_id,
+          fecha_creacion: s.fecha_creacion
+        }));
+        
+        this.cargandoSecciones = false;
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar secciones:', error);
+        this.sections = [];
+        this.cargandoSecciones = false;
+      }
+    });
+}
 
   recargarSecciones(): void {
     console.log('🔄 Recargando secciones...');

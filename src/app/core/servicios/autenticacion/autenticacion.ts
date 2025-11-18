@@ -56,7 +56,7 @@ export class AutenticacionService {
     if (host === 'localhost' || host === '127.0.0.1') {
       this.apiUrl = 'http://localhost:3000/api/auth'; // entorno local
     } else {
-	 this.apiUrl = 'http://3.146.83.30:3000/api/auth'; 
+      this.apiUrl = 'http://3.146.83.30:3000/api/auth'; 
     }
 
     const storedUser = localStorage.getItem('currentUser');
@@ -69,6 +69,17 @@ export class AutenticacionService {
   // Getter del usuario actual
   public get currentUserValue(): Usuario | null {
     return this.currentUserSubject.value;
+  }
+
+  // 🆕 Obtener ID del usuario actual
+  obtenerUsuarioId(): number | null {
+    const usuario = this.currentUserValue;
+    return usuario?.id || null;
+  }
+
+  // 🆕 Obtener usuario actual (alias para compatibilidad)
+  obtenerUsuarioActual(): Usuario | null {
+    return this.currentUserValue;
   }
 
   // Registro

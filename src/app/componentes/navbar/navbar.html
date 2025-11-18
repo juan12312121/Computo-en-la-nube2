@@ -446,7 +446,10 @@
                 </p>
               </div>
             </button>
+
           </div>
+          
+    
 
           <!-- BOTÓN SCROLL DERECHA MÓVIL -->
           <button *ngIf="canScrollRightMobile"
@@ -471,5 +474,9 @@
   </div>
 
   <!-- MODAL CREAR POST -->
-  <app-boton-crear-post *ngIf="showCrearPost" (close)="showCrearPost = false"></app-boton-crear-post>
+ <app-boton-crear-post 
+     *ngIf="showCrearPost" 
+     (close)="onCloseModal()"
+     (publicacionCreada)="onPostCreado($event)">
+   </app-boton-crear-post>
 </nav>
