@@ -17,12 +17,16 @@
       <div class="p-4 sticky top-0 z-10 border-b"
            [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold"
+          <!-- 📸 AVATAR HEADER MOBILE (CLICKEABLE) -->
+          <div (click)="navegarAPerfil(post.usuarioId, $event)"
+               class="w-11 h-11 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition"
                [ngClass]="post.avatarColor">
             {{ post.avatar }}
           </div>
           <div class="flex-1">
-            <h3 class="font-bold" [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
+            <h3 (click)="navegarAPerfil(post.usuarioId, $event)"
+                class="font-bold cursor-pointer hover:underline" 
+                [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
             <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
           </div>
         </div>
@@ -84,15 +88,34 @@
           Comentarios
         </h4>
         <div class="space-y-4 mb-4">
+          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES (MOBILE) -->
           <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                 [ngClass]="comment.avatarColor">
-              {{ comment.avatar }}
+            <!-- 📸 AVATAR CON FOTO O INICIALES (CLICKEABLE) -->
+            <div (click)="navegarAPerfil(comment.usuario_id, $event)"
+                 class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+                 [ngClass]="comment.foto_perfil_url ? '' : 'bg-gradient-to-br ' + comment.avatarColor">
+              
+              <!-- Si tiene foto (CLICKEABLE) -->
+              <img *ngIf="comment.foto_perfil_url && !comment.usandoIniciales"
+                   [src]="comment.foto_perfil_url"
+                   [alt]="comment.author"
+                   class="w-full h-full object-cover"
+                   (error)="handleImageError(comment)"
+                   (load)="onImageLoad(comment)">
+              
+              <!-- Si no tiene foto, mostrar iniciales (CLICKEABLE) -->
+              <div *ngIf="!comment.foto_perfil_url || comment.usandoIniciales"
+                   class="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                {{ comment.avatar }}
+              </div>
             </div>
+
             <div class="flex-1 min-w-0">
               <div class="rounded-2xl px-4 py-2.5 break-words"
                    [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
-                <p class="font-bold text-sm mb-1" [ngClass]="currentTheme.textPrimaryClass">{{ comment.author }}</p>
+                <p (click)="navegarAPerfil(comment.usuario_id, $event)"
+                   class="font-bold text-sm mb-1 cursor-pointer hover:underline" 
+                   [ngClass]="currentTheme.textPrimaryClass">{{ comment.author }}</p>
                 <p class="text-sm leading-relaxed" [ngClass]="currentTheme.textPrimaryClass">{{ comment.text }}</p>
               </div>
               <div class="flex items-center gap-4 mt-2 px-3">
@@ -104,6 +127,7 @@
               </div>
             </div>
           </div>
+          
           <div *ngIf="comentariosFormateados.length === 0" class="text-center py-12">
             <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
                  [ngClass]="'bg-opacity-10 ' + currentTheme.accentBg">
@@ -144,12 +168,16 @@
              *ngIf="!post.image"
              [ngClass]="currentTheme.cardBg">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-14 h-14 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg"
+            <!-- 📸 AVATAR HEADER DESKTOP (CLICKEABLE) -->
+            <div (click)="navegarAPerfil(post.usuarioId, $event)"
+                 class="w-14 h-14 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg cursor-pointer hover:opacity-80 transition"
                  [ngClass]="post.avatarColor">
               {{ post.avatar }}
             </div>
             <div class="flex-1">
-              <h3 class="font-bold text-lg" [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
+              <h3 (click)="navegarAPerfil(post.usuarioId, $event)"
+                  class="font-bold text-lg cursor-pointer hover:underline" 
+                  [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
               <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
             </div>
             <span class="inline-block text-white px-4 py-2 rounded-full text-sm font-semibold"
@@ -166,12 +194,16 @@
          [ngClass]="currentTheme.cardBg">
       <div class="p-4 border-b sticky top-0 z-10" [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
         <div class="flex items-start gap-3 mb-3">
-          <div class="w-11 h-11 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold flex-shrink-0"
+          <!-- 📸 AVATAR SIDEBAR DESKTOP (CLICKEABLE) -->
+          <div (click)="navegarAPerfil(post.usuarioId, $event)"
+               class="w-11 h-11 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold flex-shrink-0 cursor-pointer hover:opacity-80 transition"
                [ngClass]="post.avatarColor">
             {{ post.avatar }}
           </div>
           <div class="flex-1 min-w-0 pr-2">
-            <h3 class="font-bold text-base truncate" [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
+            <h3 (click)="navegarAPerfil(post.usuarioId, $event)"
+                class="font-bold text-base truncate cursor-pointer hover:underline" 
+                [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
             <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
           </div>
           <span class="inline-block text-white px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0"
@@ -220,15 +252,34 @@
         </h4>
         
         <div class="space-y-4">
+          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES (DESKTOP) -->
           <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                 [ngClass]="comment.avatarColor">
-              {{ comment.avatar }}
+            <!-- 📸 AVATAR CON FOTO O INICIALES (CLICKEABLE) -->
+            <div (click)="navegarAPerfil(comment.usuario_id, $event)"
+                 class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+                 [ngClass]="comment.foto_perfil_url ? '' : 'bg-gradient-to-br ' + comment.avatarColor">
+              
+              <!-- Si tiene foto (CLICKEABLE) -->
+              <img *ngIf="comment.foto_perfil_url && !comment.usandoIniciales"
+                   [src]="comment.foto_perfil_url"
+                   [alt]="comment.author"
+                   class="w-full h-full object-cover"
+                   (error)="handleImageError(comment)"
+                   (load)="onImageLoad(comment)">
+              
+              <!-- Si no tiene foto, mostrar iniciales (CLICKEABLE) -->
+              <div *ngIf="!comment.foto_perfil_url || comment.usandoIniciales"
+                   class="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                {{ comment.avatar }}
+              </div>
             </div>
+
             <div class="flex-1 min-w-0">
               <div class="rounded-2xl px-4 py-2.5 break-words"
                    [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
-                <p class="font-bold text-sm mb-1" [ngClass]="currentTheme.textPrimaryClass">{{ comment.author }}</p>
+                <p (click)="navegarAPerfil(comment.usuario_id, $event)"
+                   class="font-bold text-sm mb-1 cursor-pointer hover:underline" 
+                   [ngClass]="currentTheme.textPrimaryClass">{{ comment.author }}</p>
                 <p class="text-sm leading-relaxed" [ngClass]="currentTheme.textPrimaryClass">{{ comment.text }}</p>
               </div>
               <div class="flex items-center gap-4 mt-2 px-3">
@@ -260,7 +311,7 @@
                  placeholder="Añade un comentario..." 
                  class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
                  [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100', 'focus:ring-' + currentTheme.accentColor.replace('text-', '')]">
-            <button (click)="addComment()" 
+          <button (click)="addComment()" 
                   [disabled]="!commentInput.trim()" 
                   class="active:scale-95 transition-all p-2"
                   [ngClass]="commentInput.trim() ? [currentTheme.accentColor, 'hover:opacity-80'] : 'text-gray-400 cursor-not-allowed'">

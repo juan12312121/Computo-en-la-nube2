@@ -60,7 +60,6 @@ interface BackendResponse {
   };
 }
 
-// 🆕 NUEVAS INTERFACES PARA LOS ENDPOINTS SIMPLES
 interface FotoPerfilSimpleResponse {
   success: boolean;
   data: {
@@ -86,10 +85,9 @@ interface FotosBatchResponse {
 })
 export class FotosService {
   private apiUrl = 'http://3.146.83.30:3000/api/fotos';
-  // 🆕 URL base de S3
   private readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
@@ -98,55 +96,47 @@ export class FotosService {
     });
   }
 
-  // 🆕 Método para formatear URLs a S3
-  private formatearUrlS3(url: string, tipo: 'perfil' | 'portada' | 'publicacion'): string {
-    if (!url) return '';
-    
-    console.log('🔧 Formateando URL:', { original: url, tipo });
-    
-    // Si ya apunta a S3, normalizarla por si tiene rutas incorrectas
-    if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
-      // Corregir /perfiles/ a /perfil/ si existe
-      const urlCorregida = url.replace('/perfiles/', '/perfil/');
-      console.log('✅ URL S3 corregida:', urlCorregida);
-      return urlCorregida;
+  /**
+   * 🔧 Método para formatear URLs a S3
+   * Normaliza todas las URLs para que apunten correctamente a S3
+   */
+ private formatearUrlS3(url: string, tipo: 'perfil' | 'portada' | 'publicacion'): string {
+  if (!url) return '';
+
+  // Si ya es una URL completa de S3, no reescribir salvo correcciones mínimas
+  if (url.startsWith('https://redstudent-uploads.s3.us-east-2.amazonaws.com')) {
+    if (tipo === 'perfil') {
+      return url.replace('/perfil/', '/perfiles/'); // corregir singular → plural
     }
-    
-    // Si es una URL del servidor API, extraer solo la ruta
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      const match = url.match(/\/uploads\/.+$/);
-      if (match) {
-        // Corregir /perfiles/ a /perfil/ si existe
-        const rutaCorregida = match[0].replace('/perfiles/', '/perfil/');
-        const urlCompleta = `${this.s3BaseUrl}${rutaCorregida}`;
-        console.log('✅ URL transformada de API a S3:', urlCompleta);
-        return urlCompleta;
-      }
-    }
-    
-    // Si es solo un nombre de archivo (sin ruta), construir la ruta según el tipo
-    if (!url.includes('/') && !url.startsWith('uploads')) {
-      let carpeta = 'publicaciones';
-      
-      if (tipo === 'perfil' || url.includes('foto_perfil') || url.includes('perfil')) {
-        carpeta = 'perfil';
-      } else if (tipo === 'portada' || url.includes('foto_portada') || url.includes('portada')) {
-        carpeta = 'portadas';
-      }
-      
-      const urlCompleta = `${this.s3BaseUrl}/uploads/${carpeta}/${url}`;
-      console.log('✅ URL construida desde nombre:', urlCompleta);
-      return urlCompleta;
-    }
-    
-    // Si es una ruta relativa, construir URL completa
-    const cleanPath = url.replace(/^\/+/, '').replace('/perfiles/', '/perfil/');
-    const urlCompleta = `${this.s3BaseUrl}/${cleanPath}`;
-    console.log('✅ URL construida desde ruta relativa:', urlCompleta);
-    return urlCompleta;
+    return url;
   }
 
-  // ========== MÉTODOS EXISTENTES ==========
+  // Si solo viene el nombre del archivo
+  if (!url.startsWith('http')) {
+    let carpeta =
+      tipo === 'perfil' ? 'perfiles' :
+      tipo === 'portada' ? 'portadas' :
+      'publicaciones';
+
+    return `${this.s3BaseUrl}/${carpeta}/${url}`;
+  }
+
+  // Si viene del backend con rutas HTTP
+  const match = url.match(/\/(perfil|perfiles|portada|portadas|publicaciones)\/.+$/);
+  if (match) {
+    let carpeta =
+      tipo === 'perfil' ? 'perfiles' :
+      tipo === 'portada' ? 'portadas' :
+      'publicaciones';
+
+    return `${this.s3BaseUrl}/${carpeta}/${match[0].split('/').pop()}`;
+  }
+
+  return url;
+}
+
+
+  // ========== MÉTODOS PARA OBTENER FOTOS ==========
 
   obtenerMisFotos(): Observable<Photo[]> {
     console.log('========================================');
@@ -199,7 +189,7 @@ export class FotosService {
   private transformarFotos(response: BackendResponse): Photo[] {
     const fotos: Photo[] = [];
 
-    // 🆕 Mapear fotos de perfil del historial con URLs de S3
+    // Mapear fotos de perfil del historial con URLs de S3
     if (response.data?.fotos?.perfil_historial && Array.isArray(response.data.fotos.perfil_historial)) {
       const fotosPerfil = response.data.fotos.perfil_historial.map((foto, index) => {
         const urlS3 = this.formatearUrlS3(foto.url, 'perfil');
@@ -219,7 +209,7 @@ export class FotosService {
       fotos.push(...fotosPerfil);
     }
 
-    // 🆕 Mapear fotos de portada del historial con URLs de S3
+    // Mapear fotos de portada del historial con URLs de S3
     if (response.data?.fotos?.portada_historial && Array.isArray(response.data.fotos.portada_historial)) {
       const fotosPortada = response.data.fotos.portada_historial.map((foto, index) => {
         const urlS3 = this.formatearUrlS3(foto.url, 'portada');
@@ -239,7 +229,7 @@ export class FotosService {
       fotos.push(...fotosPortada);
     }
 
-    // 🆕 Mapear fotos de publicaciones con URLs de S3
+    // Mapear fotos de publicaciones con URLs de S3
     if (response.data?.fotos?.publicaciones && Array.isArray(response.data.fotos.publicaciones)) {
       const fotosPublicaciones = response.data.fotos.publicaciones.map(pub => {
         const urlS3 = this.formatearUrlS3(pub.url, 'publicacion');
@@ -276,7 +266,7 @@ export class FotosService {
     return fotos;
   }
 
-  // ========== 🆕 NUEVOS MÉTODOS PARA COMENTARIOS ==========
+  // ========== MÉTODOS PARA COMENTARIOS ==========
 
   /**
    * Obtiene la foto de perfil de un usuario específico
@@ -296,7 +286,7 @@ export class FotosService {
         });
       }),
       map(response => {
-        // 🔥 APLICAR FORMATEO A LA URL
+        // Aplicar formateo a la URL
         if (response.success && response.data && response.data.foto_perfil_url) {
           const urlOriginal = response.data.foto_perfil_url;
           const urlFormateada = this.formatearUrlS3(urlOriginal, 'perfil');
@@ -308,7 +298,6 @@ export class FotosService {
             url_formateada: urlFormateada
           });
           
-          // Devolver respuesta con URL formateada
           return {
             ...response,
             data: {
@@ -352,7 +341,7 @@ export class FotosService {
         });
       }),
       map(response => {
-        // 🔥 APLICAR FORMATEO A TODAS LAS URLs
+        // Aplicar formateo a todas las URLs
         if (response.success && response.data && Array.isArray(response.data)) {
           console.log('🔧 [obtenerFotosBatch] Formateando URLs...');
           

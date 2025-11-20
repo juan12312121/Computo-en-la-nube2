@@ -1,0 +1,230 @@
+/* ==================== POST CARD COMPONENT STYLES ==================== */
+
+/* Animación de entrada del componente */
+:host {
+  display: block;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== IMÁGENES ADAPTATIVAS ==================== */
+.cursor-pointer.hover\:opacity-95 {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: black;
+}
+
+.cursor-pointer img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 600px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.cursor-pointer:hover img {
+  opacity: 0.95;
+}
+
+/* ==================== BOTONES Y EFECTOS ==================== */
+
+/* Botón de "Me gusta" con efecto especial */
+button .fa-heart {
+  animation: heartBeat 0.3s ease-in-out;
+}
+
+@keyframes heartBeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.2);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  75% {
+    transform: scale(1.1);
+  }
+}
+
+/* Hover suave en la card */
+.hover\:shadow-md {
+  transition: box-shadow 0.3s ease;
+}
+
+/* ==================== COMENTARIOS ==================== */
+
+/* Scroll personalizado para comentarios */
+.max-h-80.overflow-y-auto {
+  scrollbar-width: thin;
+}
+
+.max-h-80.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-80.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.max-h-80.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.max-h-80.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Input de comentarios con focus mejorado */
+input[type="text"] {
+  transition: all 0.3s ease;
+}
+
+input[type="text"]:focus {
+  transform: scale(1.01);
+}
+
+/* Botón de enviar comentario con animación */
+button .fa-paper-plane {
+  transition: transform 0.3s ease;
+}
+
+button:not(:disabled):hover .fa-paper-plane {
+  transform: translateX(3px);
+}
+
+/* Comentarios con entrada suave */
+.animate-fade-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==================== BADGES Y AVATARES ==================== */
+
+/* Badge de categoría con sombra */
+span[class*="rounded-full"] {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+span[class*="rounded-full"]:hover {
+  transform: scale(1.05);
+}
+
+/* Avatar con borde sutil */
+div[style*="background"][class*="rounded-full"] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================== BOTONES DE ACCIÓN ==================== */
+
+/* Botones con efecto ripple simulado */
+button[class*="flex-1"] {
+  position: relative;
+  overflow: hidden;
+}
+
+button[class*="flex-1"]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button[class*="flex-1"]:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 640px) {
+  /* Hacer los botones más grandes en móvil */
+  button[class*="flex-1"] {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  /* Ajustar altura máxima en móvil */
+  .cursor-pointer img {
+    max-height: 400px;
+  }
+}
+
+/* ==================== TRANSICIONES ==================== */
+
+/* Transiciones suaves */
+.transition {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Hover effect para botones */
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* ==================== ESTRUCTURA DE LA CARD ==================== */
+
+/* Asegurar que la card mantenga su estructura */
+.border.rounded-xl {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Prevenir que las imágenes rompan el layout */
+.border.rounded-xl > * {
+  flex-shrink: 0;
+}
+
+/* ==================== ACCESIBILIDAD ==================== */
+
+/* Outline para navegación por teclado */
+button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ==================== TEMAS ==================== */
+
+/* Tema-specific hover effects */
+[data-theme="midnight"] button:hover,
+[data-theme="neon"] button:hover,
+[data-theme="toxic"] button:hover {
+  filter: brightness(1.1);
+}

@@ -125,14 +125,23 @@
         <div *ngIf="!post.loadingComments && post.comments.length > 0" 
              class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
           <div *ngFor="let comment of post.comments; trackBy: trackByCommentId" class="flex gap-3">
-            <!-- Avatar del comentarista con foto de perfil -->
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 overflow-hidden"
-                 [style.background]="comment.avatarColor">
-              <img *ngIf="comment.profileImageUrl" 
-                   [src]="comment.profileImageUrl" 
+            <!-- ✅ AVATAR CON FOTO O INICIALES -->
+            <div class="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden"
+                 [ngClass]="comment.foto_perfil_url ? '' : 'bg-gradient-to-br ' + comment.avatarColor">
+              
+              <!-- Si tiene foto -->
+              <img *ngIf="comment.foto_perfil_url && !comment.usandoIniciales" 
+                   [src]="comment.foto_perfil_url" 
                    [alt]="comment.author"
-                   class="w-full h-full object-cover">
-              <span *ngIf="!comment.profileImageUrl">{{ comment.avatar }}</span>
+                   class="w-full h-full object-cover"
+                   (error)="handleImageError(comment)"
+                   (load)="onImageLoad(comment)">
+              
+              <!-- Si no tiene foto, mostrar iniciales -->
+              <div *ngIf="!comment.foto_perfil_url || comment.usandoIniciales"
+                   class="w-full h-full flex items-center justify-center text-white font-semibold text-xs">
+                {{ comment.avatar }}
+              </div>
             </div>
             
             <div class="flex-1 min-w-0">
@@ -182,15 +191,21 @@
         <div class="px-4 py-3 border-t" 
              [ngClass]="currentTheme.borderColor">
           <div class="flex items-center gap-3">
-            <!-- Avatar del usuario actual con foto de perfil -->
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 overflow-hidden"
-                 [style.background]="usuarioFotoPerfil ? 'transparent' : 'linear-gradient(to bottom right, rgb(45, 212, 191), rgb(20, 184, 166))'">
+            <!-- ✅ AVATAR DEL USUARIO ACTUAL CON FOTO -->
+            <div class="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden"
+                 [ngClass]="usuarioFotoPerfil ? '' : 'bg-gradient-to-br from-teal-400 to-teal-600'">
+              
               <img *ngIf="usuarioFotoPerfil" 
                    [src]="usuarioFotoPerfil" 
                    [alt]="usuarioNombre"
                    class="w-full h-full object-cover">
-              <span *ngIf="!usuarioFotoPerfil">{{ usuarioIniciales }}</span>
+              
+              <div *ngIf="!usuarioFotoPerfil"
+                   class="w-full h-full flex items-center justify-center text-white font-semibold text-xs">
+                {{ usuarioIniciales }}
+              </div>
             </div>
+
             <input
               type="text"
               [(ngModel)]="commentInputs[post.id]"
@@ -213,11 +228,12 @@
     </div>
   </div>
 
-  <!-- ✅ Modal de detalle del post - CORREGIDO -->
+  <!-- ✅ Modal de detalle del post - PASANDO fotosPerfilCache -->
   <app-detalle-post
     *ngIf="showPostDetail"
     [post]="selectedPost"
     [isVisible]="showPostDetail"
+    [fotosPerfilCache]="fotosPerfilCache"
     (close)="closePostDetail()"
     (likeToggled)="onLikeToggled($event)">
   </app-detalle-post>
