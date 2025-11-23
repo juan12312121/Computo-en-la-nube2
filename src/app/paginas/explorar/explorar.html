@@ -130,10 +130,16 @@
                     <div class="px-4 pt-3 pb-2">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
-                                     [style.background]="post.avatarColor">
-                                    {{ post.avatar }}
-                                </div>
+                                <!-- Conditionally display avatar or profile picture -->
+                                <ng-container *ngIf="post.fotoPerfil; else avatarInitials">
+                                    <img [src]="post.fotoPerfil" alt="Profile Picture" class="w-11 h-11 rounded-full object-cover">
+                                </ng-container>
+                                <ng-template #avatarInitials>
+                                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+                                         [style.background]="post.avatarColor">
+                                        {{ post.avatar }}
+                                    </div>
+                                </ng-template>
                                 <div>
                                     <h3 class="font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">{{ post.author }}</h3>
                                     <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>

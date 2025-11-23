@@ -3,10 +3,10 @@ import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, Rendere
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { AutenticacionService, Usuario } from '../../core/servicios/autenticacion/autenticacion';
-import { Categoria, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
+import { Categoria, PublicacionesService, Visibilidad } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 
-// 🆕 Interface para documentos adjuntos
+// Interface para documentos adjuntos
 interface DocumentoAdjunto {
   file: File;
   preview: string;
@@ -25,13 +25,14 @@ interface DocumentoAdjunto {
 export class BotonCrearPost implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<void>();
   @Output() postCreado = new EventEmitter<void>();
+  @Output() publicacionCreada = new EventEmitter<any>();
 
-  // ✅ Usuario autenticado
+  // Usuario autenticado
   currentUser: Usuario | null = null;
   private authSubscription?: Subscription;
   private themeSubscription?: Subscription;
 
-  // ✅ URLs Base
+  // URLs Base
   public readonly apiBaseUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'http://3.146.83.30:3000';
@@ -41,7 +42,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   selectedImage: string | null = null;
   selectedFile: File | null = null;
   
-  // 🆕 Documentos adjuntos
+  // Documentos adjuntos
   documentosAdjuntos: DocumentoAdjunto[] = [];
   readonly MAX_DOCUMENTOS = 5;
   
@@ -52,15 +53,17 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   mensajeError = '';
   tipoError: 'error' | 'warning' | 'censura' = 'error';
 
-  // ✅ Categorías
+  // Categorías
   categorias: Categoria[] = [];
   categoriaSeleccionada = 'General';
   mostrarSelectorCategoria = false;
 
-  @Output() publicacionCreada = new EventEmitter<any>();
+  // 🆕 VISIBILIDAD
+  visibilidades: Visibilidad[] = [];
+  visibilidadSeleccionada: 'publico' | 'privado' | 'seguidores' = 'publico';
+  mostrarSelectorVisibilidad = false;
 
-
-  // ✅ Tema actual
+  // Tema actual
   currentTheme: Theme;
 
   constructor(
@@ -76,27 +79,23 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   ngOnInit() {
     this.cargarEmojis();
     this.cargarCategorias();
+    this.cargarVisibilidades();
 
-    // ✅ Suscribirse al usuario autenticado
     this.authSubscription = this.authService.currentUser.subscribe(user => {
       this.currentUser = user;
     });
 
-    // ✅ Suscribirse a los cambios de tema y aplicar atributo data-theme
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
       this.aplicarTema(theme);
-      console.log('🎨 Tema actualizado en modal crear post:', this.currentTheme.name);
     });
 
-    // Aplicar tema inicial
     this.aplicarTema(this.currentTheme);
   }
 
   ngOnDestroy() {
     document.body.classList.remove('emoji-picker-open');
 
-    // ✅ Limpiar suscripciones
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
@@ -105,7 +104,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ Aplicar tema al componente basado en tu ThemeService
   private aplicarTema(theme: Theme) {
     const hostElement = this.elementRef.nativeElement;
     
@@ -239,7 +237,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
         this.categorias = response.data;
       },
       error: (error) => {
-        console.error('❌ Error al cargar categorías:', error);
         this.categorias = [
           { value: 'General', label: 'General', color: 'bg-orange-500' },
           { value: 'Tecnología', label: 'Tecnología', color: 'bg-teal-500' },
@@ -255,10 +252,35 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     });
   }
 
+  cargarVisibilidades() {
+    this.publicacionesService.obtenerVisibilidades().subscribe({
+      next: (response) => {
+        this.visibilidades = response.data;
+      },
+      error: (error) => {
+        this.visibilidades = [
+          { value: 'publico', label: '🌍 Público', description: 'Todos pueden ver esta publicación' },
+          { value: 'seguidores', label: '👥 Solo seguidores', description: 'Solo tus seguidores pueden verla' },
+          { value: 'privado', label: '🔒 Privado', description: 'Solo tú puedes verla' }
+        ];
+      }
+    });
+  }
+
   toggleSelectorCategoria() {
     this.mostrarSelectorCategoria = !this.mostrarSelectorCategoria;
     if (this.mostrarSelectorCategoria) {
       this.mostrarEmojiPicker = false;
+      this.mostrarSelectorVisibilidad = false;
+      document.body.classList.remove('emoji-picker-open');
+    }
+  }
+
+  toggleSelectorVisibilidad() {
+    this.mostrarSelectorVisibilidad = !this.mostrarSelectorVisibilidad;
+    if (this.mostrarSelectorVisibilidad) {
+      this.mostrarEmojiPicker = false;
+      this.mostrarSelectorCategoria = false;
       document.body.classList.remove('emoji-picker-open');
     }
   }
@@ -268,8 +290,17 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     this.mostrarSelectorCategoria = false;
   }
 
+  seleccionarVisibilidad(visibilidad: 'publico' | 'privado' | 'seguidores') {
+    this.visibilidadSeleccionada = visibilidad;
+    this.mostrarSelectorVisibilidad = false;
+  }
+
   get categoriaActual(): Categoria | undefined {
     return this.categorias.find(c => c.value === this.categoriaSeleccionada);
+  }
+
+  get visibilidadActual(): Visibilidad | undefined {
+    return this.visibilidades.find(v => v.value === this.visibilidadSeleccionada);
   }
 
   get userName(): string {
@@ -299,7 +330,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       this.emojis = data.slice(0, 72);
       this.emojisCargados = true;
     } catch (error) {
-      console.error('Error cargando emojis:', error);
       this.emojis = [
         { character: '😀', unicodeName: 'grinning face' },
         { character: '😂', unicodeName: 'face with tears of joy' },
@@ -347,6 +377,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
 
     if (this.mostrarEmojiPicker) {
       this.mostrarSelectorCategoria = false;
+      this.mostrarSelectorVisibilidad = false;
       document.body.classList.add('emoji-picker-open');
     } else {
       document.body.classList.remove('emoji-picker-open');
@@ -379,17 +410,11 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     this.selectedFile = null;
   }
 
-  // 🆕 ==================== FUNCIONES PARA DOCUMENTOS ====================
-
-  /**
-   * Maneja la selección de documentos
-   */
   onDocumentosSelect(event: any) {
     const files: FileList = event.target.files;
     
     if (!files || files.length === 0) return;
 
-    // Validar cantidad máxima
     if (this.documentosAdjuntos.length + files.length > this.MAX_DOCUMENTOS) {
       this.mensajeError = `Solo puedes adjuntar hasta ${this.MAX_DOCUMENTOS} documentos`;
       this.tipoError = 'warning';
@@ -397,9 +422,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       return;
     }
 
-    // Procesar cada archivo
     Array.from(files).forEach(file => {
-      // Validar tipo de archivo
       if (!this.esArchivoPermitido(file)) {
         this.mensajeError = `Archivo no permitido: ${file.name}. Solo PDF, Word, Excel, PowerPoint, ZIP, RAR, CSV, TXT`;
         this.tipoError = 'warning';
@@ -407,7 +430,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
         return;
       }
 
-      // Validar tamaño (10MB)
       if (file.size > 10 * 1024 * 1024) {
         this.mensajeError = `El archivo ${file.name} supera los 10MB`;
         this.tipoError = 'warning';
@@ -428,22 +450,14 @@ export class BotonCrearPost implements OnInit, OnDestroy {
       this.documentosAdjuntos.push(documento);
     });
 
-    // Resetear input
     event.target.value = '';
   }
 
-  /**
-   * Elimina un documento de la lista
-   */
   eliminarDocumento(index: number) {
-    // Liberar URL del preview
     URL.revokeObjectURL(this.documentosAdjuntos[index].preview);
     this.documentosAdjuntos.splice(index, 1);
   }
 
-  /**
-   * Valida si el tipo de archivo es permitido
-   */
   private esArchivoPermitido(file: File): boolean {
     const tiposPermitidos = [
       'application/pdf',
@@ -462,9 +476,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     return tiposPermitidos.includes(file.type);
   }
 
-  /**
-   * Obtiene el icono y color según el tipo de archivo
-   */
   private obtenerIconoYColor(tipo: string): { icono: string; color: string } {
     const mapa: { [key: string]: { icono: string; color: string } } = {
       'application/pdf': { icono: 'fa-file-pdf', color: 'text-red-500' },
@@ -483,9 +494,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     return mapa[tipo] || { icono: 'fa-file', color: 'text-gray-500' };
   }
 
-  /**
-   * Formatea el tamaño del archivo
-   */
   formatearTamano(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -494,115 +502,77 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
 
-  /**
-   * Verifica si se puede agregar más documentos
-   */
   get puedeAgregarDocumentos(): boolean {
     return this.documentosAdjuntos.length < this.MAX_DOCUMENTOS;
   }
 
-  // 🆕 ==================== FIN FUNCIONES DOCUMENTOS ====================
-
-  /**
-   * 📝 Publicar post con imagen y documentos
-   */
- publicarPost() {
-  if (!this.postContent.trim()) {
-    return;
-  }
-
-  this.publicando = true;
-  this.mensajeError = '';
-  this.tipoError = 'error';
-
-  // Crear FormData con contenido, categoría, imagen y documentos
-  const formData = new FormData();
-  formData.append('contenido', this.postContent.trim());
-  formData.append('categoria', this.categoriaSeleccionada);
-
-  // Agregar imagen si existe
-  if (this.selectedFile) {
-    formData.append('imagen', this.selectedFile);
-  }
-
-  // Agregar documentos
-  this.documentosAdjuntos.forEach(doc => {
-    formData.append('documentos', doc.file);
-  });
-
-  console.log('📤 Enviando publicación con:', {
-    contenido: this.postContent.trim(),
-    categoria: this.categoriaSeleccionada,
-    tieneImagen: !!this.selectedFile,
-    cantidadDocumentos: this.documentosAdjuntos.length
-  });
-
-  this.publicacionesService.crearPublicacion(formData).subscribe({
-    next: (response) => {
-      console.log('✅ Publicación creada exitosamente', response);
-
-      // Si hay advertencia (requiere revisión)
-      if (response.data?.advertencia) {
-        this.tipoError = 'warning';
-        this.mensajeError = `⚠️ ${response.data.advertencia}`;
-        console.warn('⚠️ Advertencia:', response.data.advertencia);
-      }
-
-      // 🆕 NUEVO: Emitir la publicación completa hacia el padre
-      if (response.data) {
-        console.log('📤 Emitiendo publicación hacia Navbar:', response.data);
-        this.publicacionCreada.emit(response.data);
-      }
-
-      // Resetear formulario
-      this.postContent = '';
-      this.selectedImage = null;
-      this.selectedFile = null;
-      this.documentosAdjuntos.forEach(doc => URL.revokeObjectURL(doc.preview));
-      this.documentosAdjuntos = [];
-      this.mostrarEmojiPicker = false;
-      this.mostrarSelectorCategoria = false;
-      this.categoriaSeleccionada = 'General';
-      this.publicando = false;
-
-      document.body.classList.remove('emoji-picker-open');
-
-      // Emitir evento de éxito (para mantener compatibilidad)
-      this.postCreado.emit();
-      
-      // Cerrar modal después de 1.5 segundos si no hay advertencia
-      if (!response.data?.advertencia) {
-        setTimeout(() => this.closeModal(), 1500);
-      }
-    },
-    error: (error) => {
-      console.error('❌ Error al crear publicación:', error);
-
-      // Manejo de error de censura (403)
-      if (this.publicacionesService.esErrorCensura(error)) {
-        this.tipoError = 'censura';
-        this.mensajeError = this.publicacionesService.extraerMensajeCensura(error);
-        
-        // Mostrar detalles específicos de la censura
-        if (error.errors?.detalles) {
-          console.error('📋 Detalles de censura:', {
-            contenido: error.errors.detalles.contenido,
-            imagen: error.errors.detalles.imagen
-          });
-        }
-      } else {
-        this.tipoError = 'error';
-        this.mensajeError = error.error?.message || 'Error al publicar. Intenta de nuevo.';
-      }
-
-      this.publicando = false;
+  publicarPost() {
+    if (!this.postContent.trim()) {
+      return;
     }
-  });
-}
 
-  /**
-   * 🎨 Obtener clase CSS según el tipo de error
-   */
+    this.publicando = true;
+    this.mensajeError = '';
+    this.tipoError = 'error';
+
+    const formData = new FormData();
+    formData.append('contenido', this.postContent.trim());
+    formData.append('categoria', this.categoriaSeleccionada);
+    formData.append('visibilidad', this.visibilidadSeleccionada);
+
+    if (this.selectedFile) {
+      formData.append('imagen', this.selectedFile);
+    }
+
+    this.documentosAdjuntos.forEach(doc => {
+      formData.append('documentos', doc.file);
+    });
+
+    this.publicacionesService.crearPublicacion(formData).subscribe({
+      next: (response) => {
+        if (response.data?.advertencia) {
+          this.tipoError = 'warning';
+          this.mensajeError = `⚠️ ${response.data.advertencia}`;
+        }
+
+        if (response.data) {
+          this.publicacionCreada.emit(response.data);
+        }
+
+        this.postContent = '';
+        this.selectedImage = null;
+        this.selectedFile = null;
+        this.documentosAdjuntos.forEach(doc => URL.revokeObjectURL(doc.preview));
+        this.documentosAdjuntos = [];
+        this.mostrarEmojiPicker = false;
+        this.mostrarSelectorCategoria = false;
+        this.mostrarSelectorVisibilidad = false;
+        this.categoriaSeleccionada = 'General';
+        this.visibilidadSeleccionada = 'publico';
+        this.publicando = false;
+
+        document.body.classList.remove('emoji-picker-open');
+
+        this.postCreado.emit();
+        
+        if (!response.data?.advertencia) {
+          setTimeout(() => this.closeModal(), 1500);
+        }
+      },
+      error: (error) => {
+        if (this.publicacionesService.esErrorCensura(error)) {
+          this.tipoError = 'censura';
+          this.mensajeError = this.publicacionesService.extraerMensajeCensura(error);
+        } else {
+          this.tipoError = 'error';
+          this.mensajeError = error.error?.message || 'Error al publicar. Intenta de nuevo.';
+        }
+
+        this.publicando = false;
+      }
+    });
+  }
+
   get errorAlertClass(): string {
     switch (this.tipoError) {
       case 'censura':
@@ -615,9 +585,6 @@ export class BotonCrearPost implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * 🎨 Obtener icono según el tipo de error
-   */
   get errorIcon(): string {
     switch (this.tipoError) {
       case 'censura':

@@ -12,31 +12,47 @@
         <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden hover:opacity-90 transition"
              [style.background]="post.usuarioId && fotosPerfilCache.has(post.usuarioId) && fotosPerfilCache.get(post.usuarioId) ? 'transparent' : post.avatarColor">
           
-          <!-- IMAGEN DE PERFIL (si existe en caché) -->
           <img *ngIf="post.usuarioId && fotosPerfilCache.has(post.usuarioId) && fotosPerfilCache.get(post.usuarioId)"
                [src]="fotosPerfilCache.get(post.usuarioId)!"
                [alt]="post.author"
                class="w-full h-full object-cover"
                (error)="fotosPerfilCache.set(post.usuarioId!, null)">
           
-          <!-- INICIALES (fallback si no hay foto) -->
           <span *ngIf="!post.usuarioId || !fotosPerfilCache.has(post.usuarioId) || !fotosPerfilCache.get(post.usuarioId)">
             {{ post.avatar }}
           </span>
         </div>
         
         <div class="min-w-0 flex-1">
-          <h3 class="font-bold truncate hover:underline" [ngClass]="currentTheme.textPrimaryClass || ''">{{ post.author }}</h3>
-          <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>
+          <h3 class="font-bold truncate hover:underline" [ngClass]="currentTheme.textPrimaryClass || ''">
+            {{ post.author }}
+          </h3>
+          
+          <!-- TIEMPO + ICONO DE VISIBILIDAD (estilo Facebook) -->
+          <div class="flex items-center gap-1.5 text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+            <span>{{ post.time }}</span>
+            <span>·</span>
+            <span [title]="getVisibilidadTexto()">{{ getVisibilidadIcon() }}</span>
+          </div>
         </div>
       </div>
 
       <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- BADGE DE CATEGORÍA -->
         <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
               [ngClass]="currentThemeData.accentBg || ''">
           {{ post.category }}
         </span>
 
+        <!-- BADGE DE VISIBILIDAD (solo si NO es público y solo para el autor) -->
+        <span *ngIf="post.usuarioId === usuarioActualId && post.visibilidad && post.visibilidad !== 'publico'"
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+              [ngClass]="getVisibilidadClasses()">
+          {{ getVisibilidadIcon() }}
+          <span class="hidden sm:inline">{{ getVisibilidadTexto() }}</span>
+        </span>
+
+        <!-- MENÚ DE OPCIONES -->
         <div class="relative">
           <button (click)="toggleOptions($event)" 
                   class="transition p-2 hover:opacity-70"
@@ -82,8 +98,7 @@
 
             <button *ngIf="post.usuarioId === usuarioActualId"
                     (click)="eliminarPublicacion($event)"
-                    class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm text-red-500"
-                    [ngClass]="currentTheme.textPrimaryClass ? '' : ''">
+                    class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm text-red-500">
               <i class="fas fa-trash-alt"></i>
               Eliminar publicación
             </button>
@@ -261,12 +276,10 @@
       <div *ngFor="let comment of comments; trackBy: trackByCommentId"
            class="flex gap-2.5 animate-fade-in">
         
-        <!-- AVATAR DEL COMENTARIO -->
         <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-90 transition"
              [style.background]="comment.usandoIniciales ? comment.avatarColor : 'transparent'"
              (click)="navegarAPerfil(comment.usuario_id, $event)">
           
-          <!-- IMAGEN DE PERFIL (Prioridad 1: Solo si NO está usando iniciales) -->
           <img *ngIf="!comment.usandoIniciales && comment.foto_perfil_url"
                [src]="comment.foto_perfil_url"
                [alt]="comment.author"
@@ -274,7 +287,6 @@
                (error)="handleImageError(comment)"
                (load)="onImageLoad(comment)">
           
-          <!-- INICIALES (Prioridad 2: Solo si está usando iniciales) -->
           <span *ngIf="comment.usandoIniciales">{{ comment.avatar }}</span>
         </div>
 

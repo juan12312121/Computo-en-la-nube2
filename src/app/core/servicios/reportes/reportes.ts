@@ -1,11 +1,11 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, of, tap } from 'rxjs';
+import { Observable, catchError, of, tap, throwError } from 'rxjs';
 
 export interface CrearReporteRequest {
   publicacionId: number;
   motivo: string;
-  descripcion?: string;
+  descripcion?: string; // ✅ YA ES OPCIONAL
 }
 
 export interface CrearReporteResponse {
@@ -18,7 +18,7 @@ export interface Reporte {
   publicacion_id: number;
   usuario_id: number;
   motivo: string;
-  descripcion?: string;
+  descripcion?: string; // ✅ OPCIONAL
   fecha_reporte: string;
   nombre_completo?: string;
   nombre_usuario?: string;
@@ -38,7 +38,7 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
-  mensaje?: string;
+  mensaje?: string; // Backend usa "mensaje" en español
 }
 
 @Injectable({
@@ -87,34 +87,56 @@ export class ReportesService {
   crearReporte(reporte: CrearReporteRequest): Observable<ApiResponse<CrearReporteResponse>> {
     console.log('📝 Creando reporte para publicación:', reporte.publicacionId);
     console.log('   Motivo:', reporte.motivo);
+    console.log('   Descripción:', reporte.descripcion || '(sin descripción)');
+    
+    // Validar datos antes de enviar
+    if (!reporte.publicacionId || !reporte.motivo) {
+      console.error('❌ Datos inválidos:', reporte);
+      return throwError(() => new Error('Publicación y motivo son obligatorios'));
+    }
+
+    // Validar que el motivo sea válido
+    if (!this.esMotivosValido(reporte.motivo)) {
+      console.error('❌ Motivo inválido:', reporte.motivo);
+      return throwError(() => new Error('Motivo inválido'));
+    }
+
+    // Limpiar descripción vacía (MySQL necesita null, NO undefined)
+    const payload: CrearReporteRequest = {
+      publicacionId: reporte.publicacionId,
+      motivo: reporte.motivo,
+      descripcion: reporte.descripcion?.trim() || null as any  // ✅ null en vez de undefined
+    };
     
     return this.http.post<ApiResponse<CrearReporteResponse>>(
       `${this.apiUrl}/crear`,
-      reporte,
+      payload,
       this.getHeaders()
     ).pipe(
       tap(response => {
         if (response.success) {
-          console.log('✅ Reporte creado:', {
+          console.log('✅ Reporte creado exitosamente:', {
             reporteId: response.data.reporteId,
             totalReportes: response.data.totalReportes
           });
           
-          // Si hay 5+ reportes, mostrar alerta
           if (response.data.totalReportes >= 5) {
             console.warn('🚨 Publicación eliminada por exceso de reportes');
           }
         }
       }),
       catchError(error => {
-        console.error('❌ Error al crear reporte:', error.error?.mensaje || error.message);
+        const errorMsg = error.error?.mensaje || error.error?.message || 'Error al crear reporte';
+        console.error('❌ Error al crear reporte:', errorMsg);
         
-        return of({
+        // Retornar error específico para que el componente lo maneje
+        return throwError(() => ({
           success: false,
           data: null as any,
-          message: error.error?.mensaje || 'Error al crear reporte',
-          mensaje: error.error?.mensaje || 'Error al crear reporte'
-        });
+          message: errorMsg,
+          mensaje: errorMsg,
+          error: error
+        }));
       })
     );
   }
@@ -122,11 +144,6 @@ export class ReportesService {
   // ============================================
   // OBTENER REPORTES DE UNA PUBLICACIÓN
   // ============================================
-  /**
-   * Obtener todos los reportes de una publicación específica
-   * @param publicacionId - ID de la publicación
-   * @returns Observable con array de reportes
-   */
   obtenerReportesPorPublicacion(publicacionId: number): Observable<ApiResponse<Reporte[]>> {
     console.log('📊 Obteniendo reportes de publicación:', publicacionId);
     
@@ -154,10 +171,6 @@ export class ReportesService {
   // ============================================
   // OBTENER TODOS LOS REPORTES DEL SISTEMA
   // ============================================
-  /**
-   * Obtener todas las publicaciones reportadas (para moderadores/admin)
-   * @returns Observable con array de publicaciones reportadas
-   */
   obtenerTodosReportes(): Observable<ApiResponse<any[]>> {
     console.log('📈 Obteniendo todos los reportes del sistema...');
     
@@ -182,11 +195,6 @@ export class ReportesService {
   // ============================================
   // OBTENER ESTADÍSTICAS DE USUARIOS REPORTADOS
   // ============================================
-  /**
-   * Obtener estadísticas de usuarios con publicaciones reportadas/eliminadas
-   * Muestra usuarios suspendidos y el motivo
-   * @returns Observable con array de estadísticas
-   */
   obtenerEstadisticasReportes(): Observable<ApiResponse<EstadisticasReportes[]>> {
     console.log('👥 Obteniendo estadísticas de usuarios reportados...');
     
@@ -216,7 +224,7 @@ export class ReportesService {
   // ============================================
   /**
    * Obtener lista de motivos válidos para reportes
-   * @returns Array con motivos válidos
+   * IMPORTANTE: Estos deben coincidir EXACTAMENTE con el backend
    */
   obtenerMotivosValidos(): string[] {
     return [
@@ -232,11 +240,8 @@ export class ReportesService {
 
   /**
    * Validar si un motivo es válido
-   * @param motivo - Motivo a validar
-   * @returns true si es válido
    */
   esMotivosValido(motivo: string): boolean {
     return this.obtenerMotivosValidos().includes(motivo);
   }
 }
-

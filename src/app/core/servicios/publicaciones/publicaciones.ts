@@ -11,6 +11,7 @@ export interface Publicacion {
   imagen_s3?: string;
   categoria?: string;
   color_categoria?: string;
+  visibilidad?: 'publico' | 'privado' | 'seguidores'; // 🆕 NUEVO
   nombre_usuario?: string;
   nombre_completo?: string;
   foto_perfil_url?: string;
@@ -25,6 +26,14 @@ export interface Categoria {
   value: string;
   label: string;
   color: string;
+}
+
+// 🆕 NUEVA INTERFAZ
+export interface Visibilidad {
+  value: 'publico' | 'privado' | 'seguidores';
+  label: string;
+  description: string;
+  icono?: string;
 }
 
 export interface ApiResponse<T> {
@@ -99,7 +108,26 @@ export class PublicacionesService {
   }
 
   /**
-   * Crear publicación (con validación de censura)
+   * 🆕 Obtener opciones de visibilidad disponibles
+   * GET /api/publicaciones/visibilidades
+   */
+  obtenerVisibilidades(): Observable<ApiResponse<Visibilidad[]>> {
+    console.log('🔒 Obteniendo opciones de visibilidad...');
+    return this.http.get<ApiResponse<Visibilidad[]>>(`${this.apiUrl}/visibilidades`).pipe(
+      tap(response => console.log('✅ Visibilidades obtenidas:', response)),
+      catchError(error => {
+        console.error('❌ Error al obtener visibilidades:', error);
+        return of({
+          success: true,
+          data: this.getVisibilidadesDefault(),
+          message: 'Visibilidades por defecto'
+        });
+      })
+    );
+  }
+
+  /**
+   * Crear publicación (con validación de censura y visibilidad)
    * POST /api/publicaciones
    * 
    * Puede retornar:
@@ -147,6 +175,9 @@ export class PublicacionesService {
   /**
    * Obtener publicaciones (feed general)
    * GET /api/publicaciones
+   * 
+   * Usuario autenticado: ve públicas + propias + de seguidores (según visibilidad)
+   * Usuario no autenticado: solo ve públicas
    */
   obtenerPublicaciones(): Observable<ApiResponse<Publicacion[]>> {
     console.log('🔄 Obteniendo publicaciones...');
@@ -181,7 +212,7 @@ export class PublicacionesService {
   }
 
   /**
-   * Obtener una publicación por ID
+   * Obtener una publicación por ID (respetando visibilidad)
    * GET /api/publicaciones/:id
    */
   obtenerPublicacion(id: number): Observable<ApiResponse<Publicacion>> {
@@ -196,7 +227,7 @@ export class PublicacionesService {
   }
 
   /**
-   * Obtener mis publicaciones
+   * Obtener mis publicaciones (incluyendo privadas)
    * GET /api/publicaciones/mis-publicaciones
    */
   obtenerMisPublicaciones(): Observable<ApiResponse<Publicacion[]>> {
@@ -211,7 +242,7 @@ export class PublicacionesService {
   }
 
   /**
-   * Obtener publicaciones de otro usuario
+   * Obtener publicaciones de otro usuario (respetando visibilidad)
    * GET /api/publicaciones/usuario/:usuarioId
    */
   obtenerPublicacionesUsuario(usuarioId: number): Observable<ApiResponse<Publicacion[]>> {
@@ -226,7 +257,7 @@ export class PublicacionesService {
   }
 
   /**
-   * Actualizar publicación (con validación de censura)
+   * Actualizar publicación (con validación de censura y visibilidad)
    * PUT /api/publicaciones/:id
    * 
    * Puede retornar:
@@ -281,22 +312,34 @@ export class PublicacionesService {
   }
 
   /**
-   * Helper: Crear FormData para publicación
+   * 🆕 Helper: Crear FormData para publicación (con visibilidad)
    */
   crearFormData(datos: {
     contenido: string;
     categoria?: string;
+    visibilidad?: 'publico' | 'privado' | 'seguidores'; // 🆕 NUEVO
     imagen?: File;
+    documentos?: File[]; // 🆕 SOPORTE PARA DOCUMENTOS
   }): FormData {
     const formData = new FormData();
     formData.append('contenido', datos.contenido);
     if (datos.categoria) formData.append('categoria', datos.categoria);
+    if (datos.visibilidad) formData.append('visibilidad', datos.visibilidad); // 🆕 NUEVO
     if (datos.imagen) formData.append('imagen', datos.imagen);
+    
+    // 🆕 Agregar documentos (hasta 5)
+    if (datos.documentos && datos.documentos.length > 0) {
+      datos.documentos.forEach((doc) => {
+        formData.append('documentos', doc);
+      });
+    }
     
     console.log('📦 FormData creado:', {
       contenido: datos.contenido.substring(0, 50) + '...',
       categoria: datos.categoria,
-      tieneImagen: !!datos.imagen
+      visibilidad: datos.visibilidad || 'publico',
+      tieneImagen: !!datos.imagen,
+      documentos: datos.documentos?.length || 0
     });
     
     return formData;
@@ -321,6 +364,37 @@ export class PublicacionesService {
   }
 
   /**
+   * 🆕 Helper: Obtener el icono de visibilidad
+   */
+  obtenerIconoVisibilidad(visibilidad: string): string {
+    const iconos: { [key: string]: string } = {
+      'publico': '🌍',
+      'privado': '🔒',
+      'seguidores': '👥'
+    };
+    return iconos[visibilidad] || '🌍';
+  }
+
+  /**
+   * 🆕 Helper: Obtener el label de visibilidad
+   */
+  obtenerLabelVisibilidad(visibilidad: string): string {
+    const labels: { [key: string]: string } = {
+      'publico': 'Público',
+      'privado': 'Privado',
+      'seguidores': 'Solo seguidores'
+    };
+    return labels[visibilidad] || 'Público';
+  }
+
+  /**
+   * 🆕 Helper: Verificar si puedo editar visibilidad
+   */
+  puedeEditarVisibilidad(publicacion: Publicacion, usuarioActualId: number): boolean {
+    return publicacion.usuario_id === usuarioActualId;
+  }
+
+  /**
    * Helper: Categorías por defecto
    */
   private getCategoriasDefault(): Categoria[] {
@@ -334,6 +408,32 @@ export class PublicacionesService {
       { value: 'Vida Universitaria', label: 'Vida Universitaria', color: 'bg-orange-600' },
       { value: 'Opinión', label: 'Opinión', color: 'bg-indigo-500' },
       { value: 'Entrevistas', label: 'Entrevistas', color: 'bg-yellow-500' }
+    ];
+  }
+
+  /**
+   * 🆕 Helper: Visibilidades por defecto
+   */
+  private getVisibilidadesDefault(): Visibilidad[] {
+    return [
+      { 
+        value: 'publico', 
+        label: '🌍 Público', 
+        description: 'Todos pueden ver esta publicación',
+        icono: '🌍'
+      },
+      { 
+        value: 'seguidores', 
+        label: '👥 Solo seguidores', 
+        description: 'Solo tus seguidores pueden verla',
+        icono: '👥'
+      },
+      { 
+        value: 'privado', 
+        label: '🔒 Privado', 
+        description: 'Solo tú puedes verla',
+        icono: '🔒'
+      }
     ];
   }
 

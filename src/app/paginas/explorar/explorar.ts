@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { Navbar } from '../../componentes/navbar/navbar';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
 import { LikesService } from '../../core/servicios/likes/likes';
 import { Publicacion, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme, ThemeService } from '../../core/servicios/temas';
+import { FotosService } from '../../core/servicios/fotos/fotos';
 
 // ========== INTERFACES ==========
 interface Tag {
@@ -35,7 +37,8 @@ interface Post {
   usuarioId?: number;
   totalComments?: number;
   likeLoading?: boolean;
-  [key: string]: any; // Para propiedades dinámicas como isTooLong
+  fotoPerfil?: string | null;
+  [key: string]: any;
 }
 
 // ========== CONSTANTES ==========
@@ -64,6 +67,7 @@ export class Explorar implements OnInit, OnDestroy {
   posts: Post[] = [];
   selectedCategory: string | null = null;
   isLoading = false;
+  cargandoFotos = false;
   
   private themeSubscription?: Subscription;
   public readonly apiBaseUrl = window.location.hostname === 'localhost'
@@ -111,6 +115,7 @@ export class Explorar implements OnInit, OnDestroy {
     private publicacionesService: PublicacionesService,
     private likesService: LikesService,
     private autenticacionService: AutenticacionService,
+    private fotosService: FotosService,
     private router: Router
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
@@ -137,12 +142,107 @@ export class Explorar implements OnInit, OnDestroy {
         if (res.success && res.data) {
           this.posts = this.convertirPublicacionesAPosts(res.data);
           this.actualizarContadorTags();
+          
+          // Cargar fotos de perfil de todos los usuarios
+          this.cargarFotosPerfilPosts();
         }
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error al cargar publicaciones:', err);
         this.isLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Carga las fotos de perfil de todos los autores de los posts
+   * Usa el método batch para optimizar las peticiones
+   */
+  private cargarFotosPerfilPosts(): void {
+    if (!this.posts || this.posts.length === 0) return;
+
+    this.cargandoFotos = true;
+
+    // Obtener IDs únicos de usuarios
+    const usuariosIds = [...new Set(this.posts.map(p => p.usuarioId).filter(id => id !== undefined))] as number[];
+    
+    if (usuariosIds.length === 0) {
+      this.cargandoFotos = false;
+      return;
+    }
+
+    // Usar el método batch para obtener todas las fotos
+    this.fotosService.obtenerFotosBatch(usuariosIds).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          // Crear un mapa para acceso rápido por ID
+          const fotosMap = new Map(
+            response.data.map(u => [u.id, u.foto_perfil_url])
+          );
+
+          // Actualizar posts con las fotos
+          this.posts.forEach(post => {
+            if (post.usuarioId) {
+              post.fotoPerfil = fotosMap.get(post.usuarioId) || null;
+            }
+          });
+        }
+      }),
+      catchError(error => {
+        return of(null);
+      })
+    ).subscribe({
+      next: () => {
+        this.cargandoFotos = false;
+      },
+      error: () => {
+        this.cargandoFotos = false;
+      }
+    });
+  }
+
+  /**
+   * Método alternativo: cargar fotos individualmente (fallback)
+   * Usar solo si el método batch falla
+   */
+  private cargarFotosIndividualmente(): void {
+    if (!this.posts || this.posts.length === 0) return;
+
+    this.cargandoFotos = true;
+
+    // Obtener IDs únicos
+    const usuariosIds = [...new Set(this.posts.map(p => p.usuarioId).filter(id => id !== undefined))] as number[];
+
+    // Crear peticiones individuales
+    const peticiones = usuariosIds.map(usuarioId =>
+      this.fotosService.obtenerFotoPerfil(usuarioId).pipe(
+        map(response => ({
+          id: usuarioId,
+          foto: response.success ? response.data.foto_perfil_url : null
+        })),
+        catchError(error => {
+          return of({ id: usuarioId, foto: null });
+        })
+      )
+    );
+
+    // Ejecutar todas en paralelo
+    forkJoin(peticiones).subscribe({
+      next: (resultados) => {
+        // Crear mapa de fotos
+        const fotosMap = new Map(resultados.map(r => [r.id, r.foto]));
+
+        // Asignar fotos a posts
+        this.posts.forEach(post => {
+          if (post.usuarioId) {
+            post.fotoPerfil = fotosMap.get(post.usuarioId) || null;
+          }
+        });
+
+        this.cargandoFotos = false;
+      },
+      error: (error) => {
+        this.cargandoFotos = false;
       }
     });
   }
@@ -168,7 +268,8 @@ export class Explorar implements OnInit, OnDestroy {
         totalComments: pubAny.total_comentarios || 0,
         likeLoading: false,
         isTooLong: false,
-        aspectRatio: 0
+        aspectRatio: 0,
+        fotoPerfil: null
       };
     });
   }
@@ -181,7 +282,6 @@ export class Explorar implements OnInit, OnDestroy {
   }
 
   seleccionarCategoria(tagName: string): void {
-    // Si es la misma categoría, deseleccionar
     this.selectedCategory = this.selectedCategory === tagName ? null : tagName;
   }
 
@@ -222,9 +322,6 @@ export class Explorar implements OnInit, OnDestroy {
 
     this.likesService.toggleLike(postId).subscribe({
       next: (response) => {
-        if (response.success && response.data) {
-          console.log('✅ Like actualizado');
-        }
         post.likeLoading = false;
       },
       error: (error) => {
@@ -237,23 +334,16 @@ export class Explorar implements OnInit, OnDestroy {
   }
 
   // ========== DETECCIÓN DE IMÁGENES LARGAS ==========
-  /**
-   * Detectar si la imagen es muy larga basándose en su relación de aspecto
-   */
   isImageTooLong(post: Post): boolean {
     const maxAspectRatio = 1.5;
     if (!post.image) return false;
     return post['isTooLong'] || false;
   }
 
-  /**
-   * Cuando una imagen carga, verificar su tamaño
-   */
   onImageLoad(event: any, post: Post): void {
     const img = event.target as HTMLImageElement;
     const aspectRatio = img.naturalHeight / img.naturalWidth;
     
-    // Si la relación es mayor a 1.5, marcarla como muy larga
     post['aspectRatio'] = aspectRatio;
     post['isTooLong'] = aspectRatio > 1.5;
   }
@@ -266,17 +356,14 @@ export class Explorar implements OnInit, OnDestroy {
   }
 
   openCreateModal() {
-    // No abrir modal en Explorar
     return;
   }
 
   openPostDetail(postId: number) {
-    // No abrir modal de detalle en Explorar
     return;
   }
 
   openShareModal(postId: number, event?: Event) {
-    // No abrir modal de compartir en Explorar
     return;
   }
 
@@ -349,9 +436,8 @@ export class Explorar implements OnInit, OnDestroy {
     return tag.name;
   }
 
-  // Método helper para convertir hex a rgb (útil para algunos estilos)
   hexToRgb(hex: string): string {
-    if (!hex) return '107, 114, 128'; // gray-500 default
+    if (!hex) return '107, 114, 128';
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result 
       ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`

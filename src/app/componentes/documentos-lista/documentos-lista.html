@@ -1,11 +1,13 @@
 <div class="space-y-4">
   
-  <!-- Botón para subir documento -->
+  <!-- Botón para subir documento (SOLO EN MI PERFIL) -->
   <div class="flex justify-between items-center mb-4">
     <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg font-bold">
-      Mis Documentos
+      {{ esMiPerfil ? 'Mis Documentos' : 'Documentos' }}
     </h2>
+    <!-- ⚠️ CAMBIO: Agregado *ngIf="puedoInteractuar" -->
     <button 
+      *ngIf="puedoInteractuar"
       (click)="triggerFileInput()"
       [disabled]="subiendoArchivo"
       [ngClass]="currentTheme.cardBg"
@@ -17,8 +19,10 @@
     </button>
   </div>
 
-  <!-- Input file oculto -->
+  <!-- Input file oculto (SOLO EN MI PERFIL) -->
+  <!-- ⚠️ CAMBIO: Agregado *ngIf="puedoInteractuar" -->
   <input 
+    *ngIf="puedoInteractuar"
     type="file" 
     id="fileInput"
     (change)="onFileSelected($event)"
@@ -71,8 +75,9 @@
           </div>
         </div>
 
-        <!-- Acciones -->
-        <div class="flex-shrink-0 flex gap-2">
+        <!-- Acciones (SOLO EN MI PERFIL) -->
+        <!-- ⚠️ CAMBIO: Agregado *ngIf="puedoInteractuar" -->
+        <div *ngIf="puedoInteractuar" class="flex-shrink-0 flex gap-2">
           <!-- Botón descargar -->
           <button 
             (click)="onDownloadClick(doc.id, $event)"
@@ -100,13 +105,16 @@
        [ngClass]="currentTheme.cardBg"
        class="border rounded-xl p-8 text-center">
     <i class="fas fa-folder-open text-5xl mb-4" [ngClass]="currentTheme.textSecondaryClass"></i>
+    <!-- ⚠️ CAMBIO: Textos dinámicos -->
     <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold mb-2">
-      No tienes documentos
+      {{ esMiPerfil ? 'No tienes documentos' : 'Sin documentos' }}
     </h3>
     <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm mb-4">
-      Sube tu primer documento para comenzar
+      {{ esMiPerfil ? 'Sube tu primer documento para comenzar' : 'Este usuario no ha compartido documentos' }}
     </p>
+    <!-- ⚠️ CAMBIO: Botón solo visible en mi perfil -->
     <button 
+      *ngIf="puedoInteractuar"
       (click)="triggerFileInput()"
       class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
       <i class="fas fa-upload mr-2"></i>

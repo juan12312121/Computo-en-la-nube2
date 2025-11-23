@@ -1,6 +1,7 @@
-// secciones-grid.component.ts
+// secciones-grid.component.ts - CON PERMISOS CORRECTOS
+
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Publicacion, PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { CrearSeccionRequest, SeccionesService } from '../../core/servicios/secciones/secciones';
@@ -16,6 +17,7 @@ export interface Section {
   usuario_id: number;
   fecha_creacion: string;
 }
+
 @Component({
   selector: 'app-secciones-grid',
   standalone: true,
@@ -23,42 +25,44 @@ export interface Section {
   templateUrl: './secciones-grid.html',
   styleUrl: './secciones-grid.css'
 })
-export class SeccionesGrid {
+export class SeccionesGrid implements OnInit, OnChanges {
   @Input() sections: Section[] = [];
   @Input() currentTheme!: Theme;
+  @Input() usuarioId?: number; // ID del usuario cuyas secciones se están viendo
+  @Input() soloLectura: boolean = false; // ⭐ Si es de solo lectura (perfil de otro usuario)
+  
   @Output() sectionSelected = new EventEmitter<number>();
   @Output() sectionCreated = new EventEmitter<void>();
   @Output() sectionUpdated = new EventEmitter<void>();
 
-  // Modales
   showModal = false;
   showCreateModal = false;
   mostrarPublicacionesModal = false;
   
-  // Estado
   selectedSection: Section | null = null;
   publicaciones: Publicacion[] = [];
   publicacionesSeleccionadas: number[] = [];
   
-  // Flags de carga
   cargandoPublicaciones = false;
   creandoSeccion = false;
   agregandoPublicaciones = false;
   
-  // Mensajes
   errorCargaPublicaciones = '';
   errorCreacion = '';
   mensajeExito = '';
   mensajeError = '';
   
-  // Formulario de nueva sección
+  // ⭐ COMPUTED: Si es propietario (inverso de soloLectura)
+  get esPropietario(): boolean {
+    return !this.soloLectura;
+  }
+  
   nuevaSeccion: CrearSeccionRequest = {
     nombre: '',
     icono: 'fa-book',
     color: 'from-blue-500 to-blue-600'
   };
 
-  // Iconos disponibles
   iconosDisponibles = [
     'fa-book', 'fa-graduation-cap', 'fa-pen', 'fa-calculator',
     'fa-flask', 'fa-microscope', 'fa-atom', 'fa-dna',
@@ -68,7 +72,6 @@ export class SeccionesGrid {
     'fa-clipboard-list', 'fa-star', 'fa-award', 'fa-trophy'
   ];
 
-  // Colores disponibles
   coloresDisponibles = [
     { name: 'Azul', value: 'from-blue-500 to-blue-600' },
     { name: 'Púrpura', value: 'from-purple-500 to-purple-600' },
@@ -87,14 +90,55 @@ export class SeccionesGrid {
     private publicacionesService: PublicacionesService
   ) {}
 
+  ngOnInit(): void {
+    console.log('═══════════════════════════════════════════════');
+    console.log('🔧 SeccionesGrid inicializado');
+    console.log('═══════════════════════════════════════════════');
+    console.log('📊 INPUTS RECIBIDOS:');
+    console.log('  👤 usuarioId:', this.usuarioId);
+    console.log('  🔐 soloLectura:', this.soloLectura);
+    console.log('  📚 sections.length:', this.sections.length);
+    console.log('  ✏️ esPropietario:', this.esPropietario);
+    console.log('═══════════════════════════════════════════════');
+    
+    if (this.sections.length > 0) {
+      console.log('📋 Primeras secciones:', this.sections.slice(0, 2));
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    console.log('═══════════════════════════════════════════════');
+    console.log('🔄 ngOnChanges - Cambios detectados');
+    console.log('═══════════════════════════════════════════════');
+    
+    if (changes['usuarioId']) {
+      console.log('👤 usuarioId cambió:');
+      console.log('  Anterior:', changes['usuarioId'].previousValue);
+      console.log('  Nuevo:', changes['usuarioId'].currentValue);
+    }
+    
+    if (changes['soloLectura']) {
+      console.log('🔐 soloLectura cambió:');
+      console.log('  Anterior:', changes['soloLectura'].previousValue);
+      console.log('  Nuevo:', changes['soloLectura'].currentValue);
+      console.log('  ✏️ esPropietario ahora:', this.esPropietario);
+    }
+    
+    if (changes['sections']) {
+      console.log('📚 sections cambió:');
+      console.log('  Anterior length:', changes['sections'].previousValue?.length || 0);
+      console.log('  Nuevo length:', changes['sections'].currentValue?.length || 0);
+    }
+    
+    console.log('═══════════════════════════════════════════════');
+  }
+
   private getApiBaseUrl(): string {
     const host = window.location.hostname;
     return (host === 'localhost' || host === '127.0.0.1') 
       ? 'http://localhost:3000' 
       : 'http://18.190.26.244:3000';
   }
-
-  // ==================== EVENTOS DE SECCIONES ====================
 
   onSectionClick(sectionId: number): void {
     this.selectedSection = this.sections.find(s => s.id === sectionId) || null;
@@ -105,6 +149,11 @@ export class SeccionesGrid {
   }
 
   openCreateModal(): void {
+    if (!this.esPropietario) {
+      console.warn('⚠️ Usuario no autorizado para crear secciones');
+      return;
+    }
+    
     this.showCreateModal = true;
     this.errorCreacion = '';
     this.nuevaSeccion = {
@@ -132,8 +181,6 @@ export class SeccionesGrid {
     document.body.style.overflow = 'auto';
   }
 
-  // ==================== CREAR SECCIÓN ====================
-
   seleccionarIcono(icono: string): void {
     this.nuevaSeccion.icono = icono;
   }
@@ -143,6 +190,11 @@ export class SeccionesGrid {
   }
 
   crearSeccion(): void {
+    if (!this.esPropietario) {
+      this.errorCreacion = 'No tienes permiso para crear secciones';
+      return;
+    }
+
     if (!this.nuevaSeccion.nombre.trim()) {
       this.errorCreacion = 'El nombre de la sección es obligatorio';
       return;
@@ -163,39 +215,73 @@ export class SeccionesGrid {
 
     this.seccionesService.crearSeccion(this.nuevaSeccion).subscribe({
       next: (response) => {
-        console.log('✅ Sección creada:', response);
         this.creandoSeccion = false;
         this.closeCreateModal();
         this.sectionCreated.emit();
       },
       error: (error) => {
-        console.error('❌ Error al crear sección:', error);
         this.creandoSeccion = false;
         this.errorCreacion = error.error?.error || error.error?.mensaje || 'Error al crear la sección';
       }
     });
   }
 
-  // ==================== PUBLICACIONES EN SECCIONES ====================
-
   cargarPostsDeSeccion(seccionId: number): void {
+    console.log('═══════════════════════════════════════════════');
+    console.log('📂 cargarPostsDeSeccion()');
+    console.log('═══════════════════════════════════════════════');
+    console.log('  Sección ID:', seccionId);
+    console.log('  Usuario ID:', this.usuarioId);
+    console.log('  Es propietario:', this.esPropietario);
+    console.log('═══════════════════════════════════════════════');
+    
     this.cargandoPublicaciones = true;
     
-    this.seccionesService.obtenerSeccion(seccionId).subscribe({
-      next: (data) => {
-        this.publicaciones = data.posts || [];
-        this.cargandoPublicaciones = false;
-        console.log('✅ Posts de sección cargados:', this.publicaciones.length);
-      },
-      error: (error) => {
-        console.error('❌ Error al cargar posts de sección:', error);
-        this.publicaciones = [];
-        this.cargandoPublicaciones = false;
-      }
-    });
+    // ⭐ CAMBIO: Usar endpoint público si NO es propietario
+    if (this.soloLectura && this.usuarioId) {
+      console.log('🌍 Usando endpoint PÚBLICO');
+      console.log('  URL: /api/secciones/usuario/' + this.usuarioId + '/seccion/' + seccionId);
+      
+      this.seccionesService.obtenerSeccionPublica(this.usuarioId, seccionId).subscribe({
+        next: (data) => {
+          console.log('✅ Respuesta PÚBLICA recibida:', data);
+          this.publicaciones = data.posts || [];
+          this.cargandoPublicaciones = false;
+          console.log('📄 Posts cargados (público):', this.publicaciones.length);
+        },
+        error: (error) => {
+          console.error('❌ Error al cargar sección pública:', error);
+          this.publicaciones = [];
+          this.cargandoPublicaciones = false;
+        }
+      });
+    } else {
+      console.log('🔐 Usando endpoint PRIVADO');
+      console.log('  URL: /api/secciones/' + seccionId);
+      
+      this.seccionesService.obtenerSeccion(seccionId).subscribe({
+        next: (data) => {
+          console.log('✅ Respuesta PRIVADA recibida:', data);
+          this.publicaciones = data.posts || [];
+          this.cargandoPublicaciones = false;
+          console.log('📄 Posts cargados (privado):', this.publicaciones.length);
+        },
+        error: (error) => {
+          console.error('❌ Error al cargar sección privada:', error);
+          this.publicaciones = [];
+          this.cargandoPublicaciones = false;
+        }
+      });
+    }
+    console.log('═══════════════════════════════════════════════');
   }
 
   mostrarListaPublicaciones(): void {
+    if (!this.esPropietario) {
+      console.warn('⚠️ Usuario no autorizado para agregar publicaciones');
+      return;
+    }
+
     this.mostrarPublicacionesModal = true;
     this.publicacionesSeleccionadas = [];
     this.mensajeExito = '';
@@ -219,14 +305,12 @@ export class SeccionesGrid {
       next: (response) => {
         if (response.success) {
           this.publicaciones = response.data;
-          console.log('✅ Mis publicaciones cargadas:', this.publicaciones.length);
         } else {
           this.errorCargaPublicaciones = response.message || 'No se pudieron cargar tus publicaciones';
         }
         this.cargandoPublicaciones = false;
       },
       error: (error) => {
-        console.error('❌ Error al cargar mis publicaciones:', error);
         this.errorCargaPublicaciones = 'Error al cargar tus publicaciones';
         this.cargandoPublicaciones = false;
       }
@@ -246,9 +330,12 @@ export class SeccionesGrid {
     this.publicacionesSeleccionadas = [];
   }
 
-  // ==================== AGREGAR PUBLICACIONES A SECCIÓN ====================
-
   agregarPublicacionesASeccion(): void {
+    if (!this.esPropietario) {
+      this.mensajeError = 'No tienes permiso para agregar publicaciones';
+      return;
+    }
+
     if (!this.selectedSection || this.publicacionesSeleccionadas.length === 0) {
       this.mensajeError = 'Debes seleccionar al menos una publicación';
       return;
@@ -258,9 +345,6 @@ export class SeccionesGrid {
     this.mensajeError = '';
     this.mensajeExito = '';
 
-    console.log('🔗 Agregando', this.publicacionesSeleccionadas.length, 'publicación(es) a sección', this.selectedSection.id);
-
-    // Crear array de observables
     const requests = this.publicacionesSeleccionadas.map(publicacionId =>
       this.seccionesService.agregarPostASeccion({
         seccion_id: this.selectedSection!.id,
@@ -268,7 +352,6 @@ export class SeccionesGrid {
       })
     );
 
-    // Ejecutar todas las peticiones en paralelo
     forkJoin(requests).subscribe({
       next: (resultados) => {
         const exitosos = resultados.filter(r => r.success).length;
@@ -279,16 +362,13 @@ export class SeccionesGrid {
         if (exitosos > 0 && fallidos === 0) {
           this.mensajeExito = `✅ ${exitosos} publicación${exitosos > 1 ? 'es' : ''} agregada${exitosos > 1 ? 's' : ''} exitosamente`;
           
-          // Actualizar contador de posts en la sección
           if (this.selectedSection) {
             this.selectedSection.total_posts += exitosos;
           }
           
-          // Limpiar selección y cerrar modal después de 2 segundos
           setTimeout(() => {
             this.cerrarPublicacionesModal();
             this.sectionUpdated.emit();
-            // Recargar posts de la sección
             if (this.selectedSection) {
               this.cargarPostsDeSeccion(this.selectedSection.id);
             }
@@ -298,18 +378,13 @@ export class SeccionesGrid {
         } else {
           this.mensajeError = '❌ No se pudo agregar ninguna publicación';
         }
-        
-        console.log(`📊 Resultado: ${exitosos} exitosas, ${fallidos} fallidas`);
       },
       error: (error) => {
         this.agregandoPublicaciones = false;
         this.mensajeError = '❌ Error al agregar publicaciones';
-        console.error('❌ Error general:', error);
       }
     });
   }
-
-  // ==================== UTILIDADES ====================
 
   formatearFecha(fechaStr: string): string {
     const fecha = new Date(fechaStr);
@@ -349,8 +424,6 @@ export class SeccionesGrid {
   obtenerNombreAutor(publicacion: Publicacion): string {
     return publicacion.nombre_completo || publicacion.nombre_usuario || 'Usuario Anónimo';
   }
-
-  // ==================== EVENTOS DE BACKDROP ====================
 
   onModalBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {

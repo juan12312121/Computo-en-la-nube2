@@ -39,6 +39,7 @@ interface Post {
   usuarioId?: number;
   totalComments?: number;
   documentos?: any[];
+  visibilidad?: 'publico' | 'seguidores' | 'privado';
 }
 
 const AVATAR_COLORS = [
@@ -76,7 +77,6 @@ const SHARE_URLS: { [key: string]: (url: string, text: string) => string } = {
 export class Principal implements OnInit, OnDestroy {
   @ViewChild(AppSidebarSugerencias) sidebarSugerencias?: AppSidebarSugerencias;
 
-  // ========== ESTADOS GLOBALES ==========
   posts: Post[] = [];
   currentTheme!: Theme;
   usuarioActualId: number | null = null;
@@ -85,14 +85,12 @@ export class Principal implements OnInit, OnDestroy {
   isLoading = true;
   errorMessage = '';
   
-  // Filtros y marcas
   categoriaSeleccionada: string | null = null;
   publicacionesOcultas = new Set<number>();
   publicacionesNoInteresan = new Set<number>();
   seguidosIds = new Set<number>();
   fotosPerfilCache = new Map<number, string | null>();
 
-  // Modales globales
   showPostDetailModal = false;
   showShareModal = false;
   showReportModal = false;
@@ -102,7 +100,6 @@ export class Principal implements OnInit, OnDestroy {
   reportPostId: number | null = null;
   noInteresaPostId: number | null = null;
   
-  // Estados de modales
   linkCopied = false;
   reportMotivo = '';
   reportDescripcion = '';
@@ -150,6 +147,7 @@ export class Principal implements OnInit, OnDestroy {
       .subscribe(theme => this.currentTheme = theme);
 
     this.usuarioActualId = this.obtenerUsuarioActualId();
+    
     this.cargarDatosUsuarioActual();
     this.cargarUsuariosActivosEstatico();
     this.inicializarFeed();
@@ -171,6 +169,7 @@ export class Principal implements OnInit, OnDestroy {
   // ========== INICIALIZACIÓN ==========
   private async inicializarFeed(): Promise<void> {
     this.isLoading = true;
+    
     try {
       await this.cargarSeguidos();
       await this.cargarMarcasUsuario();
@@ -231,13 +230,16 @@ export class Principal implements OnInit, OnDestroy {
               return resolve();
             }
 
-            const publicacionesFiltradas = res.data.filter(pub =>
-              !this.publicacionesOcultas.has(pub.id) &&
-              !this.publicacionesNoInteresan.has(pub.id)
-            );
+            const publicacionesFiltradas = res.data.filter(pub => {
+              const esOculta = this.publicacionesOcultas.has(pub.id);
+              const esNoInteresa = this.publicacionesNoInteresan.has(pub.id);
+              return !esOculta && !esNoInteresa;
+            });
 
             const postsConvertidos = this.convertirPublicacionesAPosts(publicacionesFiltradas);
-            this.posts = this.organizarPosts(postsConvertidos);
+            const postsVisibles = this.filtrarPorVisibilidad(postsConvertidos);
+            
+            this.posts = this.organizarPosts(postsVisibles);
             resolve();
           },
           error: () => {
@@ -269,24 +271,59 @@ export class Principal implements OnInit, OnDestroy {
   }
 
   private convertirPublicacionesAPosts(pubs: any[]): Post[] {
-    return pubs.map(p => ({
-      id: p.id,
-      author: p.nombre_completo || p.nombre_usuario || 'Usuario',
-      avatar: this.obtenerIniciales(p.nombre_completo || p.nombre_usuario || 'U'),
-      time: this.formatearTiempo(p.fecha_creacion),
-      content: p.contenido || '',
-      image: this.normalizarUrlImagen(p.imagen_s3 || p.imagen_url || ''),
-      category: p.categoria || 'General',
-      categoryColor: p.color_categoria || this.publicacionesService.obtenerColorCategoria(p.categoria || 'General'),
-      likes: p.total_likes ?? p.likes ?? 0,
-      liked: false,
-      shares: p.total_compartidos ?? p.compartidos ?? 0,
-      avatarColor: this.generarColorAvatar(p.usuario_id),
-      comments: [],
-      usuarioId: p.usuario_id,
-      totalComments: p.total_comentarios ?? p.comentarios ?? 0,
-      documentos: p.documentos || []
-    })).filter(p => p.id && p.usuarioId);
+    const posts = pubs.map(p => {
+      const visibilidad = p.visibilidad || 'publico';
+      
+      return {
+        id: p.id,
+        author: p.nombre_completo || p.nombre_usuario || 'Usuario',
+        avatar: this.obtenerIniciales(p.nombre_completo || p.nombre_usuario || 'U'),
+        time: this.formatearTiempo(p.fecha_creacion),
+        content: p.contenido || '',
+        image: this.normalizarUrlImagen(p.imagen_s3 || p.imagen_url || ''),
+        category: p.categoria || 'General',
+        categoryColor: p.color_categoria || this.publicacionesService.obtenerColorCategoria(p.categoria || 'General'),
+        likes: p.total_likes ?? p.likes ?? 0,
+        liked: false,
+        shares: p.total_compartidos ?? p.compartidos ?? 0,
+        avatarColor: this.generarColorAvatar(p.usuario_id),
+        comments: [],
+        usuarioId: p.usuario_id,
+        totalComments: p.total_comentarios ?? p.comentarios ?? 0,
+        documentos: p.documentos || [],
+        visibilidad: visibilidad
+      };
+    }).filter(p => p.id && p.usuarioId);
+    
+    return posts;
+  }
+
+  private filtrarPorVisibilidad(posts: Post[]): Post[] {
+    const postsVisibles = posts.filter(post => {
+      const visibilidad = post.visibilidad || 'publico';
+      const esAutor = post.usuarioId === this.usuarioActualId;
+      const siguoAlAutor = post.usuarioId ? this.seguidosIds.has(post.usuarioId) : false;
+
+      if (esAutor) {
+        return true;
+      }
+      
+      switch (visibilidad) {
+        case 'publico':
+          return true;
+        
+        case 'seguidores':
+          return this.usuarioActualId && siguoAlAutor;
+        
+        case 'privado':
+          return false;
+        
+        default:
+          return true;
+      }
+    });
+    
+    return postsVisibles;
   }
 
   // ========== EVENTOS DEL POST-CARD ==========
@@ -338,23 +375,24 @@ export class Principal implements OnInit, OnDestroy {
     document.body.style.overflow = 'hidden';
   }
 
-onPostEdited(data: { postId: number; content: string }): void {
-  const formData = new FormData();
-  formData.append('contenido', data.content);
-  
-  this.publicacionesService.actualizarPublicacion(data.postId, formData)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (response) => {
-        if (response.success) {
-          const post = this.posts.find(p => p.id === data.postId);
-          if (post) post.content = data.content;
-          alert('✅ Publicación actualizada');
-        }
-      },
-      error: () => alert('Error al actualizar publicación')
-    });
-}
+  onPostEdited(data: { postId: number; content: string }): void {
+    const formData = new FormData();
+    formData.append('contenido', data.content);
+    
+    this.publicacionesService.actualizarPublicacion(data.postId, formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            const post = this.posts.find(p => p.id === data.postId);
+            if (post) post.content = data.content;
+            alert('✅ Publicación actualizada');
+          }
+        },
+        error: () => alert('Error al actualizar publicación')
+      });
+  }
+
   onPostDeleted(postId: number): void {
     this.publicacionesService.eliminarPublicacion(postId)
       .pipe(takeUntil(this.destroy$))
@@ -486,8 +524,15 @@ onPostEdited(data: { postId: number; content: string }): void {
   }
 
   get postsFiltrados(): Post[] {
-    if (!this.categoriaSeleccionada) return this.posts;
-    return this.posts.filter(p => p.category.toLowerCase() === this.categoriaSeleccionada!.toLowerCase());
+    let resultado = this.posts;
+    
+    if (this.categoriaSeleccionada) {
+      resultado = resultado.filter(p => 
+        p.category.toLowerCase() === this.categoriaSeleccionada!.toLowerCase()
+      );
+    }
+    
+    return resultado;
   }
 
   seguirUsuario(usuarioId: number): void {
@@ -512,18 +557,26 @@ onPostEdited(data: { postId: number; content: string }): void {
 
   private cargarSeguidos(): Promise<void> {
     return new Promise(resolve => {
-      if (!this.usuarioActualId) return resolve();
+      if (!this.usuarioActualId) {
+        return resolve();
+      }
 
       this.seguidorService.listarSeguidos(this.usuarioActualId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
             if (res.success && res.data?.seguidos) {
-              this.seguidosIds = new Set(res.data.seguidos.map(u => u.id));
+              const seguidos = res.data.seguidos.map((u: any) => u.id);
+              this.seguidosIds = new Set(seguidos);
+            } else {
+              this.seguidosIds = new Set();
             }
             resolve();
           },
-          error: () => resolve()
+          error: () => {
+            this.seguidosIds = new Set();
+            resolve();
+          }
         });
     });
   }
@@ -548,7 +601,8 @@ onPostEdited(data: { postId: number; content: string }): void {
       comments: [],
       usuarioId: publicacionData.usuario_id,
       totalComments: 0,
-      documentos: publicacionData.documentos || []
+      documentos: publicacionData.documentos || [],
+      visibilidad: publicacionData.visibilidad || 'publico'
     };
 
     this.posts.unshift(nuevaPublicacion);
@@ -573,7 +627,9 @@ onPostEdited(data: { postId: number; content: string }): void {
     if (userStr) {
       try {
         this.usuarioActual = JSON.parse(userStr);
-      } catch {}
+      } catch (error) {
+        console.error('Error al parsear usuario actual');
+      }
     }
   }
 

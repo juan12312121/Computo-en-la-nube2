@@ -23,6 +23,8 @@ export interface Document {
 })
 export class DocumentosLista implements OnInit {
   @Input() currentTheme!: Theme;
+  @Input() usuarioId?: number;
+  @Input() soloLectura = false;
   @Output() downloadDocument = new EventEmitter<number>();
 
   documents: Document[] = [];
@@ -31,6 +33,14 @@ export class DocumentosLista implements OnInit {
   subiendoArchivo = false;
   selectedFile: File | null = null;
 
+  get esMiPerfil(): boolean {
+    return !this.usuarioId || !this.soloLectura;
+  }
+
+  get puedoInteractuar(): boolean {
+    return this.esMiPerfil;
+  }
+
   constructor(private documentosService: DocumentosService) {}
 
   ngOnInit(): void {
@@ -38,13 +48,17 @@ export class DocumentosLista implements OnInit {
   }
 
   /**
-   * Carga los documentos del usuario
+   * Carga los documentos del usuario (propios o de otro usuario)
    */
   cargarDocumentos(): void {
     this.loading = true;
     this.error = '';
 
-    this.documentosService.obtenerMisDocumentos().subscribe({
+    const observable = this.usuarioId 
+      ? this.documentosService.obtenerDocumentosUsuario(this.usuarioId)
+      : this.documentosService.obtenerMisDocumentos();
+
+    observable.subscribe({
       next: (response) => {
         if (response.success) {
           this.documents = this.mapearDocumentos(response.data);
@@ -52,7 +66,6 @@ export class DocumentosLista implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('❌ Error al cargar documentos:', error);
         this.error = 'Error al cargar los documentos';
         this.loading = false;
       }
@@ -113,20 +126,15 @@ export class DocumentosLista implements OnInit {
    * Elimina acentos y caracteres especiales del nombre de archivo
    */
   private normalizarNombreArchivo(nombreArchivo: string): string {
-    // Separar el nombre del archivo y la extensión
     const ultimoPunto = nombreArchivo.lastIndexOf('.');
     const nombre = ultimoPunto !== -1 ? nombreArchivo.substring(0, ultimoPunto) : nombreArchivo;
     const extension = ultimoPunto !== -1 ? nombreArchivo.substring(ultimoPunto) : '';
 
-    // Eliminar acentos
     const nombreNormalizado = nombre
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      // Reemplazar espacios y caracteres especiales por guiones bajos
       .replace(/[^a-zA-Z0-9]/g, '_')
-      // Eliminar guiones bajos múltiples
       .replace(/_+/g, '_')
-      // Eliminar guiones bajos al inicio y final
       .replace(/^_|_$/g, '');
 
     return nombreNormalizado + extension;
@@ -136,6 +144,8 @@ export class DocumentosLista implements OnInit {
    * Maneja la selección de archivo
    */
   onFileSelected(event: any): void {
+    if (!this.puedoInteractuar) return;
+
     const file = event.target.files[0];
     if (!file) return;
 
@@ -147,17 +157,12 @@ export class DocumentosLista implements OnInit {
       return;
     }
 
-    // Normalizar el nombre del archivo
     const nombreNormalizado = this.normalizarNombreArchivo(file.name);
     
-    // Crear un nuevo File con el nombre normalizado
     const archivoNormalizado = new File([file], nombreNormalizado, {
       type: file.type,
       lastModified: file.lastModified
     });
-
-    console.log('📝 Nombre original:', file.name);
-    console.log('✅ Nombre normalizado:', nombreNormalizado);
 
     this.selectedFile = archivoNormalizado;
     this.subirArchivo();
@@ -167,7 +172,7 @@ export class DocumentosLista implements OnInit {
    * Sube el archivo seleccionado
    */
   subirArchivo(): void {
-    if (!this.selectedFile) return;
+    if (!this.selectedFile || !this.puedoInteractuar) return;
 
     this.subiendoArchivo = true;
     this.error = '';
@@ -175,14 +180,12 @@ export class DocumentosLista implements OnInit {
     this.documentosService.subirDocumento(this.selectedFile).subscribe({
       next: (response) => {
         if (response.success) {
-          console.log('✅ Documento subido:', response.data);
           this.cargarDocumentos();
           this.selectedFile = null;
         }
         this.subiendoArchivo = false;
       },
       error: (error) => {
-        console.error('❌ Error al subir:', error);
         this.error = error.error?.error || 'Error al subir el documento';
         this.subiendoArchivo = false;
         this.selectedFile = null;
@@ -191,9 +194,11 @@ export class DocumentosLista implements OnInit {
   }
 
   /**
-   * Maneja la descarga del documento
+   * Maneja la descarga del documento (solo en mi perfil)
    */
   onDownloadClick(docId: number, event: MouseEvent): void {
+    if (!this.puedoInteractuar) return;
+
     event.stopPropagation();
     const doc = this.documents.find(d => d.id === docId);
     
@@ -205,9 +210,11 @@ export class DocumentosLista implements OnInit {
   }
 
   /**
-   * Elimina un documento
+   * Elimina un documento (solo en mi perfil)
    */
   eliminarDocumento(docId: number, event: MouseEvent): void {
+    if (!this.puedoInteractuar) return;
+
     event.stopPropagation();
     
     if (!confirm('¿Estás seguro de eliminar este documento?')) {
@@ -217,21 +224,21 @@ export class DocumentosLista implements OnInit {
     this.documentosService.eliminarDocumento(docId).subscribe({
       next: (response) => {
         if (response.success) {
-          console.log('✅ Documento eliminado');
           this.cargarDocumentos();
         }
       },
       error: (error) => {
-        console.error('❌ Error al eliminar:', error);
         alert('Error al eliminar el documento');
       }
     });
   }
 
   /**
-   * Trigger para input file
+   * Trigger para input file (solo en mi perfil)
    */
   triggerFileInput(): void {
+    if (!this.puedoInteractuar) return;
+
     const fileInput = document.getElementById('fileInput') as HTMLInputElement;
     fileInput?.click();
   }

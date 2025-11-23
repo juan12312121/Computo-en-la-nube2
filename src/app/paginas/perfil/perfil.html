@@ -26,7 +26,7 @@
     [profileImage]="getProfileImage()"
     [coverImage]="getCoverImage()"
     [iniciales]="getInitials()"
-    [totalPublicaciones]="publicacionesReales.length"
+    [totalPublicaciones]="publicacionesFiltradas.length"
     [totalSeguidores]="usuario.total_seguidores || 0"
     [totalSiguiendo]="usuario.total_siguiendo || 0"
     [textoBoton]="getButtonText()"
@@ -46,48 +46,55 @@
 
   <!-- Content Area -->
   <div>
-    <!-- Todo Tab Content -->
+    <!-- Todo Tab Content - ✅ CON EVENTO DE REPORTES -->
     <div *ngIf="activeTab === 'todo'">
-  <app-publicaciones-perfil
-    [publicaciones]="publicacionesReales"
-    [cargando]="cargandoPublicaciones"
-    [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
-    [usuarioIniciales]="getInitials()"
-    [apiBaseUrl]="'http://3.146.83.30:3000'"
-    [usuarioFotoPerfil]="getProfileImage()"
-    (likeToggled)="onLikeToggled($event)">
-  </app-publicaciones-perfil>
-</div>
+      <app-publicaciones-perfil
+        [publicaciones]="publicacionesFiltradas"
+        [cargando]="cargandoPublicaciones"
+        [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
+        [usuarioIniciales]="getInitials()"
+        [apiBaseUrl]="'http://3.146.83.30:3000'"
+        [usuarioFotoPerfil]="getProfileImage()"
+        (likeToggled)="onLikeToggled($event)"
+        (reportarPublicacion)="abrirModalReporte($event)">
+      </app-publicaciones-perfil>
+    </div>
 
     <!-- Fotos Tab Content -->
     <div *ngIf="activeTab === 'fotos'">
       <app-fotos-perfil
-        [photos]="photos"
-        [cargando]="cargandoPublicaciones">
+        [usuarioId]="usuario.id">
       </app-fotos-perfil>
     </div>
 
     <!-- Documentos Tab Content -->
     <div *ngIf="activeTab === 'documentos'">
-  <app-documentos-lista
-    [currentTheme]="currentTheme"
-    (downloadDocument)="onDocumentDownload($event)">
-  </app-documentos-lista>
-</div>
+      <app-documentos-lista
+        [currentTheme]="currentTheme"
+        [usuarioId]="!isOwnProfile ? usuario.id : undefined"
+        [soloLectura]="!isOwnProfile"
+        (downloadDocument)="onDocumentDownload($event)">
+      </app-documentos-lista>
+    </div>
 
     <!-- Secciones Tab Content -->
-    <div *ngIf="activeTab === 'secciones'">
-      <app-secciones-grid
-        [sections]="sections"
-        [currentTheme]="currentTheme"
-        (sectionSelected)="onSectionSelected($event)"
-        (sectionCreated)="recargarSecciones()">
-      </app-secciones-grid>
-    </div>
+ <!-- Secciones Tab Content -->
+<!-- Secciones Tab Content -->
+<div *ngIf="activeTab === 'secciones'">
+  <app-secciones-grid
+    [sections]="sections"
+    [currentTheme]="currentTheme"
+    [usuarioId]="usuario?.id"
+    [soloLectura]="!isOwnProfile"
+    (sectionSelected)="onSectionSelected($event)"
+    (sectionCreated)="recargarSecciones()">
+  </app-secciones-grid>
+</div>
+
   </div>
 </div>
 
-<!-- Modal de Editar Perfil (solo si es mi perfil) -->
+<!-- Modal de Editar Perfil -->
 <app-modal-editar-perfil
   *ngIf="isOwnProfile"
   [isVisible]="showEditModal"
@@ -101,7 +108,7 @@
   (guardar)="guardarPerfil($event)">
 </app-modal-editar-perfil>
 
-<!-- Modal de Cambiar Banner (solo si es mi perfil) -->
+<!-- Modal de Cambiar Banner -->
 <app-modal-cambiar-banner
   *ngIf="isOwnProfile"
   [isVisible]="showBannerModal"
@@ -111,8 +118,7 @@
   [errorBanner]="errorBanner"
   [s3BaseUrl]="getS3BaseUrl()"
   (close)="cerrarModalBanner()"
-  (guardar)="guardarBanner($event)"
- >
+  (guardar)="guardarBanner($event)">
 </app-modal-cambiar-banner>
 
 <!-- Modal de Seguidores/Siguiendo -->
@@ -124,3 +130,24 @@
   [s3BaseUrl]="getS3BaseUrl()"
   (close)="cerrarModalSeguidores()">
 </app-modal-seguidores>
+
+<!-- 🆕 MODAL DE REPORTES -->
+<app-modal-reporte
+  [isVisible]="showReporteModal"
+  [loading]="reporteLoading"
+  [success]="reporteSuccess"
+  [error]="reporteError"
+  [motivo]="reporteMotivo"
+  [descripcion]="reporteDescripcion"
+  [motivosValidos]="motivosValidos"
+  [cardBg]="currentTheme.cardBg"
+  [borderColor]="currentTheme.borderColor"
+  [textPrimaryClass]="currentTheme.textPrimaryClass"
+  [textSecondaryClass]="currentTheme.textSecondaryClass"
+  [btnCancelar]="currentTheme.textSecondaryClass + ' hover:bg-opacity-10'"
+  [ringColor]="currentTheme.color"
+  (cerrar)="cerrarModalReporte()"
+  (enviarReporte)="enviarReporte()"
+  (motivoChange)="onMotivoChange($event)"
+  (descripcionChange)="onDescripcionChange($event)">
+</app-modal-reporte>

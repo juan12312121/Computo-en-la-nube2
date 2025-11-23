@@ -9,7 +9,7 @@ import { Theme, ThemeService } from '../../core/servicios/temas';
 import { UsuarioBusqueda, UsuarioService } from '../../core/servicios/usuarios/usuarios';
 import { BotonCrearPost } from '../boton-crear-post/boton-crear-post';
 import { NotificacionesComponent } from '../notificaciones/notificaciones';
-import { NotificacionesService } from '../../core/servicios/notificacion/notificacion'; // 🆕 Importar
+import { NotificacionesService } from '../../core/servicios/notificacion/notificacion';
 
 @Component({
   selector: 'app-navbar',
@@ -21,7 +21,6 @@ import { NotificacionesService } from '../../core/servicios/notificacion/notific
 export class Navbar implements OnInit, OnDestroy {
   @ViewChild('themeSliderMobile') themeSliderMobile?: ElementRef<HTMLDivElement>;
 
-  // Emitir la publicación creada hacia Principal
   @Output() publicacionCreada = new EventEmitter<any>();
 
   private apiBaseUrl: string;
@@ -30,13 +29,11 @@ export class Navbar implements OnInit, OnDestroy {
   private searchSubscription?: Subscription;
   private searchSubject = new Subject<string>();
 
-  // UI STATE
   isLoggedIn = false;
   currentUser: Usuario | null = null;
   currentTheme!: Theme;
   themes: Theme[] = [];
 
-  // MODAL & MENU
   showCrearPost = false;
   showMobileMenu = false;
   showProfileMenu = false;
@@ -44,16 +41,13 @@ export class Navbar implements OnInit, OnDestroy {
   showSearchResults = false;
   showMobileSearch = false;
 
-  // SCROLL MÓVIL
   canScrollLeftMobile = false;
   canScrollRightMobile = true;
 
-  // BÚSQUEDA
   searchQuery = '';
   searchResults: UsuarioBusqueda[] = [];
   isSearching = false;
 
-  // GETTERS
   get currentThemeData(): Theme { return this.currentTheme; }
   get currentThemeId(): string { return this.currentTheme.id; }
   get userName(): string { return this.currentUser?.nombre_completo || 'Usuario'; }
@@ -75,7 +69,7 @@ export class Navbar implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private authService: AutenticacionService,
     private usuarioService: UsuarioService,
-    private notificacionesService: NotificacionesService, // 🆕 Inyectar servicio
+    private notificacionesService: NotificacionesService,
     private router: Router
   ) {
     const host = window.location.hostname;
@@ -99,43 +93,25 @@ export class Navbar implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Suscripción a temas
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
     });
 
-    // 🆕 Suscripción a autenticación CON SSE
     this.authSubscription = this.authService.currentUser.subscribe(user => {
       this.currentUser = user;
       this.isLoggedIn = !!user;
       
-      // ✅ INICIALIZAR SSE cuando hay usuario autenticado
       if (user && user.id) {
-        console.log('🔌 [NAVBAR] Inicializando SSE para usuario:', user.id);
-        
-        // Conectar a SSE
         this.notificacionesService.conectarSSE(user.id);
         
-        // Solicitar permisos de notificaciones del navegador
         this.notificacionesService.solicitarPermisoNotificaciones()
-          .then(permitido => {
-            if (permitido) {
-              console.log('✅ [NAVBAR] Permisos de notificación concedidos');
-            } else {
-              console.log('⚠️ [NAVBAR] Permisos de notificación denegados');
-            }
-          })
-          .catch(error => {
-            console.error('❌ [NAVBAR] Error al solicitar permisos:', error);
-          });
+          .then(() => {})
+          .catch(() => {});
       } else {
-        // ❌ Desconectar SSE si no hay usuario
-        console.log('🔌 [NAVBAR] Desconectando SSE (usuario no autenticado)');
         this.notificacionesService.desconectarSSE();
       }
     });
 
-    // Suscripción a búsqueda
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(400),
       distinctUntilChanged()
@@ -145,9 +121,6 @@ export class Navbar implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('🔌 [NAVBAR] Destruyendo componente y desconectando SSE');
-    
-    // 🆕 Desconectar SSE al destruir navbar
     this.notificacionesService.desconectarSSE();
     
     this.themeSubscription?.unsubscribe();
@@ -155,10 +128,6 @@ export class Navbar implements OnInit, OnDestroy {
     this.searchSubscription?.unsubscribe();
     document.body.classList.remove('mobile-menu-open');
   }
-
-  // ============================================
-  // BÚSQUEDA
-  // ============================================
 
   onSearchInput(query: string): void {
     this.searchQuery = query;
@@ -209,10 +178,6 @@ export class Navbar implements OnInit, OnDestroy {
     if (!this.showMobileSearch) this.limpiarBusqueda();
   }
 
-  // ============================================
-  // TEMAS
-  // ============================================
-
   applyTheme(themeId: string): void {
     this.themeService.setTheme(themeId);
     this.showThemeMenu = false;
@@ -241,10 +206,6 @@ export class Navbar implements OnInit, OnDestroy {
     this.canScrollRightMobile = scrollLeft < (maxScroll - 10);
   }
 
-  // ============================================
-  // MENÚ Y NAVEGACIÓN
-  // ============================================
-
   toggleMobileMenu(): void {
     this.showMobileMenu = !this.showMobileMenu;
     this.showProfileMenu = false;
@@ -261,8 +222,6 @@ export class Navbar implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    // 🆕 Desconectar SSE antes de cerrar sesión
-    console.log('🔌 [NAVBAR] Desconectando SSE antes de logout');
     this.notificacionesService.desconectarSSE();
     
     this.authService.logout().subscribe({
@@ -280,22 +239,12 @@ export class Navbar implements OnInit, OnDestroy {
     });
   }
 
-  // ============================================
-  // CREAR POST
-  // ============================================
-
   onOpenCreate(): void {
     this.showCrearPost = true;
   }
 
   onPostCreado(publicacionData: any): void {
-    console.log('📤 [NAVBAR] Publicación recibida desde BotonCrearPost:', publicacionData);
-    
-    // Cerrar el modal
     this.showCrearPost = false;
-    
-    // Emitir hacia Principal
-    console.log('📤 [NAVBAR] Emitiendo hacia Principal...');
     this.publicacionCreada.emit(publicacionData);
   }
 

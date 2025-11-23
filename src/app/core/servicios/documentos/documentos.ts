@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 export interface Documento {
   id: number;
   usuario_id: number;
-  publicacion_id?: number | null; // 🆕 Campo nuevo
+  publicacion_id?: number | null;
   documento_url: string | null;
   documento_s3: string;
   nombre_archivo: string;
@@ -48,7 +48,7 @@ export class DocumentosService {
   subirDocumento(
     archivo: File, 
     nombreCustom?: string, 
-    publicacionId?: number // 🆕 Parámetro opcional
+    publicacionId?: number
   ): Observable<ApiResponse<Documento>> {
     const formData = new FormData();
     formData.append('documento', archivo);
@@ -57,7 +57,6 @@ export class DocumentosService {
       formData.append('nombre_archivo_custom', nombreCustom);
     }
 
-    // 🆕 Vincular a publicación al subir
     if (publicacionId) {
       formData.append('publicacion_id', publicacionId.toString());
     }
@@ -70,7 +69,7 @@ export class DocumentosService {
   }
 
   /**
-   * 🆕 Obtiene documentos de una publicación específica
+   * Obtiene documentos de una publicación específica
    */
   obtenerDocumentosPorPublicacion(publicacionId: number): Observable<ApiResponse<Documento[]>> {
     return this.http.get<ApiResponse<Documento[]>>(
@@ -80,7 +79,7 @@ export class DocumentosService {
   }
 
   /**
-   * 🆕 Vincula un documento existente a una publicación
+   * Vincula un documento existente a una publicación
    */
   vincularDocumentoAPublicacion(documentoId: number, publicacionId: number): Observable<ApiResponse<Documento>> {
     return this.http.patch<ApiResponse<Documento>>(
@@ -91,7 +90,7 @@ export class DocumentosService {
   }
 
   /**
-   * 🆕 Desvincula un documento de su publicación
+   * Desvincula un documento de su publicación
    */
   desvincularDocumento(documentoId: number): Observable<ApiResponse<Documento>> {
     return this.http.patch<ApiResponse<Documento>>(
@@ -126,6 +125,15 @@ export class DocumentosService {
   }
 
   /**
+   * ✅ NUEVO: Obtiene los documentos de un usuario específico
+   */
+  obtenerDocumentosUsuario(usuarioId: number): Observable<ApiResponse<Documento[]>> {
+    return this.http.get<ApiResponse<Documento[]>>(
+      `${this.apiUrl}/usuario/${usuarioId}`
+    );
+  }
+
+  /**
    * Actualiza un documento (nombre, icono, color o archivo completo)
    */
   actualizarDocumento(
@@ -135,7 +143,7 @@ export class DocumentosService {
       nombre_archivo_custom?: string;
       icono?: string;
       color?: string;
-      publicacion_id?: number; // 🆕 Puede actualizar la vinculación
+      publicacion_id?: number;
     }
   ): Observable<ApiResponse<Documento>> {
     const formData = new FormData();
@@ -206,10 +214,10 @@ export class DocumentosService {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/zip', // 🆕
-      'application/x-rar-compressed', // 🆕
-      'text/csv', // 🆕
-      'text/plain' // 🆕
+      'application/zip',
+      'application/x-rar-compressed',
+      'text/csv',
+      'text/plain'
     ];
 
     if (!tiposPermitidos.includes(file.type)) {
@@ -219,7 +227,6 @@ export class DocumentosService {
       };
     }
 
-    // Validar tamaño (10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return {
@@ -232,7 +239,7 @@ export class DocumentosService {
   }
 
   /**
-   * 🆕 Descarga un documento
+   * Descarga un documento
    */
   descargarDocumento(url: string, nombreArchivo: string): void {
     const link = document.createElement('a');
@@ -245,7 +252,7 @@ export class DocumentosService {
   }
 
   /**
-   * 🆕 Verifica si un documento está vinculado a una publicación
+   * Verifica si un documento está vinculado a una publicación
    */
   estaVinculado(documento: Documento): boolean {
     return documento.publicacion_id !== null && documento.publicacion_id !== undefined;

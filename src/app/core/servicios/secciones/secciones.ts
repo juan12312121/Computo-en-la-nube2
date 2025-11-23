@@ -1,4 +1,4 @@
-// core/servicios/secciones/secciones.service.ts
+// core/servicios/secciones/secciones.service.ts - CON MÉTODOS PÚBLICOS
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
@@ -52,6 +52,21 @@ export interface SeccionesDePostResponse {
   total: number;
 }
 
+// ⭐ NUEVO: Respuesta de secciones públicas
+export interface SeccionesPublicasResponse {
+  usuario_id: number;
+  secciones: Section[];
+  total: number;
+  es_propietario: boolean;
+}
+
+// ⭐ NUEVO: Respuesta de sección pública con posts
+export interface SeccionPublicaConPosts {
+  seccion: Section;
+  posts: any[];
+  es_propietario: boolean;
+}
+
 // ==================== SERVICIO ====================
 
 @Injectable({
@@ -83,11 +98,47 @@ export class SeccionesService {
     });
   }
 
-  // ==================== OPERACIONES CRUD DE SECCIONES ====================
+  // ==================== MÉTODOS PÚBLICOS (NUEVOS) ====================
+
+  /**
+   * Obtener secciones públicas de otro usuario
+   * GET /api/secciones/usuario/:usuario_id
+   * NO requiere autenticación
+   */
+  obtenerSeccionesDeUsuario(usuarioId: number): Observable<SeccionesPublicasResponse> {
+    const url = `${this.apiUrl}/usuario/${usuarioId}`;
+    console.log('🌐 GET secciones públicas de usuario:', url);
+    
+    return this.http.get<SeccionesPublicasResponse>(url).pipe(
+      tap(data => {
+        console.log(`✅ Secciones públicas de usuario ${usuarioId}:`, data.total);
+      })
+    );
+  }
+
+  /**
+   * Obtener una sección pública específica con sus posts
+   * GET /api/secciones/usuario/:usuario_id/seccion/:seccion_id
+   * NO requiere autenticación
+   */
+  obtenerSeccionPublica(usuarioId: number, seccionId: number): Observable<SeccionPublicaConPosts> {
+    const url = `${this.apiUrl}/usuario/${usuarioId}/seccion/${seccionId}`;
+    console.log('🌐 GET sección pública:', url);
+    
+    return this.http.get<SeccionPublicaConPosts>(url).pipe(
+      tap(data => {
+        console.log('✅ Sección pública obtenida:', data.seccion.nombre);
+        console.log('📄 Posts en sección:', data.posts.length);
+      })
+    );
+  }
+
+  // ==================== OPERACIONES CRUD DE SECCIONES (PRIVADAS) ====================
 
   /**
    * Crear nueva sección
    * POST /api/secciones
+   * Requiere autenticación
    */
   crearSeccion(datos: CrearSeccionRequest): Observable<CrearSeccionResponse> {
     console.log('🌐 POST crear sección:', this.apiUrl);
@@ -99,7 +150,6 @@ export class SeccionesService {
       tap(response => {
         if (response.success) {
           console.log('✅ Sección creada exitosamente:', response);
-          // Recargar las secciones después de crear una nueva
           this.cargarSecciones();
         }
       })
@@ -109,33 +159,57 @@ export class SeccionesService {
   /**
    * Obtener todas las secciones del usuario autenticado
    * GET /api/secciones
+   * Requiere autenticación
    */
   obtenerSecciones(): Observable<Section[]> {
-    console.log('🌐 GET secciones:', this.apiUrl);
-    
-    return this.http.get<Section[]>(this.apiUrl, {
-      headers: this.getHeaders()
-    }).pipe(
-      tap(secciones => {
-        console.log('✅ Secciones obtenidas:', secciones.length);
-        this.seccionesSubject.next(secciones);
-      })
-    );
+  console.log('🌐 GET mis secciones:', this.apiUrl);
+  
+  return this.http.get<Section[]>(this.apiUrl, {
+    headers: this.getHeaders()
+  }).pipe(
+    tap(secciones => {
+      console.log('✅ Mis secciones obtenidas:', secciones.length);
+      this.seccionesSubject.next(secciones);
+    })
+  );
+}
+
+// ✅ NUEVO MÉTODO: Obtener secciones de otro usuario
+obtenerSeccionesUsuario(usuarioId: number): Observable<Section[]> {
+  const url = `${this.apiUrl}/usuario/${usuarioId}`;
+  console.log('🌐 GET secciones del usuario:', url);
+  
+  return this.http.get<Section[]>(url, {
+    headers: this.getHeaders()
+  }).pipe(
+    tap(secciones => {
+      console.log(`✅ Secciones del usuario ${usuarioId} obtenidas:`, secciones.length);
+    })
+  );
+}
+
+// ✅ MÉTODO AUXILIAR: Obtener secciones (propias o de otro usuario)
+obtenerSeccionesSegun(usuarioId?: number): Observable<Section[]> {
+  if (!usuarioId) {
+    return this.obtenerSecciones();
   }
+  return this.obtenerSeccionesUsuario(usuarioId);
+}
 
   /**
-   * Obtener una sección específica con sus posts
+   * Obtener una sección específica con sus posts (privado)
    * GET /api/secciones/:id
+   * Requiere autenticación
    */
   obtenerSeccion(id: number): Observable<SeccionConPosts> {
     const url = `${this.apiUrl}/${id}`;
-    console.log('🌐 GET sección:', url);
+    console.log('🌐 GET mi sección:', url);
     
     return this.http.get<SeccionConPosts>(url, {
       headers: this.getHeaders()
     }).pipe(
       tap(data => {
-        console.log('✅ Sección obtenida:', data.seccion.nombre);
+        console.log('✅ Mi sección obtenida:', data.seccion.nombre);
         console.log('📄 Posts en sección:', data.posts.length);
       })
     );
@@ -144,6 +218,7 @@ export class SeccionesService {
   /**
    * Actualizar sección
    * PUT /api/secciones/:id
+   * Requiere autenticación
    */
   actualizarSeccion(id: number, datos: Partial<CrearSeccionRequest>): Observable<CrearSeccionResponse> {
     const url = `${this.apiUrl}/${id}`;
@@ -165,6 +240,7 @@ export class SeccionesService {
   /**
    * Eliminar sección
    * DELETE /api/secciones/:id
+   * Requiere autenticación
    */
   eliminarSeccion(id: number): Observable<CrearSeccionResponse> {
     const url = `${this.apiUrl}/${id}`;
@@ -187,6 +263,7 @@ export class SeccionesService {
   /**
    * Agregar un post a una sección
    * POST /api/secciones/posts/agregar
+   * Requiere autenticación
    */
   agregarPostASeccion(datos: AgregarPostRequest): Observable<CrearSeccionResponse> {
     const url = `${this.apiUrl}/posts/agregar`;
@@ -209,6 +286,7 @@ export class SeccionesService {
   /**
    * Quitar un post de una sección
    * POST /api/secciones/posts/quitar
+   * Requiere autenticación
    */
   quitarPostDeSeccion(datos: QuitarPostRequest): Observable<CrearSeccionResponse> {
     const url = `${this.apiUrl}/posts/quitar`;
@@ -231,6 +309,7 @@ export class SeccionesService {
   /**
    * Obtener todas las secciones de un post específico
    * GET /api/secciones/posts/:publicacion_id
+   * Requiere autenticación
    */
   obtenerSeccionesDePost(publicacionId: number): Observable<SeccionesDePostResponse> {
     const url = `${this.apiUrl}/posts/${publicacionId}`;

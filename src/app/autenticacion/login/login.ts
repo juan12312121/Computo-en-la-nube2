@@ -64,16 +64,12 @@ export class Login {
 
     // Iniciar proceso de login
     this.isLoading = true;
-    console.log('🔐 Iniciando sesión con:', loginData);
-    console.log('📦 Datos enviados al backend:', JSON.stringify(loginData));
-
+   
     this.authService.login(loginData).subscribe({
       next: (response) => {
-        console.log('✅ Login exitoso:', response);
         
         if (response.success && response.data) {
-          console.log('👤 Usuario autenticado:', response.data.usuario);
-          console.log('🔑 Token recibido:', response.data.token);
+          
           
           // Mostrar mensaje de éxito
           this.mostrarExito('¡Bienvenido de vuelta!');

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
@@ -29,6 +29,7 @@ interface Post {
   loadingComments?: boolean;
   hasMoreComments?: boolean;
   usuario_id?: number;
+  visibilidad?: 'publico' | 'seguidores' | 'privado';
 }
 
 interface Comment {
@@ -70,6 +71,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   
   @Output() likeToggled = new EventEmitter<number>();
   @Output() postShared = new EventEmitter<{postId: number, platform: string}>();
+  @Output() reportarPublicacion = new EventEmitter<number>();
 
   posts: Post[] = [];
   photos: Photo[] = [];
@@ -81,12 +83,13 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   showShareModal = false;
   sharePostId: number | null = null;
 
+  activeMenuId: number | null = null;
+
   currentTheme: Theme;
   private themeSubscription?: Subscription;
   private usuarioActualId: number | null = null;
   private comentariosSubscriptions: Map<number, Subscription> = new Map();
 
-  // ✅ NUEVO: Cache de fotos de perfil
   fotosPerfilCache = new Map<number, string | null>();
 
   constructor(
@@ -114,23 +117,26 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('🔄 ngOnChanges llamado');
-    
     if (changes['publicaciones']) {
       const nuevasPublicaciones = changes['publicaciones'].currentValue as Publicacion[];
-      console.log('📋 Publicaciones:', nuevasPublicaciones?.length || 0);
 
       if (nuevasPublicaciones && nuevasPublicaciones.length > 0) {
-        console.log('✅ Actualizando posts...');
         this.actualizarPostsDesdeAPI();
       }
     }
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    this.activeMenuId = null;
+  }
+
+  toggleMenu(postId: number, event: Event): void {
+    event.stopPropagation();
+    this.activeMenuId = this.activeMenuId === postId ? null : postId;
+  }
+
   private actualizarPostsDesdeAPI(): void {
-    console.log('🔄 Procesando publicaciones...');
-    console.log('📍 apiBaseUrl:', this.apiBaseUrl);
-    
     this.posts = this.publicaciones.map(pub => {
       const urlImagen = this.obtenerUrlImagen(pub);
       
@@ -153,49 +159,24 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
         totalComments: 0,
         loadingComments: false,
         hasMoreComments: false,
-        usuario_id: pub.usuario_id
+        usuario_id: pub.usuario_id,
+        visibilidad: pub.visibilidad || 'publico'
       };
     });
-
-    const postsConImagen = this.posts.filter(p => p.image).length;
-    console.log('✅ Posts procesados:', this.posts.length);
-    console.log('🖼️ Posts con imágenes:', postsConImagen);
   }
 
   private obtenerUrlImagen(pub: Publicacion): string | null {
-    // Priorizar imagen_s3
     if (pub.imagen_s3) {
-      if (pub.imagen_s3.includes('/undefined')) {
-        return null;
-      }
-      
-      // Si ya contiene S3 o http, devolverla tal cual
-      if (pub.imagen_s3.includes('s3') || pub.imagen_s3.startsWith('http')) {
-        return pub.imagen_s3;
-      }
-      
-      // Completar con apiBaseUrl si es necesario
-      if (this.apiBaseUrl) {
-        return `${this.apiBaseUrl}${pub.imagen_s3}`;
-      }
-      
+      if (pub.imagen_s3.includes('/undefined')) return null;
+      if (pub.imagen_s3.includes('s3') || pub.imagen_s3.startsWith('http')) return pub.imagen_s3;
+      if (this.apiBaseUrl) return `${this.apiBaseUrl}${pub.imagen_s3}`;
       return pub.imagen_s3;
     }
 
-    // Fallback a imagen_url
     if (pub.imagen_url) {
-      if (pub.imagen_url.includes('/undefined')) {
-        return null;
-      }
-      
-      if (pub.imagen_url.includes('s3') || pub.imagen_url.startsWith('http')) {
-        return pub.imagen_url;
-      }
-      
-      if (this.apiBaseUrl) {
-        return `${this.apiBaseUrl}${pub.imagen_url}`;
-      }
-      
+      if (pub.imagen_url.includes('/undefined')) return null;
+      if (pub.imagen_url.includes('s3') || pub.imagen_url.startsWith('http')) return pub.imagen_url;
+      if (this.apiBaseUrl) return `${this.apiBaseUrl}${pub.imagen_url}`;
       return pub.imagen_url;
     }
 
@@ -252,9 +233,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     return colores[usuarioId % colores.length];
   }
 
-  /**
-   * ✅ ACTUALIZADO: Cargar comentarios con fotos de perfil
-   */
   cargarComentarios(postId: number): void {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
@@ -268,16 +246,10 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
 
     const newSubscription = this.comentariosService.obtenerPorPublicacion(postId, 20, 0).subscribe({
       next: (comentarios) => {
-        console.log('✅ Comentarios recibidos:', comentarios.length);
-
         if (Array.isArray(comentarios) && comentarios.length > 0) {
-          // 🔑 CARGAR FOTOS PRIMERO
           const usuariosIds = [...new Set(comentarios.map(c => c.usuario_id))];
-          console.log('👥 Usuarios únicos:', usuariosIds);
 
           this.cargarFotosPerfilBatch(usuariosIds, () => {
-            console.log('📸 Fotos cargadas, mapeando comentarios...');
-            
             post.comments = comentarios.map(c => this.convertirComentarioAComment(c));
             post.totalComments = comentarios.length;
             post.hasMoreComments = false;
@@ -294,7 +266,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error al cargar comentarios:', error);
         post.comments = [];
         post.totalComments = 0;
         post.loadingComments = false;
@@ -336,56 +307,31 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     });
   }
 
-  /**
-   * ✅ NUEVO: Cargar fotos de perfil en lote
-   */
   private cargarFotosPerfilBatch(usuariosIds: number[], callback?: () => void): void {
     const idsNoEnCache = usuariosIds.filter(id => !this.fotosPerfilCache.has(id));
-    
-    console.log('📸 [cargarFotosPerfilBatch]', {
-      total_solicitados: usuariosIds.length,
-      en_cache: usuariosIds.length - idsNoEnCache.length,
-      por_cargar: idsNoEnCache.length
-    });
 
     if (idsNoEnCache.length === 0) {
-      console.log('✅ Todas las fotos ya están en caché');
       if (callback) callback();
       return;
     }
 
     this.fotosService.obtenerFotosBatch(idsNoEnCache).subscribe({
       next: (response) => {
-        console.log('✅ [cargarFotosPerfilBatch] Respuesta recibida:', response);
-
         if (response.success && response.data) {
           response.data.forEach(usuario => {
             let urlFinal = usuario.foto_perfil_url || null;
             
-            // 🔧 CORREGIR URL si tiene /uploads/perfil/
             if (urlFinal && urlFinal.includes('/uploads/perfil/')) {
               urlFinal = urlFinal.replace('/uploads/perfil/', '/perfiles/');
-              console.log('🔧 URL corregida de /uploads/perfil/ a /perfiles/');
             }
 
             this.fotosPerfilCache.set(usuario.id, urlFinal);
-
-            console.log(`📸 Usuario ${usuario.id}:`, {
-              url_final: urlFinal,
-              tiene_foto: !!urlFinal
-            });
-          });
-
-          console.log('✅ Caché actualizada:', {
-            total_en_cache: this.fotosPerfilCache.size
           });
         }
 
         if (callback) callback();
       },
       error: (error) => {
-        console.error('❌ [cargarFotosPerfilBatch] Error:', error);
-        
         idsNoEnCache.forEach(id => {
           this.fotosPerfilCache.set(id, null);
         });
@@ -395,14 +341,10 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     });
   }
 
-  /**
-   * ✅ NUEVO: Obtener foto de perfil desde el cache
-   */
   private obtenerFotoPerfilDesdeCache(usuarioId: number): string | null {
     if (this.fotosPerfilCache.has(usuarioId)) {
       let url = this.fotosPerfilCache.get(usuarioId);
       
-      // 🔧 CORREGIR URL si tiene /uploads/perfil/
       if (url && url.includes('/uploads/perfil/')) {
         url = url.replace('/uploads/perfil/', '/perfiles/');
         this.fotosPerfilCache.set(usuarioId, url);
@@ -414,18 +356,9 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     return null;
   }
 
-  /**
-   * ✅ ACTUALIZADO: Convertir comentario con foto de perfil
-   */
   private convertirComentarioAComment(comentario: Comentario): Comment {
     const fotoPerfil = this.obtenerFotoPerfilDesdeCache(comentario.usuario_id);
     const tieneFoto = fotoPerfil !== null && fotoPerfil !== undefined && fotoPerfil.trim() !== '';
-
-    console.log(`💬 Comentario usuario ${comentario.usuario_id}:`, {
-      nombre: comentario.nombre_completo,
-      foto_url: fotoPerfil,
-      tiene_foto: tieneFoto
-    });
 
     return {
       id: comentario.id,
@@ -442,9 +375,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     };
   }
 
-  /**
-   * ✅ ACTUALIZADO: Agregar comentario con foto de perfil
-   */
   addComment(postId: number, commentText: string): void {
     const text = commentText.trim();
     if (!text) return;
@@ -458,7 +388,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          // 🔑 OBTENER FOTO DEL NUEVO COMENTARIO
           let fotoPerfilUrl: string | null = null;
 
           if (response.data.foto_perfil_url) {
@@ -467,14 +396,12 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
             fotoPerfilUrl = response.data.foto_perfil_s3;
           }
 
-          // 🔧 CORREGIR URL
           if (fotoPerfilUrl && fotoPerfilUrl.includes('/uploads/perfil/')) {
             fotoPerfilUrl = fotoPerfilUrl.replace('/uploads/perfil/', '/perfiles/');
           }
 
           const tieneFoto = fotoPerfilUrl !== null && fotoPerfilUrl !== undefined && fotoPerfilUrl.trim() !== '';
 
-          // 💾 GUARDAR EN CACHE
           if (tieneFoto && response.data.usuario_id) {
             this.fotosPerfilCache.set(response.data.usuario_id, fotoPerfilUrl);
           }
@@ -608,11 +535,24 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     this.showPostDetail = false;
     this.selectedPost = null;
   }
-
-  onLikeToggled(postId: number): void {
-    this.toggleLike(postId);
+onLikeToggled(postId: number): void {
+  // El post ya fue actualizado en detalle-post
+  // selectedPost apunta al mismo objeto que está en this.posts
+  // Así que los cambios ya están reflejados
+  
+  const post = this.posts.find(p => p.id === postId);
+  
+  if (post) {
+    // Solo detectar cambios para reflejar en la vista
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
+    
+    console.log(`✅ Like sincronizado para post ${postId}:`, {
+      liked: post.liked,
+      likes: post.likes
+    });
   }
-
+}
   onShareModalOpened(postId: number): void {
     this.openShareModal(postId);
   }
@@ -628,25 +568,45 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     }
   }
 
-  /**
-   * ✅ NUEVO: Manejar error de carga de imagen
-   */
   handleImageError(comment: Comment): void {
-    console.warn(`⚠️ Error cargando imagen de usuario ${comment.usuarioId}`);
     comment.usandoIniciales = true;
     comment.foto_perfil_url = null;
     comment.profileImageUrl = null;
     this.cdr.detectChanges();
   }
 
-  /**
-   * ✅ NUEVO: Confirmar carga exitosa de imagen
-   */
   onImageLoad(comment: Comment): void {
-    console.log(`✅ Imagen cargada OK para usuario ${comment.usuarioId}`);
+    // Imagen cargada correctamente
   }
 
   trackByCommentId(index: number, comment: Comment): number {
     return comment.id;
+  }
+
+  getVisibilidadIcon(post: Post): string {
+    switch (post.visibilidad) {
+      case 'publico': return '🌐';
+      case 'seguidores': return '👥';
+      case 'privado': return '🔒';
+      default: return '🌐';
+    }
+  }
+
+  getVisibilidadTexto(post: Post): string {
+    switch (post.visibilidad) {
+      case 'publico': return 'Público';
+      case 'seguidores': return 'Seguidores';
+      case 'privado': return 'Solo yo';
+      default: return 'Público';
+    }
+  }
+
+  getVisibilidadClasses(post: Post): string {
+    switch (post.visibilidad) {
+      case 'publico': return 'bg-green-100 text-green-700';
+      case 'seguidores': return 'bg-blue-100 text-blue-700';
+      case 'privado': return 'bg-gray-100 text-gray-700';
+      default: return 'bg-green-100 text-green-700';
+    }
   }
 }

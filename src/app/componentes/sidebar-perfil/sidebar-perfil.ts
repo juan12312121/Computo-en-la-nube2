@@ -59,7 +59,6 @@ export class SidebarPerfil implements OnInit, OnDestroy {
    */
   private cargarEstadisticas(): void {
     this.cargandoEstadisticas = true;
-    console.log('📊 [SidebarPerfil] Cargando estadísticas para usuario:', this.usuario.id);
 
     // Cargar estadísticas en paralelo
     this.cargarTotalPosts();
@@ -76,14 +75,11 @@ export class SidebarPerfil implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success && Array.isArray(response.data)) {
             this.totalPosts = response.data.length;
-            console.log('✅ [SidebarPerfil] Total posts:', this.totalPosts);
           } else {
             this.totalPosts = 0;
-            console.warn('⚠️ [SidebarPerfil] Respuesta de posts sin datos válidos');
           }
         },
         error: (error) => {
-          console.error('❌ [SidebarPerfil] Error al cargar posts:', error);
           this.totalPosts = 0;
         }
       });
@@ -100,19 +96,13 @@ export class SidebarPerfil implements OnInit, OnDestroy {
           if (response.success && response.data) {
             this.totalSeguidores = response.data.seguidores || 0;
             this.totalSiguiendo = response.data.seguidos || 0;
-            console.log('✅ [SidebarPerfil] Estadísticas seguidores:', {
-              seguidores: this.totalSeguidores,
-              siguiendo: this.totalSiguiendo
-            });
           } else {
             this.totalSeguidores = 0;
             this.totalSiguiendo = 0;
-            console.warn('⚠️ [SidebarPerfil] Respuesta de seguidores sin datos válidos');
           }
           this.cargandoEstadisticas = false;
         },
         error: (error) => {
-          console.error('❌ [SidebarPerfil] Error al cargar estadísticas de seguidores:', error);
           this.totalSeguidores = 0;
           this.totalSiguiendo = 0;
           this.cargandoEstadisticas = false;
@@ -139,8 +129,6 @@ export class SidebarPerfil implements OnInit, OnDestroy {
     if (event) {
       event.stopPropagation();
     }
-
-    console.log('👤 [SidebarPerfil] Navegando a mi perfil:', this.usuario?.id);
 
     // Emitir evento (por si el padre necesita hacer algo)
     this.navegarPerfil.emit();

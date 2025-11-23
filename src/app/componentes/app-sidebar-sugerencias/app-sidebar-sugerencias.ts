@@ -20,7 +20,7 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
   @Input() hoverBackground: string = '';
   
   @Output() seguirUsuario = new EventEmitter<number>();
-  @Output() sugerenciasCargadas = new EventEmitter<number>(); // Emite cantidad de sugerencias
+  @Output() sugerenciasCargadas = new EventEmitter<number>();
 
   usuarios: any[] = [];
   isLoading: boolean = false;
@@ -56,13 +56,11 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
    */
   private cargarSugerencias(): void {
     if (!this.usuarioActualId) {
-      console.log('⚠️ [Sugerencias] No hay usuario actual');
       this.usuarios = [];
       return;
     }
 
     this.isLoading = true;
-    console.log('💡 [Sugerencias] Cargando sugerencias para usuario:', this.usuarioActualId);
 
     // Obtener usuarios que YO sigo
     this.seguidorService.listarSeguidos(this.usuarioActualId)
@@ -70,7 +68,6 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (!response.success || !response.data?.seguidos || response.data.seguidos.length === 0) {
-            console.log('ℹ️ [Sugerencias] No sigues a nadie, no hay sugerencias');
             this.usuarios = [];
             this.isLoading = false;
             this.sugerenciasCargadas.emit(0);
@@ -78,13 +75,11 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
           }
 
           const misSeguidos = response.data.seguidos;
-          console.log(`✅ [Sugerencias] Sigues a ${misSeguidos.length} usuarios`);
 
           // Obtener seguidores de mis seguidos
           this.obtenerSeguidoresDeSeguidores(misSeguidos);
         },
         error: (error) => {
-          console.error('❌ [Sugerencias] Error al cargar seguidos:', error);
           this.usuarios = [];
           this.isLoading = false;
           this.sugerenciasCargadas.emit(0);
@@ -98,7 +93,7 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
   private obtenerSeguidoresDeSeguidores(misSeguidos: any[]): void {
     const sugerenciasMap = new Map<number, any>();
     let procesados = 0;
-    const total = Math.min(misSeguidos.length, 5); // Limitar a 5 por performance
+    const total = Math.min(misSeguidos.length, 5);
 
     const seguidosAConsultar = misSeguidos.slice(0, 5);
 
@@ -131,7 +126,6 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
           },
           error: (error) => {
             procesados++;
-            console.error(`❌ [Sugerencias] Error con seguidores de ${seguido.nombre_usuario}:`, error);
 
             if (procesados === total) {
               this.finalizarSugerencias(sugerenciasMap);
@@ -146,7 +140,6 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
    */
   private finalizarSugerencias(sugerenciasMap: Map<number, any>): void {
     if (sugerenciasMap.size === 0) {
-      console.log('ℹ️ [Sugerencias] No hay sugerencias disponibles');
       this.usuarios = [];
       this.isLoading = false;
       this.sugerenciasCargadas.emit(0);
@@ -166,7 +159,6 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
         razon: usuario.razon
       }));
 
-    console.log(`✅ [Sugerencias] ${this.usuarios.length} sugerencias cargadas`);
     this.isLoading = false;
     this.sugerenciasCargadas.emit(this.usuarios.length);
   }
@@ -175,7 +167,6 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
    * Recarga sugerencias (útil después de seguir a alguien)
    */
   public recargarSugerencias(): void {
-    console.log('🔄 [Sugerencias] Recargando...');
     this.cargarSugerencias();
   }
 

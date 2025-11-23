@@ -19,7 +19,7 @@
          [ngClass]="currentTheme.cardBg"
          class="border rounded-lg shadow-sm hover:shadow-md transition">
       
-      <!-- Post Header -->
+      <!-- Post Header - ✅ CON MENÚ DE OPCIONES -->
       <div class="px-4 pt-3 pb-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -33,18 +33,51 @@
             </div>
             <div>
               <h3 class="font-bold text-sm" [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
-              <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
+              
+              <!-- Tiempo + Icono de Visibilidad -->
+              <div class="flex items-center gap-1.5 text-xs" [ngClass]="currentTheme.textSecondaryClass">
+                <span>{{ post.time }}</span>
+                <span>·</span>
+                <span [title]="getVisibilidadTexto(post)">{{ getVisibilidadIcon(post) }}</span>
+              </div>
             </div>
           </div>
-          <button class="transition p-2 text-base" 
-                  [ngClass]="currentTheme.textSecondaryClass">
-            <i class="fas fa-ellipsis-h"></i>
-          </button>
+          
+          <!-- 🆕 MENÚ DESPLEGABLE CON REPORTAR -->
+          <div class="relative">
+            <button (click)="toggleMenu(post.id, $event)"
+                    class="transition p-2 text-base rounded-full hover:bg-opacity-10"
+                    [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+
+            <!-- Menú Dropdown -->
+            <div *ngIf="activeMenuId === post.id"
+                 class="absolute right-0 top-full mt-1 w-48 rounded-lg shadow-lg border z-10 overflow-hidden"
+                 [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]"
+                 (click)="$event.stopPropagation()">
+              
+              <button (click)="reportarPublicacion.emit(post.id); activeMenuId = null"
+                      class="w-full px-4 py-3 text-left text-sm font-medium flex items-center gap-3 transition"
+                      [ngClass]="[currentTheme.textPrimaryClass, currentTheme.hoverBgLight]">
+                <i class="fas fa-flag text-red-500"></i>
+                <span>Reportar publicación</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Post Content -->
+      <!-- Post Content - ✅ CON BADGE DE VISIBILIDAD -->
       <div class="px-4 pb-3">
+        <!-- Badge de Visibilidad (solo si NO es público) -->
+        <span *ngIf="post.visibilidad && post.visibilidad !== 'publico'"
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mb-2"
+              [ngClass]="getVisibilidadClasses(post)">
+          {{ getVisibilidadIcon(post) }}
+          <span>{{ getVisibilidadTexto(post) }}</span>
+        </span>
+        
         <p class="leading-relaxed text-sm" [ngClass]="currentTheme.textPrimaryClass">
           {{ post.content }}
         </p>
@@ -125,7 +158,7 @@
         <div *ngIf="!post.loadingComments && post.comments.length > 0" 
              class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
           <div *ngFor="let comment of post.comments; trackBy: trackByCommentId" class="flex gap-3">
-            <!-- ✅ AVATAR CON FOTO O INICIALES -->
+            <!-- Avatar con Foto o Iniciales -->
             <div class="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden"
                  [ngClass]="comment.foto_perfil_url ? '' : 'bg-gradient-to-br ' + comment.avatarColor">
               
@@ -191,7 +224,7 @@
         <div class="px-4 py-3 border-t" 
              [ngClass]="currentTheme.borderColor">
           <div class="flex items-center gap-3">
-            <!-- ✅ AVATAR DEL USUARIO ACTUAL CON FOTO -->
+            <!-- Avatar del Usuario Actual con Foto -->
             <div class="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden"
                  [ngClass]="usuarioFotoPerfil ? '' : 'bg-gradient-to-br from-teal-400 to-teal-600'">
               
@@ -228,7 +261,7 @@
     </div>
   </div>
 
-  <!-- ✅ Modal de detalle del post - PASANDO fotosPerfilCache -->
+  <!-- Modal de detalle del post -->
   <app-detalle-post
     *ngIf="showPostDetail"
     [post]="selectedPost"

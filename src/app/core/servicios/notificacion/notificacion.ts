@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, Subject, tap } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, tap } from 'rxjs';
 import { AutenticacionService } from '../autenticacion/autenticacion';
 
 // ============================================
@@ -55,14 +55,17 @@ export class NotificacionesService {
   private baseUrl: string;
   
   // ============================================
-  // 🆕 SSE - Server-Sent Events
+  // 🔥 SSE - Server-Sent Events (CORREGIDO)
   // ============================================
   private eventSource: EventSource | null = null;
   private nuevaNotificacionSubject = new Subject<Notificacion>();
-  private contadorSubject = new Subject<number>();
+  
+  // 🔥 SOLO UNA DECLARACIÓN DE contadorSubject (BehaviorSubject)
+  private contadorSubject = new BehaviorSubject<number>(0);
+  
   private conexionSSESubject = new Subject<boolean>();
 
-  // Observables públicos para suscribirse
+  // 🔥 Observables públicos para suscribirse (SIN DUPLICADOS)
   public nuevaNotificacion$ = this.nuevaNotificacionSubject.asObservable();
   public contador$ = this.contadorSubject.asObservable();
   public conexionSSE$ = this.conexionSSESubject.asObservable();
@@ -98,7 +101,17 @@ export class NotificacionesService {
 
   /**
    * ========================================
-   * 🆕 SSE - CONECTAR A NOTIFICACIONES EN TIEMPO REAL
+   * 🔥 ACTUALIZAR CONTADOR MANUALMENTE
+   * ========================================
+   */
+  public actualizarContador(nuevoValor: number): void {
+    console.log('🔢 [SERVICIO] Actualizando contador manualmente a:', nuevoValor);
+    this.contadorSubject.next(nuevoValor);
+  }
+
+  /**
+   * ========================================
+   * SSE - CONECTAR A NOTIFICACIONES EN TIEMPO REAL
    * ========================================
    */
   conectarSSE(usuarioId: number): void {
@@ -147,7 +160,7 @@ export class NotificacionesService {
     this.eventSource.addEventListener('actualizar_contador', (event: any) => {
       this.ngZone.run(() => {
         const { total } = JSON.parse(event.data);
-        console.log('🔢 Contador actualizado:', total);
+        console.log('🔢 Contador actualizado por SSE:', total);
         this.contadorSubject.next(total);
       });
     });
@@ -176,7 +189,7 @@ export class NotificacionesService {
 
   /**
    * ========================================
-   * 🆕 SSE - DESCONECTAR
+   * SSE - DESCONECTAR
    * ========================================
    */
   desconectarSSE(): void {
@@ -190,7 +203,7 @@ export class NotificacionesService {
 
   /**
    * ========================================
-   * 🆕 MOSTRAR NOTIFICACIÓN DEL NAVEGADOR
+   * MOSTRAR NOTIFICACIÓN DEL NAVEGADOR
    * ========================================
    */
   private mostrarNotificacionNavegador(notificacion: Notificacion): void {
@@ -211,7 +224,7 @@ export class NotificacionesService {
 
   /**
    * ========================================
-   * 🆕 SOLICITAR PERMISO PARA NOTIFICACIONES
+   * SOLICITAR PERMISO PARA NOTIFICACIONES
    * ========================================
    */
   async solicitarPermisoNotificaciones(): Promise<boolean> {

@@ -1,21 +1,24 @@
-<!-- secciones-grid.html - CORREGIDO -->
+<!-- secciones-grid.html - COMPLETO EDITADO CON PERMISOS Y TEXTOS -->
 <div class="space-y-4">
-  <!-- Header con botón para crear nueva sección -->
+
+  <!-- Header con botón para crear nueva carpeta -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
     <div>
       <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">
-        <i class="fas fa-th-large mr-2"></i>
-        Mis Grupos de Estudio
+        <i class="fas fa-folder-open mr-2"></i>
+        {{ esPropietario ? 'Mis Carpetas de Contenido' : 'Carpetas de Contenido' }}
       </h2>
       <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm mt-1">
-        Organiza tus materias, proyectos y recursos académicos
+        {{ esPropietario ? 'Organiza tus publicaciones en carpetas temáticas' : 'Contenido organizado por temas' }}
       </p>
     </div>
+    <!-- ⭐ Solo mostrar botón si es propietario -->
     <button
+      *ngIf="esPropietario"
       (click)="openCreateModal()"
       class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold hover:shadow-lg transition flex items-center gap-2 whitespace-nowrap">
       <i class="fas fa-plus-circle"></i>
-      <span>Crear Grupo</span>
+      <span>Nueva Carpeta</span>
     </button>
   </div>
 
@@ -43,18 +46,20 @@
 
   <!-- Mensaje cuando no hay secciones -->
   <div *ngIf="sections.length === 0" [ngClass]="currentTheme.cardBg" class="border rounded-xl p-8 sm:p-12 text-center">
-    <div class="text-5xl sm:text-6xl mb-4">📚</div>
+    <div class="text-5xl sm:text-6xl mb-4">📁</div>
     <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-bold mb-2">
-      ¡Comienza a organizarte!
+      {{ esPropietario ? '¡Crea tu primera carpeta!' : 'Sin carpetas de contenido' }}
     </h3>
     <p [ngClass]="currentTheme.textSecondaryClass" class="mb-6 text-sm sm:text-base">
-      Crea grupos para tus materias, proyectos o áreas de estudio
+      {{ esPropietario ? 'Organiza tus publicaciones por temas, materias o proyectos' : 'Este usuario aún no ha organizado sus publicaciones en carpetas' }}
     </p>
+    <!-- ⭐ Solo mostrar botón si es propietario -->
     <button
+      *ngIf="esPropietario"
       (click)="openCreateModal()"
       class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition inline-flex items-center gap-2">
       <i class="fas fa-plus-circle"></i>
-      <span>Crear mi primer grupo</span>
+      <span>Crear mi primera carpeta</span>
     </button>
   </div>
 
@@ -88,13 +93,21 @@
         </button>
       </div>
       <div class="p-4 sm:p-6">
-        <!-- Botón para agregar publicaciones -->
-        <div class="mb-6">
+        <!-- ⭐ Badge de solo lectura si NO es propietario -->
+        <div *ngIf="!esPropietario" class="mb-4 bg-blue-50 border-l-4 border-blue-500 text-blue-700 px-4 py-3 rounded-lg">
+          <div class="flex items-center">
+            <i class="fas fa-eye mr-2"></i>
+            <span class="text-sm">Vista de solo lectura - No puedes modificar esta carpeta</span>
+          </div>
+        </div>
+
+        <!-- ⭐ Botón para agregar publicaciones (solo propietario) -->
+        <div *ngIf="esPropietario" class="mb-6">
           <button
             (click)="mostrarListaPublicaciones()"
             class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition flex items-center justify-center gap-2">
             <i class="fas fa-plus-circle"></i>
-            <span>Agregar Publicaciones a este Grupo</span>
+            <span>Agregar publicaciones a esta carpeta</span>
           </button>
         </div>
 
@@ -102,7 +115,7 @@
         <div *ngIf="cargandoPublicaciones" class="text-center py-8">
           <i class="fas fa-spinner fa-spin text-3xl sm:text-4xl text-blue-500 mb-3"></i>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm sm:text-base">
-            Cargando publicaciones del grupo...
+            Cargando publicaciones de la carpeta...
           </p>
         </div>
 
@@ -110,7 +123,7 @@
         <div *ngIf="!cargandoPublicaciones && publicaciones.length > 0" class="space-y-3">
           <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-sm font-bold mb-3">
             <i class="fas fa-clipboard-list mr-2"></i>
-            Publicaciones en este grupo
+            Publicaciones en esta carpeta
           </h3>
           <div *ngFor="let pub of publicaciones"
                [ngClass]="currentTheme.cardBg"
@@ -140,8 +153,6 @@
                  [src]="obtenerImagenUrl(pub.imagen_url)" 
                  [alt]="'Imagen de publicación'"
                  class="w-full h-48 rounded-lg object-cover mb-3">
-
-         
           </div>
         </div>
 
@@ -149,18 +160,18 @@
         <div *ngIf="!cargandoPublicaciones && publicaciones.length === 0" class="text-center py-8">
           <div class="text-4xl sm:text-5xl mb-3">📝</div>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm sm:text-base">
-            Aún no hay publicaciones en este grupo
+            {{ esPropietario ? 'Aún no hay publicaciones en esta carpeta' : 'Esta carpeta aún no tiene publicaciones' }}
           </p>
-          <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm mt-2">
-            Usa el botón de arriba para agregar publicaciones existentes
+          <p *ngIf="esPropietario" [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm mt-2">
+            Usa el botón de arriba para agregar publicaciones a esta carpeta
           </p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal para agregar publicaciones a la sección -->
-  <div *ngIf="showModal && mostrarPublicacionesModal"
+  <!-- ⭐ Modal para agregar publicaciones (solo propietario) -->
+  <div *ngIf="showModal && mostrarPublicacionesModal && esPropietario"
        (click)="onPublicacionesModalBackdropClick($event)"
        class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
     <div [ngClass]="currentTheme.cardBg" 
@@ -169,8 +180,8 @@
       <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
            [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
         <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
-          <i class="fas fa-list mr-2"></i>
-          Agregar Publicaciones
+          <i class="fas fa-file-alt mr-2"></i>
+          Agregar Publicaciones a la Carpeta
         </h2>
         <button 
           (click)="cerrarPublicacionesModal()"
@@ -269,7 +280,7 @@
             No tienes publicaciones disponibles
           </p>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm mt-2">
-            Crea tu primera publicación para poder agregarla a un grupo
+            Crea tu primera publicación para poder organizarla en una carpeta
           </p>
         </div>
 
@@ -301,7 +312,7 @@
           <div class="text-center py-4">
             <i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-3"></i>
             <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm">
-              Agregando publicaciones al grupo...
+              Agregando publicaciones a la carpeta...
             </p>
           </div>
         </div>
@@ -309,8 +320,8 @@
     </div>
   </div>
 
-  <!-- Modal para crear sección (sin cambios, ya está correcto) -->
-  <div *ngIf="showCreateModal"
+  <!-- ⭐ Modal para crear carpeta (solo propietario) -->
+  <div *ngIf="showCreateModal && esPropietario"
        (click)="onCreateModalBackdropClick($event)"
        class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div [ngClass]="currentTheme.cardBg" 
@@ -318,8 +329,8 @@
       <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
            [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
         <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg sm:text-xl font-black">
-          <i class="fas fa-users mr-2"></i>
-          Crear Nuevo Grupo de Estudio
+          <i class="fas fa-folder-plus mr-2"></i>
+          Crear Nueva Carpeta
         </h2>
         <button 
           (click)="closeCreateModal()"
@@ -332,14 +343,14 @@
       <div class="p-4 sm:p-6 space-y-6">
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-2">
-            Nombre del grupo *
+            Nombre de la carpeta *
           </label>
           <input
             type="text"
             [(ngModel)]="nuevaSeccion.nombre"
             [ngClass]="currentTheme.textPrimaryClass"
             class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="Ej: Matemáticas II, Física Cuántica, Proyecto Final..."
+            placeholder="Ej: Matemáticas II, Proyecto Final, Apuntes de Física..."
             maxlength="50">
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mt-1">
             {{ nuevaSeccion.nombre.length }}/50 caracteres
@@ -348,7 +359,7 @@
 
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-3">
-            Ícono del grupo
+            Ícono de la carpeta
           </label>
           <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-48 overflow-y-auto p-2 border rounded-xl">
             <button
@@ -367,7 +378,7 @@
 
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-3">
-            Color del grupo
+            Color de la carpeta
           </label>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             <button
@@ -389,7 +400,7 @@
 
         <div>
           <label [ngClass]="currentTheme.textPrimaryClass" class="block text-sm font-bold mb-3">
-            Vista previa
+            Vista previa de la carpeta
           </label>
           <div [ngClass]="currentTheme.cardBg"
                class="border-2 border-dashed rounded-xl p-5 sm:p-6">
@@ -404,7 +415,7 @@
               </span>
             </div>
             <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-black text-base sm:text-lg">
-              {{ nuevaSeccion.nombre || 'Nombre del grupo' }}
+              {{ nuevaSeccion.nombre || 'Nombre de la carpeta' }}
             </h3>
           </div>
         </div>
@@ -429,7 +440,7 @@
             class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
             <span *ngIf="!creandoSeccion">
               <i class="fas fa-check-circle mr-2"></i>
-              Crear Grupo
+              Crear Carpeta
             </span>
             <span *ngIf="creandoSeccion">
               <i class="fas fa-spinner fa-spin mr-2"></i>

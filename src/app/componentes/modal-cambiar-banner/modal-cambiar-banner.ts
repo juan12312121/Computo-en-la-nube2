@@ -16,7 +16,7 @@ export class ModalCambiarBanner {
   @Input() currentTheme!: Theme;
   @Input() guardando = false;
   @Input() errorBanner = '';
-  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com'; // 🆕 URL de S3
+  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
   @Output() close = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<File>();
@@ -35,17 +35,14 @@ export class ModalCambiarBanner {
     this.previsualizacionBanner = null;
   }
 
-  // 🆕 Método actualizado para usar S3
   getCoverImage(): string | null {
     if (!this.usuario?.foto_portada_url) return null;
     
-    // Si ya es URL completa, retornarla
     if (this.usuario.foto_portada_url.startsWith('http://') || 
         this.usuario.foto_portada_url.startsWith('https://')) {
       return this.usuario.foto_portada_url;
     }
     
-    // Construir URL de S3
     return `${this.s3BaseUrl}/${this.usuario.foto_portada_url.replace(/^\/+/, '')}`;
   }
 
@@ -60,7 +57,7 @@ export class ModalCambiarBanner {
       return;
     }
     
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       this.errorBanner = 'La imagen no debe superar los 5MB';
       return;
@@ -74,12 +71,6 @@ export class ModalCambiarBanner {
       this.previsualizacionBanner = e.target?.result as string;
     };
     reader.readAsDataURL(file);
-    
-    console.log('🖼️ Banner seleccionado:', {
-      nombre: file.name,
-      tipo: file.type,
-      tamaño: file.size
-    });
   }
 
   onGuardar(): void {
@@ -90,8 +81,6 @@ export class ModalCambiarBanner {
     
     this.guardar.emit(this.archivoBanner);
   }
-
-  
 
   onCerrar(): void {
     this.close.emit();

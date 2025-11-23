@@ -80,7 +80,6 @@ export class SidebarCategorias implements OnInit, OnDestroy {
    */
   private cargarPublicaciones(): void {
     this.cargandoContadores = true;
-    console.log('📊 [SidebarCategorias] Cargando publicaciones...');
 
     this.publicacionesService.obtenerPublicaciones()
       .pipe(takeUntil(this.destroy$))
@@ -89,14 +88,10 @@ export class SidebarCategorias implements OnInit, OnDestroy {
           if (response.success && Array.isArray(response.data)) {
             // Actualizar contadores usando la misma lógica de Explorar
             this.actualizarContadorTags(response.data);
-            console.log('✅ [SidebarCategorias] Contadores actualizados');
-          } else {
-            console.warn('⚠️ [SidebarCategorias] Respuesta sin datos válidos');
           }
           this.cargandoContadores = false;
         },
         error: (error) => {
-          console.error('❌ [SidebarCategorias] Error al cargar publicaciones:', error);
           this.cargandoContadores = false;
         }
       });
@@ -132,8 +127,6 @@ export class SidebarCategorias implements OnInit, OnDestroy {
    * (MISMA LÓGICA QUE EXPLORAR)
    */
   seleccionar(categoria: string): void {
-    console.log('🔍 [SidebarCategorias] Categoría seleccionada:', categoria);
-    
     // Toggle: si es la misma categoría, deseleccionar
     const nuevaSeleccion = this.categoriaSeleccionada === categoria ? null : categoria;
     

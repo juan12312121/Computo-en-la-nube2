@@ -1,14 +1,33 @@
 <div *ngIf="photos" class="space-y-4">
 
   <!-- Loading photos -->
-  <div *ngIf="cargando" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
+  <div *ngIf="cargando || cargandoAutomatico" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
          [style.border-color]="currentTheme.color"></div>
     <p [ngClass]="currentTheme.textSecondaryClass">Cargando fotos...</p>
   </div>
 
+  <!-- ✅ NUEVO: Error al cargar fotos -->
+  <div *ngIf="!cargando && !cargandoAutomatico && errorCarga" 
+       [ngClass]="currentTheme.cardBg" 
+       class="rounded-2xl shadow-sm border p-8 text-center">
+    <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+    <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">
+      Error al cargar fotos
+    </h3>
+    <p [ngClass]="currentTheme.textSecondaryClass" class="mb-4">
+      {{ mensajeError }}
+    </p>
+    <button 
+      (click)="recargarFotos()"
+      class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
+      <i class="fas fa-redo mr-2"></i>
+      Reintentar
+    </button>
+  </div>
+
   <!-- No photos -->
-  <div *ngIf="!cargando && photosProcessed.length === 0" 
+  <div *ngIf="!cargando && !cargandoAutomatico && !errorCarga && photosProcessed.length === 0" 
        [ngClass]="currentTheme.cardBg" 
        class="rounded-2xl shadow-sm border p-12 text-center">
     <i [ngClass]="currentTheme.textSecondaryClass" class="fas fa-images text-6xl mb-4 opacity-30"></i>
@@ -16,12 +35,12 @@
       No hay fotos todavía
     </h3>
     <p [ngClass]="currentTheme.textSecondaryClass">
-      Las fotos que subas aparecerán aquí
+      Este usuario aún no ha subido fotos
     </p>
   </div>
 
   <!-- ✅ Photos grid - USANDO photosProcessed -->
-  <div *ngIf="!cargando && photosProcessed.length > 0" 
+  <div *ngIf="!cargando && !cargandoAutomatico && !errorCarga && photosProcessed.length > 0" 
        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
     <div *ngFor="let photo of photosProcessed"
          class="relative aspect-square bg-gray-200 rounded-xl overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300"
@@ -106,8 +125,7 @@
         <img [src]="selectedPhoto.url" 
              [alt]="selectedPhoto.caption"
              class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-(error)="onModalImageError($event)"
->
+             (error)="onModalImageError($event)">
         
         <!-- Fallback cuando falla la imagen en modal -->
         <div style="display: none;" 

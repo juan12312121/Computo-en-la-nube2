@@ -18,7 +18,7 @@ export class ModalSeguidores implements OnChanges {
   @Input() tipo: TipoModal = 'seguidores';
   @Input() usuarioId: number | null = null;
   @Input() currentTheme!: Theme;
-  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com'; // 🆕 URL de S3
+  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
   
   @Output() close = new EventEmitter<void>();
 
@@ -40,14 +40,8 @@ export class ModalSeguidores implements OnChanges {
 
   cargarDatos(): void {
     if (!this.usuarioId) {
-      console.error('❌ No hay usuarioId para cargar datos');
       return;
     }
-
-    console.log('🔄 Cargando datos:', {
-      tipo: this.tipo,
-      usuarioId: this.usuarioId
-    });
 
     this.cargando = true;
     this.error = '';
@@ -56,19 +50,10 @@ export class ModalSeguidores implements OnChanges {
     if (this.tipo === 'seguidores') {
       this.seguidorService.listarSeguidores(this.usuarioId).subscribe({
         next: (response) => {
-          console.log('📦 Respuesta seguidores recibida:', response);
-          
           if (response.success && response.data) {
             this.usuarios = response.data.seguidores || [];
             this.total = response.data.total || 0;
-            
-            console.log('✅ Seguidores procesados:', {
-              total: this.total,
-              usuarios: this.usuarios.length,
-              lista: this.usuarios
-            });
           } else {
-            console.warn('⚠️ Respuesta sin seguidores:', response);
             this.usuarios = [];
             this.total = 0;
           }
@@ -76,7 +61,6 @@ export class ModalSeguidores implements OnChanges {
           this.cargando = false;
         },
         error: (error: any) => {
-          console.error('❌ Error al cargar seguidores:', error);
           this.error = error.error?.mensaje || error.error?.message || 'No se pudo cargar la lista de seguidores';
           this.usuarios = [];
           this.total = 0;
@@ -86,19 +70,10 @@ export class ModalSeguidores implements OnChanges {
     } else {
       this.seguidorService.listarSeguidos(this.usuarioId).subscribe({
         next: (response) => {
-          console.log('📦 Respuesta seguidos recibida:', response);
-          
           if (response.success && response.data) {
             this.usuarios = response.data.seguidos || [];
             this.total = response.data.total || 0;
-            
-            console.log('✅ Seguidos procesados:', {
-              total: this.total,
-              usuarios: this.usuarios.length,
-              lista: this.usuarios
-            });
           } else {
-            console.warn('⚠️ Respuesta sin seguidos:', response);
             this.usuarios = [];
             this.total = 0;
           }
@@ -106,7 +81,6 @@ export class ModalSeguidores implements OnChanges {
           this.cargando = false;
         },
         error: (error: any) => {
-          console.error('❌ Error al cargar seguidos:', error);
           this.error = error.error?.mensaje || error.error?.message || 'No se pudo cargar la lista de seguidos';
           this.usuarios = [];
           this.total = 0;
@@ -125,19 +99,16 @@ export class ModalSeguidores implements OnChanges {
     this.router.navigate(['/perfil', usuarioId]);
   }
 
-  // 🆕 Método actualizado para usar S3
   getProfileImage(usuario: UsuarioSeguidor): string {
     if (!usuario.foto_perfil_url) {
       return '';
     }
     
-    // Si ya es URL completa, retornarla
     if (usuario.foto_perfil_url.startsWith('http://') || 
         usuario.foto_perfil_url.startsWith('https://')) {
       return usuario.foto_perfil_url;
     }
     
-    // Construir URL de S3
     return `${this.s3BaseUrl}/${usuario.foto_perfil_url.replace(/^\/+/, '')}`;
   }
 

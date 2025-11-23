@@ -8,11 +8,10 @@
     <!-- Header -->
     <div
       [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]"
-      class="sticky top-0 border-b px-6 py-4 flex items-center justify-between rounded-t-2xl">
+      class="sticky top-0 border-b px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
       <h2
         class="text-transparent text-xl font-bold"
-        [ngStyle]="{'background': currentTheme.color, '-webkit-background-clip': 'text', '-webkit-text-fill-color': 'transparent', 'background-clip': 'text'}"
-      >
+        [ngStyle]="{'background': currentTheme.color, '-webkit-background-clip': 'text', '-webkit-text-fill-color': 'transparent', 'background-clip': 'text'}">
         Crear Publicación
       </h2>
       <button (click)="closeModal()" [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverText]" class="transition" [disabled]="publicando">
@@ -30,22 +29,21 @@
           [alt]="userName"
           class="w-12 h-12 rounded-full border-2 object-cover"
           [ngClass]="currentTheme.accentBorder"
-          (error)="$event.target.src = 'https://ui-avatars.com/api/?name=' + userName + '&background=random&size=200'"
-        >
+          (error)="$event.target.src = 'https://ui-avatars.com/api/?name=' + userName + '&background=random&size=200'">
         <div class="flex-1">
           <p [ngClass]="currentTheme.textPrimaryClass" class="font-semibold">{{ userName }}</p>
           <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm">{{ userUsername }}</p>
         </div>
 
-        <!-- Badge de categoría seleccionada -->
+        <!-- Badge de categoría -->
         <div *ngIf="categoriaActual"
-             [class]="categoriaActual.color + ' text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 category-badge'">
-          <i class="fas fa-tag"></i>
+             [class]="categoriaActual.color + ' text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 category-badge'">
+          <i class="fas fa-tag text-xs"></i>
           {{ categoriaActual.label }}
         </div>
       </div>
 
-      <!-- ✅ MENSAJE DE CENSURA/ERROR/ADVERTENCIA -->
+      <!-- MENSAJE DE CENSURA/ERROR/ADVERTENCIA -->
       <div *ngIf="mensajeError" 
            class="px-4 py-3 rounded-xl flex items-start gap-3 border"
            [ngClass]="errorAlertClass">
@@ -53,7 +51,6 @@
         <div class="flex-1">
           <p class="font-semibold leading-tight">{{ mensajeError }}</p>
           
-          <!-- 🚫 Detalles específicos de censura -->
           <div *ngIf="tipoError === 'censura'" class="mt-2 text-sm space-y-1">
             <p class="font-medium opacity-90">Razones del rechazo:</p>
             <ul class="list-disc list-inside opacity-90 space-y-0.5">
@@ -64,13 +61,11 @@
             <p class="mt-2 font-medium">💡 Tip: Intenta reformular tu publicación manteniendo su esencia educativa</p>
           </div>
 
-          <!-- ⚠️ Detalles de advertencia (requiere revisión) -->
           <div *ngIf="tipoError === 'warning'" class="mt-2 text-sm opacity-90">
             <p>Tu publicación está siendo revisada por un moderador. Se aprobará en breve.</p>
           </div>
         </div>
         
-        <!-- Botón cerrar alerta -->
         <button (click)="mensajeError = ''" 
                 class="text-lg flex-shrink-0 opacity-70 hover:opacity-100 transition"
                 title="Cerrar alerta">
@@ -85,8 +80,7 @@
         class="w-full min-h-[150px] p-4 border rounded-xl focus:ring-2 focus:border-transparent resize-none"
         [ngClass]="[currentTheme.borderColor, currentTheme.textPrimaryClass, currentTheme.bgPrimary.replace('bg-', 'focus:ring-')]"
         [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'var(--picker-bg-color)' : ''"
-        [disabled]="publicando"
-      ></textarea>
+        [disabled]="publicando"></textarea>
 
       <!-- Vista previa de imagen -->
       <div *ngIf="selectedImage" class="relative">
@@ -94,13 +88,12 @@
         <button
           (click)="removeImage()"
           [disabled]="publicando"
-          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+          class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
-      <!-- 🆕 VISTA PREVIA DE DOCUMENTOS ADJUNTOS -->
+      <!-- VISTA PREVIA DE DOCUMENTOS -->
       <div *ngIf="documentosAdjuntos.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
           <p [ngClass]="currentTheme.textPrimaryClass" class="font-semibold text-sm">
@@ -114,12 +107,10 @@
                class="flex items-center gap-3 p-3 rounded-lg border transition hover:shadow-md"
                [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]">
             
-            <!-- Icono del documento -->
             <div class="flex-shrink-0">
               <i [class]="'fas ' + doc.icono + ' text-2xl ' + doc.color"></i>
             </div>
 
-            <!-- Info del documento -->
             <div class="flex-1 min-w-0">
               <p [ngClass]="currentTheme.textPrimaryClass" class="font-medium text-sm truncate">
                 {{ doc.nombre }}
@@ -129,7 +120,6 @@
               </p>
             </div>
 
-            <!-- Botón eliminar -->
             <button
               (click)="eliminarDocumento(i)"
               [disabled]="publicando"
@@ -147,7 +137,6 @@
            [style.background-color]="'var(--picker-bg-color)'"
            [style.border-color]="'var(--picker-border-color)'">
 
-        <!-- Header unificado -->
         <div class="flex items-center justify-between mb-2 picker-header">
           <div class="font-semibold flex items-center gap-2 picker-title">
             <i class="fas fa-tag text-xl" [ngClass]="currentTheme.accentColor"></i>
@@ -159,7 +148,6 @@
           </button>
         </div>
 
-        <!-- Contenedor scrollable de categorías -->
         <div class="max-h-48 overflow-y-auto pr-2 -mr-2">
           <div class="grid grid-cols-2 lg:grid-cols-3 gap-2">
             <button
@@ -190,7 +178,6 @@
            [style.background-color]="'var(--picker-bg-color)'"
            [style.border-color]="'var(--picker-border-color)'">
 
-        <!-- Header unificado (mismo estilo que categorías) -->
         <div class="flex items-center justify-between mb-2 picker-header">
           <div class="font-semibold flex items-center gap-2 picker-title">
             <i class="fas fa-smile text-xl" [ngClass]="currentTheme.accentColor"></i>
@@ -202,7 +189,6 @@
           </button>
         </div>
 
-        <!-- Contenido -->
         <div class="rounded-lg p-3 max-h-48 overflow-y-auto"
              [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#1e293b' : '#f9fafb'">
           <div class="grid grid-cols-8 gap-1">
@@ -223,16 +209,15 @@
       </div>
 
       <!-- Opciones -->
-      <div [ngClass]="currentTheme.borderColor" class="flex items-center gap-4 pt-4 border-t">
+      <div [ngClass]="currentTheme.borderColor" class="flex items-center gap-3 pt-4 border-t flex-wrap">
         <label
           class="flex items-center gap-2 cursor-pointer transition"
           [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverText, publicando ? 'pointer-events-none opacity-50' : '']">
           <i class="fas fa-image text-xl"></i>
-          <span class="font-medium">Foto</span>
+          <span class="font-medium text-sm">Foto</span>
           <input type="file" accept="image/*" (change)="onImageSelect($event)" class="hidden" [disabled]="publicando">
         </label>
 
-        <!-- 🆕 BOTÓN DE DOCUMENTOS -->
         <label
           class="flex items-center gap-2 cursor-pointer transition"
           [ngClass]="[
@@ -242,7 +227,7 @@
             documentosAdjuntos.length > 0 ? currentTheme.accentColor : ''
           ]">
           <i class="fas fa-paperclip text-xl"></i>
-          <span class="font-medium">Docs ({{ documentosAdjuntos.length }}/{{ MAX_DOCUMENTOS }})</span>
+          <span class="font-medium text-sm">Docs</span>
           <input 
             type="file" 
             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.csv,.txt" 
@@ -259,7 +244,7 @@
           [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverText, mostrarEmojiPicker ? currentTheme.accentColor : '', publicando ? 'opacity-50 cursor-not-allowed' : '']"
           class="flex items-center gap-2 transition">
           <i class="fas fa-smile text-xl"></i>
-          <span class="font-medium">Emoji</span>
+          <span class="font-medium text-sm">Emoji</span>
         </button>
 
         <button
@@ -269,8 +254,24 @@
           [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverText, mostrarSelectorCategoria ? currentTheme.accentColor : '', publicando ? 'opacity-50 cursor-not-allowed' : '']"
           class="flex items-center gap-2 transition">
           <i class="fas fa-tag text-xl"></i>
-          <span class="font-medium">Categoría</span>
+          <span class="font-medium text-sm">Categoría</span>
         </button>
+
+        <!-- SELECTOR DE VISIBILIDAD SIMPLE -->
+        <div class="flex items-center gap-2 ml-auto">
+          <i class="fas fa-eye" [ngClass]="currentTheme.textSecondaryClass"></i>
+          <select
+            [(ngModel)]="visibilidadSeleccionada"
+            [disabled]="publicando"
+            class="visibility-select px-3 py-1.5 rounded-lg border text-sm focus:ring-2 focus:outline-none transition cursor-pointer"
+            [ngClass]="[currentTheme.borderColor]"
+            [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#1e293b' : '#ffffff'"
+            [style.color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? '#e2e8f0' : '#1f2937'">
+            <option *ngFor="let vis of visibilidades" [value]="vis.value">
+              {{ vis.label }}
+            </option>
+          </select>
+        </div>
       </div>
 
       <!-- Botón publicar -->
@@ -280,8 +281,7 @@
         style="width: 100%; color: white; padding: 0.75rem; border-radius: 0.75rem; font-weight: 700; border: none; transition: all 0.3s;"
         [ngStyle]="{'background': publicando || !postContent.trim() ? 'lightgray' : currentTheme.buttonGradient}"
         [style.opacity]="!postContent.trim() || publicando ? '0.5' : '1'"
-        [style.cursor]="!postContent.trim() || publicando ? 'not-allowed' : 'pointer'"
-      >
+        [style.cursor]="!postContent.trim() || publicando ? 'not-allowed' : 'pointer'">
         <i [class]="publicando ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-paper-plane mr-2'"></i>
         {{ publicando ? 'Publicando...' : 'Publicar' }}
       </button>

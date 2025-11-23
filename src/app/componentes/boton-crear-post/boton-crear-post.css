@@ -1,24 +1,52 @@
 /* ==================== ESTILOS BASE ==================== */
 
-/* Contenedor del emoji picker */
 .emoji-picker-wrapper {
   position: relative;
   z-index: 10;
 }
 
-/* Estilos generales del picker */
-.emoji-picker-container {
+.emoji-picker-container,
+.category-selector-container {
   position: relative;
 }
 
-/* Prevenir scroll del body cuando el picker móvil está abierto */
 body.emoji-picker-open {
   overflow: hidden;
 }
 
-/* ==================== TEXTO DE PICKERS (TAILWIND + CSS) ==================== */
+/* ==================== SELECTOR DE VISIBILIDAD SIMPLE ==================== */
 
-/* Clases personalizadas para los títulos de los pickers */
+.visibility-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
+  min-width: 140px;
+}
+
+.visibility-select:focus {
+  border-color: var(--primary-color, #f97316);
+}
+
+.visibility-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Opciones en temas oscuros */
+[data-theme="midnight"] .visibility-select option,
+[data-theme="neon"] .visibility-select option,
+[data-theme="toxic"] .visibility-select option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+/* ==================== TEXTO DE PICKERS ==================== */
+
 .picker-title {
   color: var(--picker-text-color);
 }
@@ -33,27 +61,29 @@ body.emoji-picker-open {
 
 /* ==================== SCROLLBAR PERSONALIZADO ==================== */
 
-/* Desktop scrollbar */
-.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar {
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar,
+.category-selector-container > div::-webkit-scrollbar {
   width: 8px;
 }
 
-.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-track {
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-track,
+.category-selector-container > div::-webkit-scrollbar-track {
   background: var(--scrollbar-track-bg, #f1f5f9);
   border-radius: 10px;
 }
 
-.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb {
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb,
+.category-selector-container > div::-webkit-scrollbar-thumb {
   background: var(--primary-color, #f97316);
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
-.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb:hover {
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb:hover,
+.category-selector-container > div::-webkit-scrollbar-thumb:hover {
   background: var(--accent-color, #ea580c);
 }
 
-/* Mobile scrollbar */
 .emoji-picker-container .fixed::-webkit-scrollbar {
   width: 6px;
 }
@@ -67,29 +97,8 @@ body.emoji-picker-open {
   border-radius: 3px;
 }
 
-/* Scrollbar para el contenedor de categorías */
-.category-selector-container > div::-webkit-scrollbar {
-  width: 8px;
-}
-
-.category-selector-container > div::-webkit-scrollbar-track {
-  background: var(--scrollbar-track-bg, #f1f5f9);
-  border-radius: 10px;
-}
-
-.category-selector-container > div::-webkit-scrollbar-thumb {
-  background: var(--primary-color, #f97316);
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-.category-selector-container > div::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-color, #ea580c);
-}
-
 /* ==================== ANIMACIONES ==================== */
 
-/* Desktop emoji picker */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -101,11 +110,11 @@ body.emoji-picker-open {
   }
 }
 
-.emoji-picker-container > div.hidden.sm\:block {
+.emoji-picker-container > div.hidden.sm\:block,
+.category-selector-container {
   animation: slideDown 0.2s ease-out;
 }
 
-/* Mobile emoji picker */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -123,7 +132,6 @@ body.emoji-picker-open {
 
 /* ==================== ESTILOS INTERACTIVOS ==================== */
 
-/* Botones de emoji */
 .emoji-picker-container button {
   transition: all 0.2s ease;
 }
@@ -137,7 +145,6 @@ body.emoji-picker-open {
   transform: scale(0.95);
 }
 
-/* Selector de categorías */
 .category-selector {
   transition: all 0.3s ease;
 }
@@ -151,28 +158,17 @@ body.emoji-picker-open {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ==================== CONTENEDORES DE PICKERS ==================== */
-
-
-s
-
 /* ==================== TEMAS ESPECÍFICOS ==================== */
 
 /* TEMA DEFAULT - TrinoFlow */
-[data-theme="default"] .emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb,
-[data-theme="default"] .emoji-picker-container .fixed::-webkit-scrollbar-thumb,
-[data-theme="default"] .category-selector-container > div::-webkit-scrollbar-thumb {
-  background: #f97316;
-}
-
-[data-theme="default"] .emoji-picker-container button:hover {
-  background-color: rgba(249, 115, 22, 0.1);
-}
-
 [data-theme="default"] {
   --picker-bg-color: #ffffff;
   --picker-border-color: #e5e7eb;
   --picker-text-color: #1f2937;
+  --primary-color: #f97316;
+  --accent-color: #ea580c;
+  --hover-bg-color: rgba(249, 115, 22, 0.1);
+  --active-bg-color: rgba(249, 115, 22, 0.2);
 }
 
 /* TEMA MIDNIGHT - Medianoche */
@@ -185,10 +181,6 @@ s
   --picker-bg-color: #0f172a;
   --picker-border-color: #334155;
   --picker-text-color: #e2e8f0;
-}
-
-[data-theme="midnight"] .category-badge:hover {
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 /* TEMA FOREST - Bosque */
@@ -273,6 +265,10 @@ s
   box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
 }
 
+[data-theme="neon"] .emoji-picker-container button:hover {
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+}
+
 /* TEMA TOXIC - Tóxico */
 [data-theme="toxic"] {
   --scrollbar-track-bg: #27272a;
@@ -287,6 +283,10 @@ s
 
 [data-theme="toxic"] .category-badge:hover {
   box-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+}
+
+[data-theme="toxic"] .emoji-picker-container button:hover {
+  box-shadow: 0 0 15px rgba(132, 204, 22, 0.3);
 }
 
 /* TEMA CANDY - Caramelo */
@@ -321,12 +321,6 @@ s
     rgba(34, 197, 94, 0.1) 50%, 
     rgba(59, 130, 246, 0.1) 100%
   );
-  animation: chaosShift 3s infinite;
-}
-
-@keyframes chaosShift {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
 }
 
 /* ==================== RESPONSIVE ==================== */
@@ -341,15 +335,22 @@ s
     min-width: 44px;
   }
 
-  /* Ajustar animaciones en móvil */
   .emoji-picker-container .fixed {
     animation-duration: 0.25s;
+  }
+
+  .picker-title {
+    font-size: 0.875rem;
+  }
+
+  .visibility-select {
+    min-width: 120px;
+    font-size: 0.75rem;
   }
 }
 
 /* ==================== MODO OSCURO GENERAL ==================== */
 
-/* Detectar temas oscuros */
 [data-theme="midnight"],
 [data-theme="neon"],
 [data-theme="toxic"] {
@@ -367,36 +368,39 @@ s
 .emoji-picker-container,
 .emoji-picker-container button,
 .category-selector,
+.picker-close-btn,
+.visibility-select,
 .emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb,
 .emoji-picker-container .fixed::-webkit-scrollbar-thumb,
 .category-selector-container > div::-webkit-scrollbar-thumb,
 .picker-text,
-.picker-close-btn,
 .picker-title {
-  transition: background 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==================== ACCESIBILIDAD ==================== */
 
-.emoji-picker-container button:focus-visible {
-  outline: 2px solid var(--primary-color);
+.emoji-picker-container button:focus-visible,
+.visibility-select:focus-visible {
+  outline: 3px solid var(--primary-color);
   outline-offset: 2px;
 }
 
-/* Mejorar contraste en temas oscuros */
 [data-theme="midnight"] .emoji-picker-container button:focus-visible,
 [data-theme="neon"] .emoji-picker-container button:focus-visible,
-[data-theme="toxic"] .emoji-picker-container button:focus-visible {
+[data-theme="toxic"] .emoji-picker-container button:focus-visible,
+[data-theme="midnight"] .visibility-select:focus-visible,
+[data-theme="neon"] .visibility-select:focus-visible,
+[data-theme="toxic"] .visibility-select:focus-visible {
   outline-color: var(--accent-color);
 }
 
-/* ==================== EFECTOS ESPECIALES ==================== */
-
-/* Efecto glow para temas neón */
-[data-theme="neon"] .emoji-picker-container button:hover {
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
-}
-
-[data-theme="toxic"] .emoji-picker-container button:hover {
-  box-shadow: 0 0 15px rgba(132, 204, 22, 0.3);
+@media (prefers-reduced-motion: reduce) {
+  .category-badge:hover,
+  .emoji-picker-container button,
+  .category-selector-container,
+  .emoji-picker-container > div.hidden.sm\:block,
+  .emoji-picker-container .fixed {
+    animation: none !important;
+  }
 }

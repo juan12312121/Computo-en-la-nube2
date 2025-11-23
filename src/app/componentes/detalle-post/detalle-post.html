@@ -88,8 +88,8 @@
           Comentarios
         </h4>
         <div class="space-y-4 mb-4">
-          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES (MOBILE) -->
-          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3">
+          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES Y OPCIÓN ELIMINAR (MOBILE) -->
+          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3 relative group">
             <!-- 📸 AVATAR CON FOTO O INICIALES (CLICKEABLE) -->
             <div (click)="navegarAPerfil(comment.usuario_id, $event)"
                  class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition"
@@ -120,9 +120,12 @@
               </div>
               <div class="flex items-center gap-4 mt-2 px-3">
                 <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ comment.time }}</p>
-                <button class="text-xs font-semibold transition" 
-                        [ngClass]="currentTheme.textSecondaryClass">
-                  Responder
+                <!-- ⭐ BOTÓN ELIMINAR (solo si puede eliminar) -->
+                <button *ngIf="comment.canDelete"
+                        (click)="eliminarComentario(comment.id)"
+                        class="text-xs font-semibold transition hover:opacity-70"
+                        [ngClass]="currentTheme.accentColor">
+                  Eliminar
                 </button>
               </div>
             </div>
@@ -252,8 +255,8 @@
         </h4>
         
         <div class="space-y-4">
-          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES (DESKTOP) -->
-          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3">
+          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES Y OPCIÓN ELIMINAR (DESKTOP) -->
+          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3 relative group">
             <!-- 📸 AVATAR CON FOTO O INICIALES (CLICKEABLE) -->
             <div (click)="navegarAPerfil(comment.usuario_id, $event)"
                  class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition"
@@ -284,9 +287,12 @@
               </div>
               <div class="flex items-center gap-4 mt-2 px-3">
                 <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ comment.time }}</p>
-                <button class="text-xs font-semibold transition hover:opacity-70" 
-                        [ngClass]="currentTheme.textSecondaryClass">
-                  Responder
+                <!-- ⭐ BOTÓN ELIMINAR (solo si puede eliminar) -->
+                <button *ngIf="comment.canDelete"
+                        (click)="eliminarComentario(comment.id)"
+                        class="text-xs font-semibold transition hover:opacity-70"
+                        [ngClass]="currentTheme.accentColor">
+                  Eliminar
                 </button>
               </div>
             </div>

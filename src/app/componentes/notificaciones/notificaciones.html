@@ -126,7 +126,7 @@
       <!-- LISTA DE NOTIFICACIONES -->
       <div *ngIf="!cargando && !error && hayNotificaciones">
         <div
-          *ngFor="let notificacion of notificaciones"
+          *ngFor="let notificacion of notificaciones; let i = index"
           class="w-full flex items-start gap-3 px-4 py-3 transition-all duration-200 border-b group relative"
           [ngClass]="[
             currentTheme.borderColor || '',
@@ -140,11 +140,12 @@
             [style.background]="currentTheme.color"
             aria-hidden="true"></div>
 
-          <!-- Avatar (clickeable) -->
+          <!-- Avatar (clickeable) - DESKTOP -->
           <button 
             (click)="manejarClicNotificacion(notificacion)"
             class="relative flex-shrink-0 ml-2 touch-manipulation"
             [attr.aria-label]="'Ver notificación de ' + notificacion.nombre_completo">
+            
             <img 
               [src]="obtenerAvatar(notificacion)"
               [alt]="notificacion.nombre_completo"
@@ -191,7 +192,7 @@
       </div>
     </div>
 
-    <!-- FOOTER - 🆕 BOTÓN BORRAR TODO -->
+    <!-- FOOTER - BOTÓN BORRAR TODO -->
     <div 
       *ngIf="hayNotificaciones && !cargando"
       class="sticky bottom-0 px-4 py-3 border-t backdrop-blur-sm bg-opacity-95"
@@ -235,7 +236,7 @@
         <i class="fas fa-check-double text-base"></i>
       </button>
 
-      <!-- 🆕 Borrar todo (móvil) -->
+      <!-- Borrar todo (móvil) -->
       <button
         *ngIf="hayNotificaciones"
         (click)="borrarTodo()"
@@ -299,11 +300,11 @@
       </div>
     </div>
 
-    <!-- LISTA DE NOTIFICACIONES -->
+    <!-- LISTA DE NOTIFICACIONES - MÓVIL -->
     <div *ngIf="!cargando && !error && hayNotificaciones" class="divide-y"
          [ngClass]="currentTheme.borderColor || ''">
       <div
-        *ngFor="let notificacion of notificaciones"
+        *ngFor="let notificacion of notificaciones; let i = index"
         class="w-full flex items-center gap-3 px-4 py-3 relative"
         [ngClass]="notificacion.leida ? 'opacity-60' : ''">
         
@@ -313,13 +314,25 @@
           class="flex items-center gap-3 flex-1 min-w-0 text-left transition-colors active:opacity-50"
           [attr.aria-label]="'Notificación de ' + notificacion.nombre_completo">
           
-          <!-- Avatar -->
-          <img 
-            [src]="obtenerAvatar(notificacion)"
-            [alt]="notificacion.nombre_completo"
-            (error)="$any($event.target).src=obtenerAvatarFallback(notificacion.nombre_completo)"
-            class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            loading="lazy">
+          <!-- Avatar con icono de tipo - MÓVIL -->
+          <div class="relative flex-shrink-0">
+            
+            <img 
+              [src]="obtenerAvatar(notificacion)"
+              [alt]="notificacion.nombre_completo"
+              (error)="$any($event.target).src=obtenerAvatarFallback(notificacion.nombre_completo)"
+              class="w-12 h-12 rounded-full object-cover"
+              loading="lazy">
+            
+            <!-- Icono de tipo en móvil -->
+            <div 
+              class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-lg border-2"
+              [ngClass]="currentTheme.cardBg || ''"
+              [style.border-color]="currentTheme.color"
+              aria-hidden="true">
+              {{ obtenerIconoTipo(notificacion.tipo) }}
+            </div>
+          </div>
           
           <!-- Contenido -->
           <div class="flex-1 min-w-0">
