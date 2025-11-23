@@ -31,6 +31,17 @@ export class Login {
     }
   }
 
+  // NUEVO MÉTODO: Navegar al principal
+  irAPrincipal(): void {
+    // Si el usuario ya está autenticado, ir a principal
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/principal']);
+    } else {
+      // Si no está autenticado, ir a la página de inicio/home
+      this.router.navigate(['/']);
+    }
+  }
+
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
