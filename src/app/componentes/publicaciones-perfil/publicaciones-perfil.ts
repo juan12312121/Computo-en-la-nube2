@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
+import { Subject, Subscription, takeUntil } from 'rxjs';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
 import { Comentario, ComentariosService } from '../../core/servicios/comentarios/comentarios';
 import { Publicacion } from '../../core/servicios/publicaciones/publicaciones';
+import { LikesService } from '../../core/servicios/likes/likes';
 import { FotosService } from '../../core/servicios/fotos/fotos';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 import { DetallePost } from '../detalle-post/detalle-post';
@@ -30,6 +32,7 @@ interface Post {
   hasMoreComments?: boolean;
   usuario_id?: number;
   visibilidad?: 'publico' | 'seguidores' | 'privado';
+  likeLoading?: boolean; // ✅ NUEVO: Para controlar estado de like
 }
 
 interface Comment {
@@ -44,14 +47,6 @@ interface Comment {
   canDelete?: boolean;
   foto_perfil_url?: string | null;
   usandoIniciales?: boolean;
-}
-
-interface Photo {
-  id: number | string;
-  url: string;
-  caption: string;
-  postId: number;
-  tipo: 'perfil' | 'portada' | 'publicacion';
 }
 
 @Component({
@@ -74,21 +69,19 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
   @Output() reportarPublicacion = new EventEmitter<number>();
 
   posts: Post[] = [];
-  photos: Photo[] = [];
   commentInputs: { [key: number]: string } = {};
 
   selectedPost: Post | null = null;
   showPostDetail = false;
-
   showShareModal = false;
   sharePostId: number | null = null;
-
   activeMenuId: number | null = null;
 
   currentTheme: Theme;
   private themeSubscription?: Subscription;
   private usuarioActualId: number | null = null;
   private comentariosSubscriptions: Map<number, Subscription> = new Map();
+  private destroy$ = new Subject<void>(); // ✅ NUEVO
 
   fotosPerfilCache = new Map<number, string | null>();
 
@@ -96,7 +89,9 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     private themeService: ThemeService,
     private comentariosService: ComentariosService,
     private autenticacionService: AutenticacionService,
+    private likesService: LikesService, // ✅ NUEVO
     private fotosService: FotosService,
+    private router: Router, // ✅ NUEVO
     private cdr: ChangeDetectorRef
   ) {
     this.currentTheme = this.themeService.getCurrentTheme();
@@ -114,6 +109,8 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     this.themeSubscription?.unsubscribe();
     this.comentariosSubscriptions.forEach(sub => sub.unsubscribe());
     this.comentariosSubscriptions.clear();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -140,7 +137,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     this.posts = this.publicaciones.map(pub => {
       const urlImagen = this.obtenerUrlImagen(pub);
       
-      return {
+      const post: Post = {
         id: pub.id,
         author: pub.nombre_completo || pub.nombre_usuario || 'Usuario',
         avatar: this.obtenerIniciales(pub.nombre_completo || pub.nombre_usuario || 'Usuario'),
@@ -149,20 +146,401 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
         image: urlImagen,
         category: pub.categoria || 'General',
         categoryColor: pub.color_categoria || 'bg-gray-500',
-        likes: 0,
-        liked: false,
+        likes: pub.total_likes || 0, // ✅ USAR total_likes del backend
+        liked: false, // ✅ Se verificará después
         shares: 0,
         avatarColor: this.generarColorAvatar(pub.usuario_id),
         comments: [],
         profileImageUrl: this.obtenerUrlFotoPerfil(pub),
         showComments: false,
-        totalComments: 0,
+        totalComments: pub.total_comentarios || 0, // ✅ USAR total_comentarios del backend
         loadingComments: false,
         hasMoreComments: false,
         usuario_id: pub.usuario_id,
-        visibilidad: pub.visibilidad || 'publico'
+        visibilidad: pub.visibilidad || 'publico',
+        likeLoading: false
       };
+
+      // ✅ Verificar si el usuario actual dio like a esta publicación
+      if (this.autenticacionService.isAuthenticated()) {
+        this.verificarLikeUsuario(post);
+      }
+
+      return post;
     });
+  }
+
+  // ✅ NUEVO: Verificar si el usuario dio like
+  private verificarLikeUsuario(post: Post): void {
+    this.likesService.verificarLike(post.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            post.liked = response.data.usuario_dio_like || false;
+            post.likes = response.data.total_likes || post.likes;
+            this.cdr.detectChanges();
+          }
+        },
+        error: (error) => {
+          console.error('Error al verificar like:', error);
+        }
+      });
+  }
+
+  // ✅ MEJORADO: Toggle like con lógica de post-card
+  toggleLike(postId: number): void {
+    if (!this.autenticacionService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    const post = this.posts.find(p => p.id === postId);
+    if (!post || post.likeLoading) return;
+
+    const likeAnterior = post.liked;
+    const likesAnterior = post.likes;
+    const nuevoEstado = !post.liked;
+
+    console.log('🔄 Toggle Like en Perfil:', {
+      publicacionId: postId,
+      estadoAnterior: likeAnterior,
+      nuevoEstado: nuevoEstado,
+      likesAnterior: likesAnterior
+    });
+
+    // ✅ Actualización optimista INMEDIATA
+    post.liked = nuevoEstado;
+    post.likes += nuevoEstado ? 1 : -1;
+    post.likeLoading = true;
+    this.cdr.detectChanges();
+
+    this.likesService.toggleLike(postId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('✅ Respuesta del servidor (Perfil):', response);
+          
+          if (response.success && response.data) {
+            if (response.data.usuario_dio_like !== undefined) {
+              post.liked = response.data.usuario_dio_like;
+            }
+            if (response.data.total_likes !== undefined) {
+              post.likes = response.data.total_likes;
+            }
+            
+            console.log('📊 Estado sincronizado (Perfil):', {
+              liked: post.liked,
+              likes: post.likes
+            });
+          }
+          
+          post.likeLoading = false;
+          this.likeToggled.emit(postId);
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('❌ Error en toggle like (Perfil):', error);
+          // Revertir en caso de error
+          post.liked = likeAnterior;
+          post.likes = likesAnterior;
+          post.likeLoading = false;
+          if (error.status === 401) this.router.navigate(['/login']);
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  toggleComments(postId: number): void {
+    const post = this.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    post.showComments = !post.showComments;
+
+    if (post.showComments && post.comments.length === 0 && !post.loadingComments) {
+      this.cargarComentarios(postId);
+    }
+  }
+
+  cargarComentarios(postId: number): void {
+    const post = this.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    post.loadingComments = true;
+
+    const subscription = this.comentariosSubscriptions.get(postId);
+    if (subscription) {
+      subscription.unsubscribe();
+    }
+
+    const newSubscription = this.comentariosService.obtenerPorPublicacion(postId, 20, 0)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (comentarios) => {
+          if (Array.isArray(comentarios) && comentarios.length > 0) {
+            const usuariosIds = [...new Set(comentarios.map(c => c.usuario_id))];
+
+            this.cargarFotosPerfilBatch(usuariosIds, () => {
+              post.comments = comentarios.map(c => this.convertirComentarioAComment(c));
+              post.totalComments = comentarios.length;
+              post.hasMoreComments = false;
+              post.loadingComments = false;
+              this.cdr.detectChanges();
+            });
+          } else {
+            post.comments = [];
+            post.totalComments = 0;
+            post.hasMoreComments = false;
+            post.loadingComments = false;
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar comentarios:', error);
+          post.comments = [];
+          post.totalComments = 0;
+          post.loadingComments = false;
+        }
+      });
+
+    this.comentariosSubscriptions.set(postId, newSubscription);
+  }
+
+  addComment(postId: number, commentText: string): void {
+    const text = commentText.trim();
+    if (!text) return;
+
+    if (!this.autenticacionService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    const post = this.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    this.comentariosService.crear({
+      publicacion_id: postId,
+      texto: text
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          let fotoPerfilUrl: string | null = null;
+
+          if (response.data.foto_perfil_url) {
+            fotoPerfilUrl = response.data.foto_perfil_url;
+          } else if (response.data.foto_perfil_s3) {
+            fotoPerfilUrl = response.data.foto_perfil_s3;
+          }
+
+          if (fotoPerfilUrl && fotoPerfilUrl.includes('/uploads/perfil/')) {
+            fotoPerfilUrl = fotoPerfilUrl.replace('/uploads/perfil/', '/perfiles/');
+          }
+
+          const tieneFoto = fotoPerfilUrl !== null && fotoPerfilUrl !== undefined && fotoPerfilUrl.trim() !== '';
+
+          if (tieneFoto && response.data.usuario_id) {
+            this.fotosPerfilCache.set(response.data.usuario_id, fotoPerfilUrl);
+          }
+
+          const nuevoComentario: Comment = {
+            id: response.data.id,
+            author: response.data.nombre_completo || response.data.nombre_usuario,
+            avatar: this.obtenerIniciales(response.data.nombre_completo || response.data.nombre_usuario),
+            text: response.data.texto,
+            time: 'Ahora',
+            avatarColor: this.generarColorAvatar(response.data.usuario_id),
+            profileImageUrl: tieneFoto ? fotoPerfilUrl : null,
+            usuarioId: response.data.usuario_id,
+            canDelete: true,
+            foto_perfil_url: tieneFoto ? fotoPerfilUrl : null,
+            usandoIniciales: !tieneFoto
+          };
+
+          post.comments.unshift(nuevoComentario);
+          post.totalComments = (post.totalComments || 0) + 1;
+          this.commentInputs[postId] = '';
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('Error al crear comentario:', error);
+        if (error.status === 401) this.router.navigate(['/login']);
+        alert('No se pudo agregar el comentario.');
+      }
+    });
+  }
+
+  eliminarComentario(postId: number, comentarioId: number): void {
+    const post = this.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const comentario = post.comments.find(c => c.id === comentarioId);
+    if (!comentario || !comentario.canDelete) {
+      alert('No tienes permiso para eliminar este comentario');
+      return;
+    }
+
+    if (!confirm('¿Estás seguro de eliminar este comentario?')) return;
+
+    this.comentariosService.eliminar(comentarioId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            post.comments = post.comments.filter(c => c.id !== comentarioId);
+            post.totalComments = Math.max(0, (post.totalComments || 0) - 1);
+            this.cdr.detectChanges();
+          }
+        },
+        error: () => {
+          alert('Error al eliminar el comentario.');
+        }
+      });
+  }
+
+  onCommentKeyPress(event: KeyboardEvent, postId: number, commentText: string): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.addComment(postId, commentText);
+    }
+  }
+
+  onLikeToggled(postId: number): void {
+    const post = this.posts.find(p => p.id === postId);
+    
+    if (post) {
+      this.cdr.detectChanges();
+      
+      console.log(`✅ Like sincronizado en perfil para post ${postId}:`, {
+        liked: post.liked,
+        likes: post.likes
+      });
+    }
+  }
+
+  openPostDetail(postId: number): void {
+    const post = this.posts.find(p => p.id === postId);
+    if (post) {
+      this.selectedPost = post;
+      this.showPostDetail = true;
+      
+      if (post.comments.length === 0 && !post.loadingComments) {
+        this.cargarComentarios(postId);
+      }
+    }
+  }
+
+  closePostDetail(): void {
+    this.showPostDetail = false;
+    this.selectedPost = null;
+  }
+
+  openShareModal(postId: number): void {
+    this.sharePostId = postId;
+    const post = this.posts.find(p => p.id === postId);
+    if (post) {
+      this.selectedPost = post;
+      this.showShareModal = true;
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeShareModal(): void {
+    this.showShareModal = false;
+    this.sharePostId = null;
+    document.body.style.overflow = 'auto';
+  }
+
+  onShareToSocial(data: {postId: number, platform: string}): void {
+    const post = this.posts.find(p => p.id === data.postId);
+    if (post) {
+      post.shares += 1;
+    }
+    this.postShared.emit(data);
+    this.closeShareModal();
+  }
+
+  onShareToUsers(data: {postId: number, userIds: number[]}): void {
+    const post = this.posts.find(p => p.id === data.postId);
+    if (post) {
+      post.shares += data.userIds.length;
+    }
+    this.closeShareModal();
+  }
+
+  onShareModalOpened(postId: number): void {
+    this.openShareModal(postId);
+  }
+
+  private cargarFotosPerfilBatch(usuariosIds: number[], callback?: () => void): void {
+    const idsNoEnCache = usuariosIds.filter(id => !this.fotosPerfilCache.has(id));
+
+    if (idsNoEnCache.length === 0) {
+      if (callback) callback();
+      return;
+    }
+
+    this.fotosService.obtenerFotosBatch(idsNoEnCache)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            response.data.forEach(usuario => {
+              let urlFinal = usuario.foto_perfil_url || null;
+              
+              if (urlFinal && urlFinal.includes('/uploads/perfil/')) {
+                urlFinal = urlFinal.replace('/uploads/perfil/', '/perfiles/');
+              }
+
+              this.fotosPerfilCache.set(usuario.id, urlFinal);
+            });
+          }
+
+          if (callback) callback();
+        },
+        error: (error) => {
+          idsNoEnCache.forEach(id => {
+            this.fotosPerfilCache.set(id, null);
+          });
+
+          if (callback) callback();
+        }
+      });
+  }
+
+  private obtenerFotoPerfilDesdeCache(usuarioId: number): string | null {
+    if (this.fotosPerfilCache.has(usuarioId)) {
+      let url = this.fotosPerfilCache.get(usuarioId);
+      
+      if (url && url.includes('/uploads/perfil/')) {
+        url = url.replace('/uploads/perfil/', '/perfiles/');
+        this.fotosPerfilCache.set(usuarioId, url);
+      }
+      
+      return url || null;
+    }
+
+    return null;
+  }
+
+  private convertirComentarioAComment(comentario: Comentario): Comment {
+    const fotoPerfil = this.obtenerFotoPerfilDesdeCache(comentario.usuario_id);
+    const tieneFoto = fotoPerfil !== null && fotoPerfil !== undefined && fotoPerfil.trim() !== '';
+
+    return {
+      id: comentario.id,
+      author: comentario.nombre_completo || comentario.nombre_usuario,
+      avatar: this.obtenerIniciales(comentario.nombre_completo || comentario.nombre_usuario),
+      text: comentario.texto,
+      time: this.calcularTiempoTranscurrido(comentario.fecha_creacion),
+      avatarColor: this.generarColorAvatar(comentario.usuario_id),
+      profileImageUrl: tieneFoto ? fotoPerfil : null,
+      usuarioId: comentario.usuario_id,
+      canDelete: comentario.usuario_id === this.usuarioActualId,
+      foto_perfil_url: tieneFoto ? fotoPerfil : null,
+      usandoIniciales: !tieneFoto
+    };
   }
 
   private obtenerUrlImagen(pub: Publicacion): string | null {
@@ -233,341 +611,6 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     return colores[usuarioId % colores.length];
   }
 
-  cargarComentarios(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (!post) return;
-
-    post.loadingComments = true;
-
-    const subscription = this.comentariosSubscriptions.get(postId);
-    if (subscription) {
-      subscription.unsubscribe();
-    }
-
-    const newSubscription = this.comentariosService.obtenerPorPublicacion(postId, 20, 0).subscribe({
-      next: (comentarios) => {
-        if (Array.isArray(comentarios) && comentarios.length > 0) {
-          const usuariosIds = [...new Set(comentarios.map(c => c.usuario_id))];
-
-          this.cargarFotosPerfilBatch(usuariosIds, () => {
-            post.comments = comentarios.map(c => this.convertirComentarioAComment(c));
-            post.totalComments = comentarios.length;
-            post.hasMoreComments = false;
-            post.loadingComments = false;
-
-            this.cdr.markForCheck();
-            this.cdr.detectChanges();
-          });
-        } else {
-          post.comments = [];
-          post.totalComments = 0;
-          post.hasMoreComments = false;
-          post.loadingComments = false;
-        }
-      },
-      error: (error) => {
-        post.comments = [];
-        post.totalComments = 0;
-        post.loadingComments = false;
-      }
-    });
-
-    this.comentariosSubscriptions.set(postId, newSubscription);
-  }
-
-  cargarMasComentarios(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (!post || post.loadingComments || !post.hasMoreComments) return;
-
-    post.loadingComments = true;
-
-    this.comentariosService.obtenerPorPublicacion(postId, 20, post.comments.length).subscribe({
-      next: (comentarios) => {
-        if (Array.isArray(comentarios) && comentarios.length > 0) {
-          const usuariosIds = [...new Set(comentarios.map(c => c.usuario_id))];
-          
-          this.cargarFotosPerfilBatch(usuariosIds, () => {
-            const nuevosComentarios = comentarios.map(c => this.convertirComentarioAComment(c));
-            post.comments = [...post.comments, ...nuevosComentarios];
-            post.hasMoreComments = comentarios.length === 20;
-            post.loadingComments = false;
-
-            this.cdr.markForCheck();
-            this.cdr.detectChanges();
-          });
-        } else {
-          post.hasMoreComments = false;
-          post.loadingComments = false;
-        }
-      },
-      error: () => {
-        post.hasMoreComments = false;
-        post.loadingComments = false;
-      }
-    });
-  }
-
-  private cargarFotosPerfilBatch(usuariosIds: number[], callback?: () => void): void {
-    const idsNoEnCache = usuariosIds.filter(id => !this.fotosPerfilCache.has(id));
-
-    if (idsNoEnCache.length === 0) {
-      if (callback) callback();
-      return;
-    }
-
-    this.fotosService.obtenerFotosBatch(idsNoEnCache).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          response.data.forEach(usuario => {
-            let urlFinal = usuario.foto_perfil_url || null;
-            
-            if (urlFinal && urlFinal.includes('/uploads/perfil/')) {
-              urlFinal = urlFinal.replace('/uploads/perfil/', '/perfiles/');
-            }
-
-            this.fotosPerfilCache.set(usuario.id, urlFinal);
-          });
-        }
-
-        if (callback) callback();
-      },
-      error: (error) => {
-        idsNoEnCache.forEach(id => {
-          this.fotosPerfilCache.set(id, null);
-        });
-
-        if (callback) callback();
-      }
-    });
-  }
-
-  private obtenerFotoPerfilDesdeCache(usuarioId: number): string | null {
-    if (this.fotosPerfilCache.has(usuarioId)) {
-      let url = this.fotosPerfilCache.get(usuarioId);
-      
-      if (url && url.includes('/uploads/perfil/')) {
-        url = url.replace('/uploads/perfil/', '/perfiles/');
-        this.fotosPerfilCache.set(usuarioId, url);
-      }
-      
-      return url || null;
-    }
-
-    return null;
-  }
-
-  private convertirComentarioAComment(comentario: Comentario): Comment {
-    const fotoPerfil = this.obtenerFotoPerfilDesdeCache(comentario.usuario_id);
-    const tieneFoto = fotoPerfil !== null && fotoPerfil !== undefined && fotoPerfil.trim() !== '';
-
-    return {
-      id: comentario.id,
-      author: comentario.nombre_completo || comentario.nombre_usuario,
-      avatar: this.obtenerIniciales(comentario.nombre_completo || comentario.nombre_usuario),
-      text: comentario.texto,
-      time: this.calcularTiempoTranscurrido(comentario.fecha_creacion),
-      avatarColor: this.generarColorAvatar(comentario.usuario_id),
-      profileImageUrl: tieneFoto ? fotoPerfil : null,
-      usuarioId: comentario.usuario_id,
-      canDelete: comentario.usuario_id === this.usuarioActualId,
-      foto_perfil_url: tieneFoto ? fotoPerfil : null,
-      usandoIniciales: !tieneFoto
-    };
-  }
-
-  addComment(postId: number, commentText: string): void {
-    const text = commentText.trim();
-    if (!text) return;
-
-    const post = this.posts.find(p => p.id === postId);
-    if (!post) return;
-
-    this.comentariosService.crear({
-      publicacion_id: postId,
-      texto: text
-    }).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          let fotoPerfilUrl: string | null = null;
-
-          if (response.data.foto_perfil_url) {
-            fotoPerfilUrl = response.data.foto_perfil_url;
-          } else if (response.data.foto_perfil_s3) {
-            fotoPerfilUrl = response.data.foto_perfil_s3;
-          }
-
-          if (fotoPerfilUrl && fotoPerfilUrl.includes('/uploads/perfil/')) {
-            fotoPerfilUrl = fotoPerfilUrl.replace('/uploads/perfil/', '/perfiles/');
-          }
-
-          const tieneFoto = fotoPerfilUrl !== null && fotoPerfilUrl !== undefined && fotoPerfilUrl.trim() !== '';
-
-          if (tieneFoto && response.data.usuario_id) {
-            this.fotosPerfilCache.set(response.data.usuario_id, fotoPerfilUrl);
-          }
-
-          const nuevoComentario: Comment = {
-            id: response.data.id,
-            author: response.data.nombre_completo || response.data.nombre_usuario,
-            avatar: this.obtenerIniciales(response.data.nombre_completo || response.data.nombre_usuario),
-            text: response.data.texto,
-            time: 'Ahora',
-            avatarColor: this.generarColorAvatar(response.data.usuario_id),
-            profileImageUrl: tieneFoto ? fotoPerfilUrl : null,
-            usuarioId: response.data.usuario_id,
-            canDelete: true,
-            foto_perfil_url: tieneFoto ? fotoPerfilUrl : null,
-            usandoIniciales: !tieneFoto
-          };
-
-          post.comments.unshift(nuevoComentario);
-          post.totalComments = (post.totalComments || 0) + 1;
-          this.commentInputs[postId] = '';
-
-          this.cdr.markForCheck();
-          this.cdr.detectChanges();
-        }
-      },
-      error: () => {
-        alert('No se pudo agregar el comentario.');
-      }
-    });
-  }
-
-  eliminarComentario(postId: number, comentarioId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (!post) return;
-
-    const comentario = post.comments.find(c => c.id === comentarioId);
-    if (!comentario || !comentario.canDelete) {
-      alert('No tienes permiso para eliminar este comentario');
-      return;
-    }
-
-    if (!confirm('¿Estás seguro?')) return;
-
-    this.comentariosService.eliminar(comentarioId).subscribe({
-      next: (response) => {
-        if (response.success) {
-          post.comments = post.comments.filter(c => c.id !== comentarioId);
-          post.totalComments = Math.max(0, (post.totalComments || 0) - 1);
-        }
-      },
-      error: () => {
-        alert('Error al eliminar el comentario.');
-      }
-    });
-  }
-
-  toggleLike(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (post) {
-      post.liked = !post.liked;
-      post.likes += post.liked ? 1 : -1;
-    }
-    this.likeToggled.emit(postId);
-  }
-
-  toggleComments(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (!post) return;
-
-    post.showComments = !post.showComments;
-
-    if (post.showComments && post.comments.length === 0 && !post.loadingComments) {
-      this.cargarComentarios(postId);
-    }
-  }
-
-  onCommentKeyPress(event: KeyboardEvent, postId: number, commentText: string): void {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      this.addComment(postId, commentText);
-    }
-  }
-
-  openShareModal(postId: number): void {
-    this.sharePostId = postId;
-    const post = this.posts.find(p => p.id === postId);
-    if (post) {
-      this.selectedPost = post;
-      this.showShareModal = true;
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  closeShareModal(): void {
-    this.showShareModal = false;
-    this.sharePostId = null;
-    document.body.style.overflow = 'auto';
-  }
-
-  onShareToSocial(data: {postId: number, platform: string}): void {
-    const post = this.posts.find(p => p.id === data.postId);
-    if (post) {
-      post.shares += 1;
-    }
-    this.postShared.emit(data);
-    this.closeShareModal();
-  }
-
-  onShareToUsers(data: {postId: number, userIds: number[]}): void {
-    const post = this.posts.find(p => p.id === data.postId);
-    if (post) {
-      post.shares += data.userIds.length;
-    }
-    this.closeShareModal();
-  }
-
-  openPostDetail(postId: number): void {
-    const post = this.posts.find(p => p.id === postId);
-    if (post) {
-      this.selectedPost = post;
-      this.showPostDetail = true;
-      
-      if (post.comments.length === 0 && !post.loadingComments) {
-        this.cargarComentarios(postId);
-      }
-    }
-  }
-
-  closePostDetail(): void {
-    this.showPostDetail = false;
-    this.selectedPost = null;
-  }
-onLikeToggled(postId: number): void {
-  // El post ya fue actualizado en detalle-post
-  // selectedPost apunta al mismo objeto que está en this.posts
-  // Así que los cambios ya están reflejados
-  
-  const post = this.posts.find(p => p.id === postId);
-  
-  if (post) {
-    // Solo detectar cambios para reflejar en la vista
-    this.cdr.markForCheck();
-    this.cdr.detectChanges();
-    
-    console.log(`✅ Like sincronizado para post ${postId}:`, {
-      liked: post.liked,
-      likes: post.likes
-    });
-  }
-}
-  onShareModalOpened(postId: number): void {
-    this.openShareModal(postId);
-  }
-
-  openPhotoDetail(photoId: number): void {
-    const photo = this.photos.find(p => p.id === photoId);
-    if (photo) {
-      const post = this.posts.find(p => p.id === photo.postId);
-      if (post) {
-        this.selectedPost = post;
-        this.showPostDetail = true;
-      }
-    }
-  }
-
   handleImageError(comment: Comment): void {
     comment.usandoIniciales = true;
     comment.foto_perfil_url = null;
@@ -608,5 +651,37 @@ onLikeToggled(postId: number): void {
       case 'privado': return 'bg-gray-100 text-gray-700';
       default: return 'bg-green-100 text-green-700';
     }
+  }
+
+  cargarMasComentarios(postId: number): void {
+    const post = this.posts.find(p => p.id === postId);
+    if (!post || post.loadingComments || !post.hasMoreComments) return;
+
+    post.loadingComments = true;
+
+    this.comentariosService.obtenerPorPublicacion(postId, 20, post.comments.length)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (comentarios) => {
+          if (Array.isArray(comentarios) && comentarios.length > 0) {
+            const usuariosIds = [...new Set(comentarios.map(c => c.usuario_id))];
+            
+            this.cargarFotosPerfilBatch(usuariosIds, () => {
+              const nuevosComentarios = comentarios.map(c => this.convertirComentarioAComment(c));
+              post.comments = [...post.comments, ...nuevosComentarios];
+              post.hasMoreComments = comentarios.length === 20;
+              post.loadingComments = false;
+              this.cdr.detectChanges();
+            });
+          } else {
+            post.hasMoreComments = false;
+            post.loadingComments = false;
+          }
+        },
+        error: () => {
+          post.hasMoreComments = false;
+          post.loadingComments = false;
+        }
+      });
   }
 }

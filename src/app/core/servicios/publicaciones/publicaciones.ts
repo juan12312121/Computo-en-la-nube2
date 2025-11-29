@@ -2,7 +2,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, of, tap } from 'rxjs';
 
-// Interfaces
+// ==================== INTERFACES ====================
+
 export interface Publicacion {
   id: number;
   usuario_id: number;
@@ -11,7 +12,7 @@ export interface Publicacion {
   imagen_s3?: string;
   categoria?: string;
   color_categoria?: string;
-  visibilidad?: 'publico' | 'privado' | 'seguidores'; // 🆕 NUEVO
+  visibilidad?: 'publico' | 'privado' | 'seguidores';
   nombre_usuario?: string;
   nombre_completo?: string;
   foto_perfil_url?: string;
@@ -20,6 +21,32 @@ export interface Publicacion {
   requiere_revision?: number;
   analisis_censura?: any;
   advertencia?: string;
+  
+  // ✅ PROPIEDADES DE LIKES
+  total_likes?: number;           // Total de likes que tiene la publicación
+  usuario_dio_like?: boolean;     // Si el usuario actual dio like
+  likes?: number;                 // Alias de total_likes (para compatibilidad)
+  liked?: boolean;                // Alias de usuario_dio_like
+  
+  // ✅ PROPIEDADES DE COMENTARIOS
+  total_comentarios?: number;     // Total de comentarios
+  comentarios?: number;           // Alias de total_comentarios
+  
+  // ✅ PROPIEDADES DE DOCUMENTOS
+  documentos?: Documento[];
+}
+
+export interface Documento {
+  id: number;
+  usuario_id: number;
+  publicacion_id: number;
+  documento_s3: string;
+  nombre_archivo: string;
+  tamano_archivo: number;
+  tipo_archivo: string;
+  icono: string;
+  color: string;
+  fecha_creacion: string;
 }
 
 export interface Categoria {
@@ -28,7 +55,6 @@ export interface Categoria {
   color: string;
 }
 
-// 🆕 NUEVA INTERFAZ
 export interface Visibilidad {
   value: 'publico' | 'privado' | 'seguidores';
   label: string;
@@ -52,6 +78,8 @@ export interface ErrorCensura {
   };
 }
 
+// ==================== SERVICIO ====================
+
 @Injectable({
   providedIn: 'root'
 })
@@ -68,8 +96,10 @@ export class PublicacionesService {
     console.log('📍 API URL:', this.apiUrl);
   }
 
+  // ==================== MÉTODOS PRIVADOS ====================
+
   /**
-   * Construir headers con token
+   * Construir headers con token de autenticación
    */
   private getHeaders(): { headers?: HttpHeaders } {
     const token = localStorage.getItem('token');
@@ -87,6 +117,8 @@ export class PublicacionesService {
     console.log('⚠️ No hay token, request sin autenticación');
     return {};
   }
+
+  // ==================== MÉTODOS PÚBLICOS - CATEGORÍAS ====================
 
   /**
    * Obtener categorías disponibles
@@ -107,8 +139,10 @@ export class PublicacionesService {
     );
   }
 
+  // ==================== MÉTODOS PÚBLICOS - VISIBILIDAD ====================
+
   /**
-   * 🆕 Obtener opciones de visibilidad disponibles
+   * Obtener opciones de visibilidad disponibles
    * GET /api/publicaciones/visibilidades
    */
   obtenerVisibilidades(): Observable<ApiResponse<Visibilidad[]>> {
@@ -126,11 +160,13 @@ export class PublicacionesService {
     );
   }
 
+  // ==================== MÉTODOS PÚBLICOS - CRUD PUBLICACIONES ====================
+
   /**
    * Crear publicación (con validación de censura y visibilidad)
    * POST /api/publicaciones
    * 
-   * Puede retornar:
+   * Retorna:
    * - 201: Publicación creada exitosamente
    * - 403: Contenido rechazado por censura
    * - 400: Validación fallida
@@ -149,7 +185,6 @@ export class PublicacionesService {
         }
       }),
       catchError(error => {
-        // Manejo de error 403 (Contenido rechazado)
         if (error.status === 403) {
           console.error('❌ Contenido rechazado por censura:', error.error);
           const errorCensura: ErrorCensura = error.error.errors || {
@@ -260,7 +295,7 @@ export class PublicacionesService {
    * Actualizar publicación (con validación de censura y visibilidad)
    * PUT /api/publicaciones/:id
    * 
-   * Puede retornar:
+   * Retorna:
    * - 200: Publicación actualizada
    * - 403: Contenido rechazado por censura
    */
@@ -273,7 +308,6 @@ export class PublicacionesService {
     return this.http.put<ApiResponse<Publicacion>>(`${this.apiUrl}/${id}`, publicacion, headers).pipe(
       tap(response => console.log('✅ Publicación actualizada:', response)),
       catchError(error => {
-        // Manejo de error 403 (Contenido rechazado)
         if (error.status === 403) {
           console.error('❌ Contenido actualizado rechazado por censura:', error.error);
           const errorCensura: ErrorCensura = error.error.errors || {
@@ -311,23 +345,25 @@ export class PublicacionesService {
     );
   }
 
+  // ==================== HELPERS - FORMDATA ====================
+
   /**
-   * 🆕 Helper: Crear FormData para publicación (con visibilidad)
+   * Crear FormData para publicación (con visibilidad y documentos)
    */
   crearFormData(datos: {
     contenido: string;
     categoria?: string;
-    visibilidad?: 'publico' | 'privado' | 'seguidores'; // 🆕 NUEVO
+    visibilidad?: 'publico' | 'privado' | 'seguidores';
     imagen?: File;
-    documentos?: File[]; // 🆕 SOPORTE PARA DOCUMENTOS
+    documentos?: File[];
   }): FormData {
     const formData = new FormData();
     formData.append('contenido', datos.contenido);
     if (datos.categoria) formData.append('categoria', datos.categoria);
-    if (datos.visibilidad) formData.append('visibilidad', datos.visibilidad); // 🆕 NUEVO
+    if (datos.visibilidad) formData.append('visibilidad', datos.visibilidad);
     if (datos.imagen) formData.append('imagen', datos.imagen);
     
-    // 🆕 Agregar documentos (hasta 5)
+    // Agregar documentos (hasta 5)
     if (datos.documentos && datos.documentos.length > 0) {
       datos.documentos.forEach((doc) => {
         formData.append('documentos', doc);
@@ -345,8 +381,10 @@ export class PublicacionesService {
     return formData;
   }
 
+  // ==================== HELPERS - CATEGORÍAS ====================
+
   /**
-   * Helper: Obtener el color de una categoría
+   * Obtener el color de una categoría
    */
   obtenerColorCategoria(categoria: string): string {
     const colores: { [key: string]: string } = {
@@ -364,38 +402,7 @@ export class PublicacionesService {
   }
 
   /**
-   * 🆕 Helper: Obtener el icono de visibilidad
-   */
-  obtenerIconoVisibilidad(visibilidad: string): string {
-    const iconos: { [key: string]: string } = {
-      'publico': '🌍',
-      'privado': '🔒',
-      'seguidores': '👥'
-    };
-    return iconos[visibilidad] || '🌍';
-  }
-
-  /**
-   * 🆕 Helper: Obtener el label de visibilidad
-   */
-  obtenerLabelVisibilidad(visibilidad: string): string {
-    const labels: { [key: string]: string } = {
-      'publico': 'Público',
-      'privado': 'Privado',
-      'seguidores': 'Solo seguidores'
-    };
-    return labels[visibilidad] || 'Público';
-  }
-
-  /**
-   * 🆕 Helper: Verificar si puedo editar visibilidad
-   */
-  puedeEditarVisibilidad(publicacion: Publicacion, usuarioActualId: number): boolean {
-    return publicacion.usuario_id === usuarioActualId;
-  }
-
-  /**
-   * Helper: Categorías por defecto
+   * Categorías por defecto
    */
   private getCategoriasDefault(): Categoria[] {
     return [
@@ -411,8 +418,41 @@ export class PublicacionesService {
     ];
   }
 
+  // ==================== HELPERS - VISIBILIDAD ====================
+
   /**
-   * 🆕 Helper: Visibilidades por defecto
+   * Obtener el icono de visibilidad
+   */
+  obtenerIconoVisibilidad(visibilidad: string): string {
+    const iconos: { [key: string]: string } = {
+      'publico': '🌍',
+      'privado': '🔒',
+      'seguidores': '👥'
+    };
+    return iconos[visibilidad] || '🌍';
+  }
+
+  /**
+   * Obtener el label de visibilidad
+   */
+  obtenerLabelVisibilidad(visibilidad: string): string {
+    const labels: { [key: string]: string } = {
+      'publico': 'Público',
+      'privado': 'Privado',
+      'seguidores': 'Solo seguidores'
+    };
+    return labels[visibilidad] || 'Público';
+  }
+
+  /**
+   * Verificar si puedo editar visibilidad
+   */
+  puedeEditarVisibilidad(publicacion: Publicacion, usuarioActualId: number): boolean {
+    return publicacion.usuario_id === usuarioActualId;
+  }
+
+  /**
+   * Visibilidades por defecto
    */
   private getVisibilidadesDefault(): Visibilidad[] {
     return [
@@ -437,22 +477,10 @@ export class PublicacionesService {
     ];
   }
 
-  /**
-   * Helper: Verificar conectividad con backend
-   */
-  verificarConexion(): Observable<boolean> {
-    console.log('🔌 Verificando conexión con backend...');
-    return this.http.get<ApiResponse<Categoria[]>>(`${this.apiUrl}/categorias`).pipe(
-      tap(() => console.log('✅ Backend accesible')),
-      catchError(error => {
-        console.error('❌ Backend no accesible:', error);
-        return of(false as any);
-      })
-    ) as Observable<boolean>;
-  }
+  // ==================== HELPERS - CENSURA ====================
 
   /**
-   * Helper: Extraer mensaje de error de censura
+   * Extraer mensaje de error de censura
    */
   extraerMensajeCensura(error: any): string {
     if (error.message?.includes('CENSURA:')) {
@@ -467,11 +495,27 @@ export class PublicacionesService {
   }
 
   /**
-   * Helper: Verificar si es error de censura
+   * Verificar si es error de censura
    */
   esErrorCensura(error: any): boolean {
     return error?.message?.includes('CENSURA:') || 
            error?.errors?.motivo !== undefined ||
            error?.message?.includes('inapropiado');
+  }
+
+  // ==================== HELPERS - CONEXIÓN ====================
+
+  /**
+   * Verificar conectividad con backend
+   */
+  verificarConexion(): Observable<boolean> {
+    console.log('🔌 Verificando conexión con backend...');
+    return this.http.get<ApiResponse<Categoria[]>>(`${this.apiUrl}/categorias`).pipe(
+      tap(() => console.log('✅ Backend accesible')),
+      catchError(error => {
+        console.error('❌ Backend no accesible:', error);
+        return of(false as any);
+      })
+    ) as Observable<boolean>;
   }
 }
