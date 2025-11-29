@@ -406,30 +406,7 @@
           </div>
         </div>
 
-        <!-- Selector de color -->
-        <div>
-          <label [ngClass]="textoPrimariaAdaptado" class="block text-sm font-bold mb-3">
-            Color de la carpeta
-          </label>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            <button
-              *ngFor="let colorOption of coloresDisponibles"
-              (click)="seleccionarColor(colorOption.value)"
-              type="button"
-              [ngClass]="'bg-gradient-to-br ' + colorOption.value + (nuevaSeccion.color === colorOption.value ? ' selected' : '')"
-              class="color-option h-16 rounded-xl relative shadow-md">
-              <!-- Check mark si está seleccionado -->
-              <div *ngIf="nuevaSeccion.color === colorOption.value"
-                   class="check-mark absolute inset-0 flex items-center justify-center border-4 border-white rounded-xl">
-                <i class="fas fa-check text-white text-2xl drop-shadow-lg"></i>
-              </div>
-              <!-- Nombre del color -->
-              <span class="absolute bottom-1 left-0 right-0 text-center text-white text-xs font-bold drop-shadow-md">
-                {{ colorOption.name }}
-              </span>
-            </button>
-          </div>
-        </div>
+        
 
         <!-- Vista previa -->
         <div>
