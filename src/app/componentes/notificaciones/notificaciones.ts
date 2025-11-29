@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Notificacion, NotificacionesService } from '../../core/servicios/notificacion/notificacion';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
+import { PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme } from '../../core/servicios/temas';
 
 @Component({
@@ -49,6 +50,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   constructor(
     private notificacionesService: NotificacionesService,
     private autenticacionService: AutenticacionService,
+    private publicacionesService: PublicacionesService,
     private router: Router
   ) {}
 
@@ -114,8 +116,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
     if (this.showNotifications) {
       this.aplicarAnimacionNuevaNotificacion();
     }
-    
-   
   }
 
   private reproducirSonidoNotificacion(): void {
@@ -151,7 +151,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
       }
     }, 100);
   }
-
 
   private cargarNotificacionesOcultas(): void {
     try {
@@ -404,23 +403,65 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   }
 
   manejarClicNotificacion(notificacion: Notificacion): void {
+    console.log('🔔 Notificación clickeada:', notificacion);
+    
+    // Marcar como leída primero
     this.marcarComoLeida(notificacion);
-    this.cerrarNotificaciones();
 
+    // Navegación según el tipo
     switch (notificacion.tipo) {
       case 'follow':
-        this.router.navigate(['/perfil', notificacion.de_usuario_id]);
+        // Navegar al perfil del usuario que siguió
+        this.cerrarNotificaciones();
+        if (notificacion.de_usuario_id) {
+          console.log('👤 Navegando a perfil:', notificacion.de_usuario_id);
+          this.router.navigate(['/perfil', notificacion.de_usuario_id]);
+        }
         break;
 
       case 'like':
       case 'comment':
+        // Verificar que exista la publicación antes de navegar
         if (notificacion.publicacion_id) {
-          this.router.navigate(['/publicacion', notificacion.publicacion_id]);
+          console.log('📝 Verificando publicación:', notificacion.publicacion_id);
+          
+          // Verificar que la publicación existe y es accesible
+          this.publicacionesService.obtenerPublicacion(notificacion.publicacion_id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (response) => {
+                if (response.success && response.data) {
+                  console.log('✅ Publicación encontrada, navegando...');
+                  this.cerrarNotificaciones();
+                  this.router.navigate(['/publicacion', notificacion.publicacion_id]);
+                } else {
+                  console.warn('⚠️ Publicación no encontrada o no accesible');
+                  this.mostrarFeedbackError('Esta publicación ya no está disponible');
+                }
+              },
+              error: (error) => {
+                console.error('❌ Error al verificar publicación:', error);
+                
+                // Determinar el mensaje según el error
+                let mensaje = 'No se puede abrir esta publicación';
+                if (error.status === 404) {
+                  mensaje = 'Esta publicación fue eliminada';
+                } else if (error.status === 403) {
+                  mensaje = 'No tienes permiso para ver esta publicación';
+                }
+                
+                this.mostrarFeedbackError(mensaje);
+              }
+            });
+        } else {
+          console.error('❌ No hay publicacion_id en la notificación');
+          this.mostrarFeedbackError('No se puede abrir esta notificación');
         }
         break;
 
       default:
-        // No hacer nada
+        this.cerrarNotificaciones();
+        console.log('⚠️ Tipo de notificación no manejado:', notificacion.tipo);
     }
   }
 
@@ -503,7 +544,73 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   }
 
   private mostrarFeedback(mensaje: string): void {
-    // Implementar feedback si es necesario
+    console.log('💬 Feedback:', mensaje);
+    
+    // Implementar feedback visual simple
+    if (this.isMobile) {
+      alert(mensaje);
+    } else {
+      // Para desktop, podrías implementar un toast más elegante
+      console.warn(mensaje);
+    }
+  }
+
+  private mostrarFeedbackError(mensaje: string): void {
+    console.error('⚠️ Feedback Error:', mensaje);
+    
+    // Crear un toast temporal
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-fade-in';
+    toast.style.cssText = `
+      background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+      max-width: 90vw;
+      animation: slideDown 0.3s ease-out;
+    `;
+    
+    toast.innerHTML = `
+      <i class="fas fa-exclamation-circle text-xl"></i>
+      <span>${mensaje}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Añadir animación
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+      toast.style.animation = 'slideUp 0.3s ease-in';
+      setTimeout(() => {
+        document.body.removeChild(toast);
+        document.head.removeChild(style);
+      }, 300);
+    }, 3000);
   }
 
   isLightTheme(): boolean {
