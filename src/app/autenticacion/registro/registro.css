@@ -77,12 +77,3 @@ button[type="submit"]:hover {
   box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3) !important;
 }
 
-/* Botón de registro */
-button:not([type="submit"]) {
-  background: transparent !important;
-  color: #f97316 !important;
-}
-
-button:not([type="submit"]):hover {
-  color: #ea580c !important;
-}

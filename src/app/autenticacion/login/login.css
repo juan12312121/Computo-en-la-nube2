@@ -28,6 +28,26 @@ input::placeholder {
   color: #9ca3af !important;
 }
 
+/* Contenedor relativo del input de contraseña */
+.relative {
+  position: relative;
+}
+
+.relative button[type="button"] i {
+  font-size: 1rem;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.relative button[type="button"]:hover i {
+  color: #374151;
+}
+
+.relative button[type="button"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* Iconos de los inputs */
 .relative span {
   pointer-events: none;
@@ -78,11 +98,11 @@ button[type="submit"]:hover {
 }
 
 /* Botón de registro */
-button:not([type="submit"]) {
+button:not([type="submit"]):not([type="button"]) {
   background: transparent !important;
   color: #f97316 !important;
 }
 
-button:not([type="submit"]):hover {
+button:not([type="submit"]):not([type="button"]):hover {
   color: #ea580c !important;
 }
