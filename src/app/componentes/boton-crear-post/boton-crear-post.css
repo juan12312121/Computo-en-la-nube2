@@ -1,0 +1,406 @@
+/* ==================== ESTILOS BASE ==================== */
+
+.emoji-picker-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.emoji-picker-container,
+.category-selector-container {
+  position: relative;
+}
+
+body.emoji-picker-open {
+  overflow: hidden;
+}
+
+/* ==================== SELECTOR DE VISIBILIDAD SIMPLE ==================== */
+
+.visibility-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
+  min-width: 140px;
+}
+
+.visibility-select:focus {
+  border-color: var(--primary-color, #f97316);
+}
+
+.visibility-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Opciones en temas oscuros */
+[data-theme="midnight"] .visibility-select option,
+[data-theme="neon"] .visibility-select option,
+[data-theme="toxic"] .visibility-select option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+/* ==================== TEXTO DE PICKERS ==================== */
+
+.picker-title {
+  color: var(--picker-text-color);
+}
+
+.picker-text {
+  color: var(--picker-text-color);
+}
+
+.picker-close-btn {
+  color: var(--picker-text-color);
+}
+
+/* ==================== SCROLLBAR PERSONALIZADO ==================== */
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar,
+.category-selector-container > div::-webkit-scrollbar {
+  width: 8px;
+}
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-track,
+.category-selector-container > div::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg, #f1f5f9);
+  border-radius: 10px;
+}
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb,
+.category-selector-container > div::-webkit-scrollbar-thumb {
+  background: var(--primary-color, #f97316);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb:hover,
+.category-selector-container > div::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color, #ea580c);
+}
+
+.emoji-picker-container .fixed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.emoji-picker-container .fixed::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-bg, #f1f5f9);
+}
+
+.emoji-picker-container .fixed::-webkit-scrollbar-thumb {
+  background: var(--primary-color, #f97316);
+  border-radius: 3px;
+}
+
+/* ==================== ANIMACIONES ==================== */
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emoji-picker-container > div.hidden.sm\:block,
+.category-selector-container {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emoji-picker-container .fixed {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* ==================== ESTILOS INTERACTIVOS ==================== */
+
+.emoji-picker-container button {
+  transition: all 0.2s ease;
+}
+
+.emoji-picker-container button:hover {
+  background-color: var(--hover-bg-color, rgba(249, 115, 22, 0.1));
+}
+
+.emoji-picker-container button:active {
+  background-color: var(--active-bg-color, rgba(249, 115, 22, 0.2));
+  transform: scale(0.95);
+}
+
+.category-selector {
+  transition: all 0.3s ease;
+}
+
+.category-badge {
+  transition: all 0.2s ease;
+}
+
+.category-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== TEMAS ESPECÍFICOS ==================== */
+
+/* TEMA DEFAULT - TrinoFlow */
+[data-theme="default"] {
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #e5e7eb;
+  --picker-text-color: #1f2937;
+  --primary-color: #f97316;
+  --accent-color: #ea580c;
+  --hover-bg-color: rgba(249, 115, 22, 0.1);
+  --active-bg-color: rgba(249, 115, 22, 0.2);
+}
+
+/* TEMA MIDNIGHT - Medianoche */
+[data-theme="midnight"] {
+  --scrollbar-track-bg: #1e293b;
+  --primary-color: #6366f1;
+  --accent-color: #8b5cf6;
+  --hover-bg-color: rgba(99, 102, 241, 0.15);
+  --active-bg-color: rgba(99, 102, 241, 0.25);
+  --picker-bg-color: #0f172a;
+  --picker-border-color: #334155;
+  --picker-text-color: #e2e8f0;
+}
+
+/* TEMA FOREST - Bosque */
+[data-theme="forest"] {
+  --primary-color: #10b981;
+  --accent-color: #059669;
+  --hover-bg-color: rgba(16, 185, 129, 0.1);
+  --active-bg-color: rgba(16, 185, 129, 0.2);
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #d1fae5;
+  --picker-text-color: #1f2937;
+}
+
+/* TEMA SUNSET - Atardecer */
+[data-theme="sunset"] {
+  --primary-color: #f59e0b;
+  --accent-color: #ef4444;
+  --hover-bg-color: rgba(245, 158, 11, 0.1);
+  --active-bg-color: rgba(245, 158, 11, 0.2);
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #fed7aa;
+  --picker-text-color: #1f2937;
+}
+
+/* TEMA OCEAN - Océano */
+[data-theme="ocean"] {
+  --primary-color: #0ea5e9;
+  --accent-color: #06b6d4;
+  --hover-bg-color: rgba(14, 165, 233, 0.1);
+  --active-bg-color: rgba(14, 165, 233, 0.2);
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #bae6fd;
+  --picker-text-color: #1f2937;
+}
+
+/* TEMA ROSE - Rosa */
+[data-theme="rose"] {
+  --primary-color: #ec4899;
+  --accent-color: #f43f5e;
+  --hover-bg-color: rgba(236, 72, 153, 0.1);
+  --active-bg-color: rgba(236, 72, 153, 0.2);
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #fbcfe8;
+  --picker-text-color: #1f2937;
+}
+
+/* TEMA SLATE - Pizarra */
+[data-theme="slate"] {
+  --primary-color: #64748b;
+  --accent-color: #475569;
+  --hover-bg-color: rgba(100, 116, 139, 0.1);
+  --active-bg-color: rgba(100, 116, 139, 0.2);
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #cbd5e1;
+  --picker-text-color: #1f2937;
+}
+
+/* TEMA LAVENDER - Lavanda */
+[data-theme="lavender"] {
+  --primary-color: #a78bfa;
+  --accent-color: #c084fc;
+  --hover-bg-color: rgba(167, 139, 250, 0.1);
+  --active-bg-color: rgba(167, 139, 250, 0.2);
+  --picker-bg-color: #ffffff;
+  --picker-border-color: #ddd6fe;
+  --picker-text-color: #1f2937;
+}
+
+/* TEMA NEON - Neón */
+[data-theme="neon"] {
+  --scrollbar-track-bg: #1f2937;
+  --primary-color: #22d3ee;
+  --accent-color: #d946ef;
+  --hover-bg-color: rgba(34, 211, 238, 0.15);
+  --active-bg-color: rgba(34, 211, 238, 0.25);
+  --picker-bg-color: #111827;
+  --picker-border-color: #374151;
+  --picker-text-color: #22d3ee;
+}
+
+[data-theme="neon"] .category-badge:hover {
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+
+[data-theme="neon"] .emoji-picker-container button:hover {
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+}
+
+/* TEMA TOXIC - Tóxico */
+[data-theme="toxic"] {
+  --scrollbar-track-bg: #27272a;
+  --primary-color: #84cc16;
+  --accent-color: #22c55e;
+  --hover-bg-color: rgba(132, 204, 22, 0.15);
+  --active-bg-color: rgba(132, 204, 22, 0.25);
+  --picker-bg-color: #18181b;
+  --picker-border-color: #3f3f46;
+  --picker-text-color: #84cc16;
+}
+
+[data-theme="toxic"] .category-badge:hover {
+  box-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+}
+
+[data-theme="toxic"] .emoji-picker-container button:hover {
+  box-shadow: 0 0 15px rgba(132, 204, 22, 0.3);
+}
+
+/* TEMA CANDY - Caramelo */
+[data-theme="candy"] {
+  --primary-color: #ec4899;
+  --accent-color: #fbbf24;
+  --hover-bg-color: rgba(236, 72, 153, 0.1);
+  --active-bg-color: rgba(236, 72, 153, 0.2);
+  --picker-bg-color: #fdf4ff;
+  --picker-border-color: #f9a8d4;
+  --picker-text-color: #831843;
+}
+
+[data-theme="candy"] .emoji-picker-container button:hover {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(236, 72, 153, 0.1));
+}
+
+/* TEMA CHAOS - Caos */
+[data-theme="chaos"] {
+  --primary-color: #ef4444;
+  --accent-color: #22c55e;
+  --hover-bg-color: rgba(239, 68, 68, 0.1);
+  --active-bg-color: rgba(34, 197, 94, 0.1);
+  --picker-bg-color: #fef9c3;
+  --picker-border-color: #fb923c;
+  --picker-text-color: #1e3a8a;
+}
+
+[data-theme="chaos"] .emoji-picker-container button:hover {
+  background: linear-gradient(45deg, 
+    rgba(239, 68, 68, 0.1) 0%, 
+    rgba(34, 197, 94, 0.1) 50%, 
+    rgba(59, 130, 246, 0.1) 100%
+  );
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 640px) {
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .emoji-picker-container button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .emoji-picker-container .fixed {
+    animation-duration: 0.25s;
+  }
+
+  .picker-title {
+    font-size: 0.875rem;
+  }
+
+  .visibility-select {
+    min-width: 120px;
+    font-size: 0.75rem;
+  }
+}
+
+/* ==================== MODO OSCURO GENERAL ==================== */
+
+[data-theme="midnight"],
+[data-theme="neon"],
+[data-theme="toxic"] {
+  --scrollbar-track-bg: #1e293b;
+}
+
+[data-theme="midnight"] .emoji-picker-backdrop,
+[data-theme="neon"] .emoji-picker-backdrop,
+[data-theme="toxic"] .emoji-picker-backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* ==================== TRANSICIONES SUAVES ==================== */
+
+.emoji-picker-container,
+.emoji-picker-container button,
+.category-selector,
+.picker-close-btn,
+.visibility-select,
+.emoji-picker-container > div:not(.fixed)::-webkit-scrollbar-thumb,
+.emoji-picker-container .fixed::-webkit-scrollbar-thumb,
+.category-selector-container > div::-webkit-scrollbar-thumb,
+.picker-text,
+.picker-title {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== ACCESIBILIDAD ==================== */
+
+.emoji-picker-container button:focus-visible,
+.visibility-select:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+[data-theme="midnight"] .emoji-picker-container button:focus-visible,
+[data-theme="neon"] .emoji-picker-container button:focus-visible,
+[data-theme="toxic"] .emoji-picker-container button:focus-visible,
+[data-theme="midnight"] .visibility-select:focus-visible,
+[data-theme="neon"] .visibility-select:focus-visible,
+[data-theme="toxic"] .visibility-select:focus-visible {
+  outline-color: var(--accent-color);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-badge:hover,
+  .emoji-picker-container button,
+  .category-selector-container,
+  .emoji-picker-container > div.hidden.sm\:block,
+  .emoji-picker-container .fixed {
+    animation: none !important;
+  }
+}

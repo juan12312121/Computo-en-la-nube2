@@ -1,0 +1,158 @@
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejora del scroll en listas de usuarios */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Animación para el check de usuarios seleccionados */
+.fa-check {
+  animation: checkPop 0.3s ease-out;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Transición suave para el botón de copiar */
+button:active {
+  transform: scale(0.95);
+}
+
+/* Mejora visual para input de búsqueda */
+input:focus {
+  transition: all 0.2s ease;
+}
+
+/* Animación hover para iconos sociales */
+.transform.hover\:scale-105:hover {
+  transition: transform 0.2s ease;
+}
+
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Animación de slide up para modal de compartir */
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejora del scroll */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.7);
+}
+
+/* Animación para el check de usuarios seleccionados */
+.fa-check {
+  animation: checkPop 0.3s ease-out;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Transición suave para botones */
+button:active {
+  transform: scale(0.95);
+}
+
+/* Mejora visual para inputs */
+input:focus {
+  transition: all 0.2s ease;
+}
+
+/* Animación hover para iconos sociales */
+.transform.hover\:scale-105:hover {
+  transition: transform 0.2s ease;
+}
+
+/* Efecto hover suave en comentarios */
+.flex.gap-3:hover {
+  transition: all 0.2s ease;
+}
+
+/* Backdrop blur para modales */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+.share-modal-backdrop {
+  backdrop-filter: blur(4px);
+}

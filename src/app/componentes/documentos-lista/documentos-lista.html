@@ -1,0 +1,125 @@
+<div class="space-y-4">
+  
+  <!-- Botón para subir documento (SOLO EN MI PERFIL) -->
+  <div class="flex justify-between items-center mb-4">
+    <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-lg font-bold">
+      {{ esMiPerfil ? 'Mis Documentos' : 'Documentos' }}
+    </h2>
+    <!-- ⚠️ CAMBIO: Agregado *ngIf="puedoInteractuar" -->
+    <button 
+      *ngIf="puedoInteractuar"
+      (click)="triggerFileInput()"
+      [disabled]="subiendoArchivo"
+      [ngClass]="currentTheme.cardBg"
+      class="px-4 py-2 rounded-lg border hover:shadow-md transition flex items-center gap-2">
+      <i class="fas fa-upload" [class.fa-spin]="subiendoArchivo"></i>
+      <span class="text-sm font-medium">
+        {{ subiendoArchivo ? 'Subiendo...' : 'Subir Documento' }}
+      </span>
+    </button>
+  </div>
+
+  <!-- Input file oculto (SOLO EN MI PERFIL) -->
+  <!-- ⚠️ CAMBIO: Agregado *ngIf="puedoInteractuar" -->
+  <input 
+    *ngIf="puedoInteractuar"
+    type="file" 
+    id="fileInput"
+    (change)="onFileSelected($event)"
+    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+    class="hidden">
+
+  <!-- Mensaje de error -->
+  <div *ngIf="error" 
+       class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
+    <i class="fas fa-exclamation-circle mr-2"></i>
+    {{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-8">
+    <i class="fas fa-spinner fa-spin text-3xl" [ngClass]="currentTheme.textSecondaryClass"></i>
+    <p [ngClass]="currentTheme.textSecondaryClass" class="mt-2">Cargando documentos...</p>
+  </div>
+
+  <!-- Lista de documentos -->
+  <div *ngIf="!loading && documents.length > 0" class="space-y-3">
+    <div *ngFor="let doc of documents"
+         [ngClass]="currentTheme.cardBg"
+         class="border rounded-xl p-4 sm:p-5 hover:shadow-md transition cursor-pointer">
+      <div class="flex items-start gap-3 sm:gap-4">
+        
+        <!-- Icono del documento -->
+        <div class="flex-shrink-0">
+          <i [class]="'fas ' + doc.icon + ' ' + doc.color + ' text-3xl sm:text-4xl'"></i>
+        </div>
+
+        <!-- Info del documento -->
+        <div class="flex-1 min-w-0">
+          <h3 [ngClass]="currentTheme.textPrimaryClass" 
+              class="font-bold text-xs sm:text-sm mb-1 truncate">
+            {{ doc.name }}
+          </h3>
+          <p [ngClass]="currentTheme.textSecondaryClass" class="text-xs mb-2">
+            {{ doc.description }}
+          </p>
+          <div class="flex items-center gap-3 sm:gap-4 text-xs">
+            <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
+              <i class="fas fa-file"></i>
+              {{ doc.size }}
+            </span>
+            <span [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-1">
+              <i class="far fa-clock"></i>
+              {{ doc.date }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Acciones (SOLO EN MI PERFIL) -->
+        <!-- ⚠️ CAMBIO: Agregado *ngIf="puedoInteractuar" -->
+        <div *ngIf="puedoInteractuar" class="flex-shrink-0 flex gap-2">
+          <!-- Botón descargar -->
+          <button 
+            (click)="onDownloadClick(doc.id, $event)"
+            [ngClass]="currentTheme.textSecondaryClass" 
+            class="hover:opacity-70 transition p-2"
+            title="Descargar">
+            <i class="fas fa-download text-base sm:text-lg"></i>
+          </button>
+
+          <!-- Botón eliminar -->
+          <button 
+            (click)="eliminarDocumento(doc.id, $event)"
+            class="text-red-500 hover:opacity-70 transition p-2"
+            title="Eliminar">
+            <i class="fas fa-trash text-base sm:text-lg"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Sin documentos -->
+  <div *ngIf="!loading && documents.length === 0" 
+       [ngClass]="currentTheme.cardBg"
+       class="border rounded-xl p-8 text-center">
+    <i class="fas fa-folder-open text-5xl mb-4" [ngClass]="currentTheme.textSecondaryClass"></i>
+    <!-- ⚠️ CAMBIO: Textos dinámicos -->
+    <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold mb-2">
+      {{ esMiPerfil ? 'No tienes documentos' : 'Sin documentos' }}
+    </h3>
+    <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm mb-4">
+      {{ esMiPerfil ? 'Sube tu primer documento para comenzar' : 'Este usuario no ha compartido documentos' }}
+    </p>
+    <!-- ⚠️ CAMBIO: Botón solo visible en mi perfil -->
+    <button 
+      *ngIf="puedoInteractuar"
+      (click)="triggerFileInput()"
+      class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
+      <i class="fas fa-upload mr-2"></i>
+      Subir Documento
+    </button>
+  </div>
+
+</div>

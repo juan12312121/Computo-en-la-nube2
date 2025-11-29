@@ -1,0 +1,107 @@
+<div [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border mb-6 overflow-hidden">
+  <!-- Cover Photo -->
+  <div class="profile-cover relative w-full overflow-hidden group cursor-pointer">
+    <img *ngIf="coverImage" 
+         [src]="coverImage" 
+         alt="Portada" 
+         class="w-full h-full object-cover"
+         style="object-position: center;">
+    
+    <!-- 🆕 Overlay y botón solo para el dueño del perfil -->
+    <div *ngIf="isOwnProfile" 
+         (click)="cambiarBanner.emit()"
+         class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
+      <button class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition flex items-center gap-2 backdrop-blur-sm z-10 text-xs sm:text-sm opacity-0 group-hover:opacity-100">
+        <i class="fas fa-camera"></i>
+        <span class="font-semibold hidden sm:inline">Cambiar portada</span>
+        <span class="font-semibold sm:hidden">Cambiar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Profile Info -->
+  <div class="px-4 sm:px-6 pb-4 sm:pb-6">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between -mt-9 sm:-mt-12 md:-mt-14 lg:-mt-16 mb-4">
+      <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+        <div class="profile-avatar">
+          <img *ngIf="profileImage" 
+               [src]="profileImage" 
+               alt="Perfil" 
+               class="w-full h-full object-cover rounded-full">
+          <span *ngIf="!profileImage">{{ iniciales }}</span>
+        </div>
+        <div class="mb-2">
+          <h1 [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">
+            {{ usuario.nombre_completo }}
+          </h1>
+          <p [ngClass]="currentTheme.textSecondaryClass" class="font-medium text-sm sm:text-base">
+            @{{ usuario.nombre_usuario }}
+          </p>
+        </div>
+      </div>
+
+      <div class="profile-action-container">
+        <button
+          (click)="accionBoton.emit()"
+          [disabled]="cargandoAccion"
+          [class]="getButtonClass()"
+          [style.background]="!isOwnProfile && !estaSiguiendo ? currentTheme.color : null"
+          [style.opacity]="cargandoAccion ? '0.7' : '1'">
+          <i [class]="iconoBoton"></i>
+          <span *ngIf="!isOwnProfile && estaSiguiendo">
+            <span class="btn-text-default">Siguiendo</span>
+            <span class="btn-text-hover">Dejar de seguir</span>
+          </span>
+          <span *ngIf="isOwnProfile || !estaSiguiendo">{{ textoBoton }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bio and Info -->
+    <div class="space-y-3 mb-4">
+      <p [ngClass]="currentTheme.textPrimaryClass" class="leading-relaxed text-sm sm:text-base">
+        {{ usuario.biografia || '¡Hola! Aún no he agregado una biografía 👋' }}
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+        <div *ngIf="usuario.carrera" 
+             [ngClass]="currentTheme.textSecondaryClass" 
+             class="flex items-center gap-2">
+          <i [ngClass]="currentTheme.icon" class="fas fa-book"></i>
+          <span class="font-medium">{{ usuario.carrera }}</span>
+        </div>
+        <div *ngIf="usuario.ubicacion" 
+             [ngClass]="currentTheme.textSecondaryClass" 
+             class="flex items-center gap-2">
+          <i [ngClass]="currentTheme.icon" class="fas fa-map-marker-alt"></i>
+          <span class="font-medium">{{ usuario.ubicacion }}</span>
+        </div>
+      </div>
+
+      <!-- Social Links -->
+  
+    </div>
+
+    <!-- Stats -->
+    <div [ngClass]="currentTheme.borderColor" class="flex gap-4 sm:gap-6 pt-4 border-t">
+      <div class="text-center">
+        <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ totalPublicaciones }}</div>
+        <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Publicaciones</div>
+      </div>
+      <div 
+        (click)="abrirSeguidores.emit()"
+        [ngClass]="'hover:' + currentTheme.accentColor" 
+        class="text-center cursor-pointer transition">
+        <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ totalSeguidores }}</div>
+        <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Seguidores</div>
+      </div>
+      <div 
+        (click)="abrirSiguiendo.emit()"
+        [ngClass]="'hover:' + currentTheme.accentColor" 
+        class="text-center cursor-pointer transition">
+        <div [ngClass]="currentTheme.textPrimaryClass" class="text-xl sm:text-2xl font-black">{{ totalSiguiendo }}</div>
+        <div [ngClass]="currentTheme.textSecondaryClass" class="text-xs sm:text-sm font-medium">Siguiendo</div>
+      </div>
+    </div>
+  </div>
+</div>

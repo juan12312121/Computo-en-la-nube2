@@ -1,0 +1,770 @@
+/* Cover Photo según tema - MEJORADO RESPONSIVE */
+.profile-cover {
+  width: 100%;
+  height: 100px; /* Más pequeño para móviles */
+  background: linear-gradient(135deg, #14b8a6 0%, rgba(20, 184, 166, 0.8) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Asegurar que la imagen dentro del cover se ajuste bien */
+.profile-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Tablets pequeñas */
+@media (min-width: 640px) {
+  .profile-cover {
+    height: 150px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 768px) {
+  .profile-cover {
+    height: 200px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .profile-cover {
+    height: 280px;
+  }
+}
+
+[data-theme="default"] .profile-cover {
+  background: linear-gradient(to bottom right, #fb923c, #f97316, #14b8a6);
+}
+
+[data-theme="midnight"] .profile-cover {
+  background: linear-gradient(to bottom right, #6366f1, #8b5cf6, #1e293b);
+}
+
+[data-theme="forest"] .profile-cover {
+  background: linear-gradient(to bottom right, #10b981, #059669, #14b8a6);
+}
+
+[data-theme="sunset"] .profile-cover {
+  background: linear-gradient(to bottom right, #f59e0b, #f97316, #ef4444);
+}
+
+[data-theme="ocean"] .profile-cover {
+  background: linear-gradient(to bottom right, #0ea5e9, #06b6d4, #0891b2);
+}
+
+[data-theme="rose"] .profile-cover {
+  background: linear-gradient(to bottom right, #ec4899, #f472b6, #fda4af);
+}
+
+[data-theme="slate"] .profile-cover {
+  background: linear-gradient(to bottom right, #64748b, #475569, #334155);
+}
+
+[data-theme="lavender"] .profile-cover {
+  background: linear-gradient(to bottom right, #a78bfa, #c084fc, #e879f9);
+}
+
+[data-theme="neon"] .profile-cover {
+  background: linear-gradient(to bottom right, #00ffff, #ff00ff, #0a0a0a);
+}
+
+[data-theme="toxic"] .profile-cover {
+  background: linear-gradient(to bottom right, #84cc16, #22c55e, #18181b);
+}
+
+[data-theme="candy"] .profile-cover {
+  background: linear-gradient(to bottom right, #fbbf24, #ec4899, #8b5cf6);
+}
+
+[data-theme="chaos"] .profile-cover {
+  background: linear-gradient(to bottom right, #ff0000, #00ff00, #0000ff, #ffff00);
+}
+
+/* Avatar según tema - RESPONSIVE */
+.profile-avatar {
+  width: 4.5rem; /* Más pequeño para móviles (72px) */
+  height: 4.5rem;
+  border-radius: 9999px;
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5rem; /* Texto más pequeño en móvil */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Tablets pequeñas */
+@media (min-width: 640px) {
+  .profile-avatar {
+    width: 6rem;
+    height: 6rem;
+    border: 3px solid white;
+    font-size: 1.875rem;
+  }
+}
+
+/* Tablets */
+@media (min-width: 768px) {
+  .profile-avatar {
+    width: 7rem;
+    height: 7rem;
+    border: 4px solid white;
+    font-size: 2rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .profile-avatar {
+    width: 8rem;
+    height: 8rem;
+    font-size: 2.25rem;
+  }
+}
+
+/* Asegurar que la imagen dentro del avatar se ajuste bien */
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+[data-theme="default"] .profile-avatar {
+  background: linear-gradient(to bottom right, #2dd4bf, #14b8a6);
+}
+
+[data-theme="midnight"] .profile-avatar {
+  background: linear-gradient(to bottom right, #6366f1, #8b5cf6);
+  border-color: #1e293b;
+}
+
+[data-theme="forest"] .profile-avatar {
+  background: linear-gradient(to bottom right, #10b981, #059669);
+}
+
+[data-theme="sunset"] .profile-avatar {
+  background: linear-gradient(to bottom right, #f59e0b, #ef4444);
+}
+
+[data-theme="ocean"] .profile-avatar {
+  background: linear-gradient(to bottom right, #0ea5e9, #06b6d4);
+}
+
+[data-theme="rose"] .profile-avatar {
+  background: linear-gradient(to bottom right, #ec4899, #f472b6);
+}
+
+[data-theme="slate"] .profile-avatar {
+  background: linear-gradient(to bottom right, #64748b, #475569);
+}
+
+[data-theme="lavender"] .profile-avatar {
+  background: linear-gradient(to bottom right, #a78bfa, #c084fc);
+}
+
+[data-theme="neon"] .profile-avatar {
+  background: linear-gradient(to bottom right, #00ffff, #ff00ff);
+  border-color: #0a0a0a;
+}
+
+[data-theme="toxic"] .profile-avatar {
+  background: linear-gradient(to bottom right, #84cc16, #22c55e);
+  border-color: #18181b;
+}
+
+[data-theme="candy"] .profile-avatar {
+  background: linear-gradient(to bottom right, #ec4899, #8b5cf6);
+}
+
+[data-theme="chaos"] .profile-avatar {
+  background: linear-gradient(to bottom right, #00ff00, #8b5cf6);
+}
+
+/* Contenedor del botón de acción */
+.profile-action-container {
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .profile-action-container {
+    margin-top: 0;
+  }
+}
+
+/* Botón de acción según tema */
+.profile-action-btn {
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .profile-action-btn {
+    font-size: 1rem;
+  }
+}
+
+.profile-action-btn.edit {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.profile-action-btn.edit:hover {
+  background-color: #d1d5db;
+}
+
+[data-theme="midnight"] .profile-action-btn.edit {
+  background-color: #334155;
+  color: #e2e8f0;
+}
+
+[data-theme="midnight"] .profile-action-btn.edit:hover {
+  background-color: #475569;
+}
+
+[data-theme="neon"] .profile-action-btn.edit,
+[data-theme="toxic"] .profile-action-btn.edit {
+  background-color: #27272a;
+  color: #e4e4e7;
+}
+
+[data-theme="neon"] .profile-action-btn.edit:hover,
+[data-theme="toxic"] .profile-action-btn.edit:hover {
+  background-color: #3f3f46;
+}
+
+/* Botón FOLLOW - Se adapta al tema seleccionado */
+.profile-action-btn.follow {
+  color: white;
+}
+
+.profile-action-btn.follow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="midnight"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+}
+
+[data-theme="midnight"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+}
+
+[data-theme="forest"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #10b981, #059669);
+}
+
+[data-theme="forest"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #059669, #047857);
+}
+
+[data-theme="sunset"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #f59e0b, #ef4444);
+}
+
+[data-theme="sunset"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #d97706, #dc2626);
+}
+
+[data-theme="ocean"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #0ea5e9, #06b6d4);
+}
+
+[data-theme="ocean"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #0284c7, #0891b2);
+}
+
+[data-theme="rose"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #ec4899, #f472b6);
+}
+
+[data-theme="rose"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #db2777, #ec4899);
+}
+
+[data-theme="slate"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #64748b, #475569);
+}
+
+[data-theme="slate"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #475569, #334155);
+}
+
+[data-theme="lavender"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #a78bfa, #c084fc);
+}
+
+[data-theme="lavender"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #8b5cf6, #a855f7);
+}
+
+[data-theme="neon"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #00ffff, #ff00ff);
+}
+
+[data-theme="neon"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #00cccc, #cc00cc);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+[data-theme="toxic"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #84cc16, #22c55e);
+}
+
+[data-theme="toxic"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #65a30d, #16a34a);
+  box-shadow: 0 0 20px rgba(132, 204, 22, 0.5);
+}
+
+[data-theme="candy"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #fbbf24, #ec4899);
+}
+
+[data-theme="candy"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #f59e0b, #db2777);
+}
+
+[data-theme="chaos"] .profile-action-btn.follow {
+  background: linear-gradient(to right, #ff0000, #00ff00);
+}
+
+[data-theme="chaos"] .profile-action-btn.follow:hover {
+  background: linear-gradient(to right, #cc0000, #00cc00);
+  animation: chaos-pulse 0.5s ease-in-out;
+}
+
+@keyframes chaos-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Tabs según tema */
+.tab-button.active {
+  font-weight: bold;
+  border-bottom: 2px solid;
+  transition: all 0.3s ease;
+}
+
+[data-theme="default"] .tab-button.active {
+  color: #f97316;
+  border-color: #f97316;
+}
+
+[data-theme="midnight"] .tab-button.active {
+  color: #6366f1;
+  border-color: #6366f1;
+}
+
+[data-theme="forest"] .tab-button.active {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+[data-theme="sunset"] .tab-button.active {
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+[data-theme="ocean"] .tab-button.active {
+  color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+
+[data-theme="rose"] .tab-button.active {
+  color: #ec4899;
+  border-color: #ec4899;
+}
+
+[data-theme="slate"] .tab-button.active {
+  color: #64748b;
+  border-color: #64748b;
+}
+
+[data-theme="lavender"] .tab-button.active {
+  color: #a78bfa;
+  border-color: #a78bfa;
+}
+
+[data-theme="neon"] .tab-button.active {
+  color: #00ffff;
+  border-color: #00ffff;
+}
+
+[data-theme="toxic"] .tab-button.active {
+  color: #84cc16;
+  border-color: #84cc16;
+}
+
+[data-theme="candy"] .tab-button.active {
+  color: #ec4899;
+  border-color: #ec4899;
+}
+
+[data-theme="chaos"] .tab-button.active {
+  color: #00ff00;
+  border-color: #00ff00;
+}
+
+/* Modal header según tema */
+.section-modal-header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.3s ease;
+}
+
+[data-theme="default"] .section-modal-header {
+  background: linear-gradient(to right, #f97316, #14b8a6);
+}
+
+[data-theme="midnight"] .section-modal-header {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+}
+
+[data-theme="forest"] .section-modal-header {
+  background: linear-gradient(to right, #10b981, #059669);
+}
+
+[data-theme="sunset"] .section-modal-header {
+  background: linear-gradient(to right, #f59e0b, #ef4444);
+}
+
+[data-theme="ocean"] .section-modal-header {
+  background: linear-gradient(to right, #0ea5e9, #06b6d4);
+}
+
+[data-theme="rose"] .section-modal-header {
+  background: linear-gradient(to right, #ec4899, #f472b6);
+}
+
+[data-theme="slate"] .section-modal-header {
+  background: linear-gradient(to right, #64748b, #475569);
+}
+
+[data-theme="lavender"] .section-modal-header {
+  background: linear-gradient(to right, #a78bfa, #c084fc);
+}
+
+[data-theme="neon"] .section-modal-header {
+  background: linear-gradient(to right, #00ffff, #ff00ff);
+}
+
+[data-theme="toxic"] .section-modal-header {
+  background: linear-gradient(to right, #84cc16, #22c55e);
+}
+
+[data-theme="candy"] .section-modal-header {
+  background: linear-gradient(to right, #fbbf24, #ec4899);
+}
+
+[data-theme="chaos"] .section-modal-header {
+  background: linear-gradient(to right, #ff0000, #00ff00, #0000ff);
+}
+
+/* Animaciones y transiciones suaves */
+.profile-cover,
+.profile-avatar {
+  transition: all 0.3s ease;
+}
+
+/* Mejora visual para hover en elementos interactivos */
+.profile-cover button:hover {
+  transform: translateY(-2px);
+}
+
+.profile-avatar:hover {
+  transform: scale(1.02);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive utilities */
+@media (max-width: 639px) {
+  .profile-action-btn i {
+    font-size: 0.875rem;
+  }
+}
+
+/* Estilos para el botón de seguir/dejar de seguir */
+.profile-action-btn {
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Botón de editar perfil */
+.profile-action-btn.edit {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border-color: #e5e7eb;
+}
+
+.profile-action-btn.edit:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+/* Botón de seguir (cuando NO está siguiendo) */
+.profile-action-btn.follow {
+  color: white;
+  border-color: transparent;
+}
+
+.profile-action-btn.follow:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Botón de siguiendo (estado normal) */
+.profile-action-btn.following {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border-color: #e5e7eb;
+  position: relative;
+}
+
+.profile-action-btn.following .btn-text-default {
+  display: inline;
+}
+
+.profile-action-btn.following .btn-text-hover {
+  display: none;
+}
+
+/* Botón de siguiendo (al hacer hover - cambia a dejar de seguir) */
+.profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.profile-action-btn.following:hover .btn-text-default {
+  display: none;
+}
+
+.profile-action-btn.following:hover .btn-text-hover {
+  display: inline;
+}
+
+/* Tema oscuro */
+.dark .profile-action-btn.edit,
+.dark .profile-action-btn.following {
+  background-color: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+.dark .profile-action-btn.edit:hover {
+  background-color: #4b5563;
+  border-color: #6b7280;
+}
+
+.dark .profile-action-btn.following:hover {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+  border-color: #991b1b;
+}
+
+/* Adaptación del botón "Siguiendo" a los diferentes temas */
+[data-theme="midnight"] .profile-action-btn.following {
+  background-color: #334155;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+[data-theme="midnight"] .profile-action-btn.following:hover {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+  border-color: #991b1b;
+}
+
+[data-theme="forest"] .profile-action-btn.following {
+  background-color: #d1fae5;
+  color: #047857;
+  border-color: #6ee7b7;
+}
+
+[data-theme="forest"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="sunset"] .profile-action-btn.following {
+  background-color: #fed7aa;
+  color: #92400e;
+  border-color: #fdba74;
+}
+
+[data-theme="sunset"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="ocean"] .profile-action-btn.following {
+  background-color: #cffafe;
+  color: #0e7490;
+  border-color: #67e8f9;
+}
+
+[data-theme="ocean"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="rose"] .profile-action-btn.following {
+  background-color: #fce7f3;
+  color: #9f1239;
+  border-color: #f9a8d4;
+}
+
+[data-theme="rose"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="slate"] .profile-action-btn.following {
+  background-color: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+[data-theme="slate"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="lavender"] .profile-action-btn.following {
+  background-color: #ede9fe;
+  color: #6b21a8;
+  border-color: #c4b5fd;
+}
+
+[data-theme="lavender"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="neon"] .profile-action-btn.following,
+[data-theme="toxic"] .profile-action-btn.following {
+  background-color: #27272a;
+  color: #e4e4e7;
+  border-color: #3f3f46;
+}
+
+[data-theme="neon"] .profile-action-btn.following:hover,
+[data-theme="toxic"] .profile-action-btn.following:hover {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+  border-color: #991b1b;
+}
+
+[data-theme="candy"] .profile-action-btn.following {
+  background-color: #fce7f3;
+  color: #9f1239;
+  border-color: #f9a8d4;
+}
+
+[data-theme="candy"] .profile-action-btn.following:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+[data-theme="chaos"] .profile-action-btn.following {
+  background-color: #18181b;
+  color: #00ff00;
+  border-color: #3f3f46;
+}
+
+[data-theme="chaos"] .profile-action-btn.following:hover {
+  background-color: #7f1d1d;
+  color: #ff0000;
+  border-color: #991b1b;
+  animation: chaos-shake 0.3s ease-in-out;
+}
+
+@keyframes chaos-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Estado deshabilitado */
+.profile-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .profile-action-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Animación del icono */
+.profile-action-btn i {
+  transition: transform 0.3s ease;
+}
+
+.profile-action-btn:hover i {
+  transform: scale(1.1);
+}
+
+.profile-action-btn.following:hover i {
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}

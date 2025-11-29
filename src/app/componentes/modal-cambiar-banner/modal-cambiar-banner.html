@@ -1,0 +1,121 @@
+<div *ngIf="isVisible && usuario"
+     (click)="onBackdropClick($event)"
+     class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div [ngClass]="currentTheme.cardBg" class="rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+    
+    <!-- Header del Modal -->
+    <div class="sticky top-0 z-10" 
+         [style.background]="currentTheme.color"
+         style="padding: 1.25rem 1.5rem;">
+      <div class="flex items-center justify-between">
+        <h2 class="text-white font-bold text-xl">
+          <i class="fas fa-image mr-2"></i>Cambiar Foto de Portada
+        </h2>
+        <button 
+          (click)="onCerrar()" 
+          class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido del Modal -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+      
+      <!-- Mensaje de Error -->
+      <div *ngIf="errorBanner" 
+           class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+        <i class="fas fa-exclamation-circle text-red-500 text-xl mt-0.5"></i>
+        <div class="flex-1">
+          <p class="text-red-800 font-semibold">Error</p>
+          <p class="text-red-600 text-sm">{{ errorBanner }}</p>
+        </div>
+      </div>
+
+      <!-- Vista Previa de la Portada -->
+      <div class="mb-6">
+        <div class="relative w-full h-48 rounded-xl overflow-hidden"
+             [ngStyle]="(previsualizacionBanner || getCoverImage()) ? {
+               'background-image': 'url(' + (previsualizacionBanner || getCoverImage()) + ')',
+               'background-size': 'cover',
+               'background-position': 'center'
+             } : {
+               'background': 'linear-gradient(135deg, ' + currentTheme.color + ' 0%, rgba(0,0,0,0.3) 100%)'
+             }">
+          <div *ngIf="!previsualizacionBanner && !getCoverImage()" 
+               class="w-full h-full flex flex-col items-center justify-center text-white">
+            <i class="fas fa-image text-5xl mb-2 opacity-50"></i>
+            <p class="text-sm opacity-75">No hay portada</p>
+          </div>
+        </div>
+        <p [ngClass]="currentTheme.textSecondaryClass" class="text-sm mt-3 text-center">
+          La imagen debe tener proporción 16:9 para mejor visualización
+        </p>
+      </div>
+
+      <!-- Input de Archivo -->
+      <input 
+        #bannerInput
+        type="file" 
+        accept="image/*"
+        (change)="onFileSelected($event)"
+        class="hidden">
+
+      <!-- Botones de Acción -->
+      <div class="space-y-3">
+        <button 
+          type="button"
+          (click)="bannerInput.click()"
+          [disabled]="guardando"
+          [style.background]="currentTheme.color"
+          class="w-full py-3 rounded-lg text-white font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          <i class="fas fa-upload"></i>
+          {{ previsualizacionBanner ? 'Cambiar Imagen' : 'Seleccionar Imagen' }}
+        </button>
+
+   
+      </div>
+
+      <!-- Información Adicional -->
+      <div [ngClass]="currentTheme.cardBg" 
+           class="mt-6 p-4 rounded-lg border"
+           [ngClass]="currentTheme.borderColor">
+        <h4 [ngClass]="currentTheme.textPrimaryClass" class="font-semibold text-sm mb-2">
+          <i class="fas fa-info-circle mr-2"></i>Recomendaciones
+        </h4>
+        <ul [ngClass]="currentTheme.textSecondaryClass" class="text-xs space-y-1">
+          <li>• Tamaño recomendado: 1500x500 píxeles (16:9)</li>
+          <li>• Formatos aceptados: JPG, PNG, GIF</li>
+          <li>• Tamaño máximo: 5 MB</li>
+          <li>• Evita imágenes con texto importante en los bordes</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Footer con Botones -->
+    <div class="sticky bottom-0 z-10" 
+         [ngClass]="[currentTheme.cardBg, currentTheme.borderColor]"
+         style="padding: 1.25rem 1.5rem; border-top-width: 1px;">
+      <div class="flex gap-3 justify-end">
+        <button 
+          (click)="onCerrar()"
+          [disabled]="guardando"
+          [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]"
+          class="px-6 py-2.5 rounded-lg font-semibold transition disabled:opacity-50">
+          Cancelar
+        </button>
+        <button 
+          (click)="onGuardar()"
+          [disabled]="guardando || !archivoBanner"
+          [style.background]="currentTheme.color"
+          class="px-6 py-2.5 rounded-lg text-white font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2">
+          <i *ngIf="guardando" class="fas fa-spinner fa-spin"></i>
+          <i *ngIf="!guardando" class="fas fa-save"></i>
+          {{ guardando ? 'Guardando...' : 'Guardar Portada' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

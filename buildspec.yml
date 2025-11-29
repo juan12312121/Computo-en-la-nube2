@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo "Instalando Angular CLI y dependencias..."
+      - npm install -g @angular/cli
+      - npm install --legacy-peer-deps
+      - npm install --save-dev @angular-devkit/build-angular --legacy-peer-deps
+  pre_build:
+    commands:
+      - echo "Verificando versión de Node y Angular..."
+      - node -v
+      - npm -v
+      - npx ng version
+  build:
+    commands:
+      - echo "Compilando proyecto Angular en modo producción..."
+      - npx ng build --configuration production
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: dist/frontend-trinoflow

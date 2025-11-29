@@ -1,0 +1,103 @@
+<div *ngIf="isVisible"
+         (click)="onBackdropClick($event)"
+         class="share-modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-end lg:items-center justify-center">
+      <div onclick="event.stopPropagation()"
+           class="rounded-t-3xl lg:rounded-3xl w-full lg:max-w-lg p-6 lg:m-4 max-h-[90vh] overflow-y-auto animate-slide-up"
+           [ngClass]="cardBg">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold" [ngClass]="textPrimaryClass">Compartir publicación</h3>
+          <button (click)="cerrar.emit()"
+                  class="w-10 h-10 rounded-full flex items-center justify-center transition"
+                  [ngClass]="[textSecondaryClass, hoverBackground]">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- REDES SOCIALES -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <button (click)="compartirEn.emit('whatsapp')"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg">
+              <i class="fab fa-whatsapp"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">WhatsApp</span>
+          </button>
+
+          <button (click)="compartirEn.emit('facebook')"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl shadow-lg">
+              <i class="fab fa-facebook-f"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">Facebook</span>
+          </button>
+
+          <button (click)="compartirEn.emit('twitter')"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl shadow-lg">
+              <i class="fab fa-twitter"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">Twitter</span>
+          </button>
+
+          <button (click)="compartirEn.emit('linkedin')"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center text-white text-2xl shadow-lg">
+              <i class="fab fa-linkedin-in"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">LinkedIn</span>
+          </button>
+
+          <button (click)="compartirEn.emit('telegram')"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full bg-sky-600 flex items-center justify-center text-white text-2xl shadow-lg">
+              <i class="fab fa-telegram-plane"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">Telegram</span>
+          </button>
+
+          <button (click)="compartirEn.emit('email')"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl shadow-lg">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">Email</span>
+          </button>
+
+          <button (click)="copiarLink.emit()"
+                  class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+                  [ngClass]="hoverBackground">
+            <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
+                 [ngClass]="accentBg">
+              <i class="fas fa-link"></i>
+            </div>
+            <span class="text-xs font-semibold" [ngClass]="textPrimaryClass">Copiar</span>
+          </button>
+        </div>
+
+        <!-- COPY LINK SECTION -->
+        <div class="border-t pt-4" [ngClass]="borderColor">
+          <div class="flex items-center gap-3 rounded-xl p-3"
+               [ngClass]="bgInfo">
+            <i class="fas fa-link" [ngClass]="textPrimary"></i>
+            <input type="text"
+                   [value]="urlPost"
+                   readonly
+                   class="flex-1 bg-transparent text-sm outline-none"
+                   [ngClass]="textSecondaryClass">
+            <button (click)="copiarLink.emit()"
+                    class="font-semibold text-sm transition"
+                    [ngClass]="linkCopiado ? 'text-green-500' : [textPrimary, 'hover:opacity-80']">
+              {{ linkCopiado ? '✓ Copiado' : 'Copiar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,79 @@
+<!-- Solo mostrar si el usuario está autenticado -->
+<div *ngIf="estaAutenticado" class="rounded-xl shadow-sm border p-4" [ngClass]="cardBg">
+  <h3 class="font-bold mb-3 flex items-center gap-2" [ngClass]="textPrimaryClass">
+    <i class="fas fa-circle text-green-500 text-xs animate-pulse"></i>
+    Seguidores activos
+  </h3>
+  
+  <!-- Lista de seguidores activos con fotos -->
+  <div class="space-y-3" *ngIf="!cargandoFotos && usuariosConFotos.length > 0">
+    <div *ngFor="let usuario of usuariosConFotos"
+         (click)="irAPerfil(usuario.id)"
+         class="flex items-center gap-3 p-2 rounded-lg transition cursor-pointer hover:opacity-80"
+         [ngClass]="hoverBackground">
+      
+      <div class="relative flex-shrink-0">
+        <!-- Foto de perfil si existe -->
+        <div *ngIf="usuario.foto_perfil_url; else iniciales"
+             class="w-10 h-10 rounded-full bg-cover bg-center border-2"
+             [ngClass]="borderClass"
+             [ngStyle]="{'background-image': 'url(' + usuario.foto_perfil_url + ')'}">
+        </div>
+        
+        <!-- Iniciales si no hay foto -->
+        <ng-template #iniciales>
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+               [style.background]="generarColorAvatar(usuario.id)">
+            {{ obtenerIniciales(usuario.nombre_completo) }}
+          </div>
+        </ng-template>
+        
+        <!-- Indicador verde de "en línea" -->
+        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 animate-pulse"
+             [ngClass]="borderClass">
+        </div>
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm truncate" [ngClass]="textPrimaryClass">
+          {{ usuario.nombre_completo }}
+        </p>
+        <p class="text-xs truncate" [ngClass]="textSecondaryClass">
+          @{{ usuario.nombre_usuario }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado: Cargando seguidores -->
+  <div *ngIf="cargandoFotos" class="text-center py-8">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-3"></div>
+    <p class="text-xs" [ngClass]="textSecondaryClass">
+      Cargando seguidores activos...
+    </p>
+  </div>
+
+  <!-- Estado: Sin seguidores activos -->
+  <div *ngIf="!cargandoFotos && usuariosConFotos.length === 0" class="text-center py-8">
+    <i class="fas fa-user-friends text-4xl mb-3 opacity-50" [ngClass]="textSecondaryClass"></i>
+    <p class="text-sm font-medium" [ngClass]="textPrimaryClass">
+      Sin seguidores en línea
+    </p>
+    <p class="text-xs mt-1" [ngClass]="textSecondaryClass">
+      Tus seguidores aparecerán aquí cuando estén activos
+    </p>
+  </div>
+</div>
+
+<!-- Mensaje cuando NO está autenticado -->
+<div *ngIf="!estaAutenticado" class="rounded-xl shadow-sm border p-4" [ngClass]="cardBg">
+  <div class="text-center py-8">
+    <i class="fas fa-lock text-4xl mb-3 opacity-30" [ngClass]="textSecondaryClass"></i>
+    <p class="text-sm font-medium mb-2" [ngClass]="textPrimaryClass">
+      Inicia sesión
+    </p>
+    <p class="text-xs" [ngClass]="textSecondaryClass">
+      para ver tus seguidores en línea
+    </p>
+  </div>
+</div>

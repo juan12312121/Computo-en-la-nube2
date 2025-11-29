@@ -1,0 +1,227 @@
+<app-navbar (openCreate)="openCreateModal()"></app-navbar>
+
+<!-- Hero Section -->
+<div class="max-w-7xl mx-auto px-6 py-12">
+    <div class="text-center mb-12">
+        <h1 class="hero-title">
+            Explora TrinoFlow
+        </h1>
+        <p class="hero-subtitle">
+            Descubre temas fascinantes y conecta con tu pasión
+        </p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-16">
+        <div class="relative max-w-3xl mx-auto group">
+            <div [style.background]="currentTheme.color" 
+                 style="position: absolute; inset: -0.25rem; border-radius: 1.5rem; filter: blur(16px); opacity: 0.25; transition: opacity 0.3s;">
+            </div>
+            <div class="relative">
+                <input
+                    type="text"
+                    [(ngModel)]="searchTerm"
+                    (input)="filterTags()"
+                    placeholder="¿Qué quieres explorar hoy?"
+                    [ngClass]="[currentTheme.cardBg, currentTheme.textPrimaryClass]"
+                    class="w-full px-8 py-5 pl-16 rounded-3xl border-2 focus:outline-none text-lg shadow-lg transition duration-300 focus:shadow-2xl"
+                    [style.border-color]="currentTheme.color">
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA DE CATEGORÍAS - Mostrar cuando no hay categoría seleccionada -->
+    <div *ngIf="!selectedCategory">
+        <!-- Tags Grid with Modern Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="filteredTags.length > 0">
+            <div *ngFor="let tag of filteredTags"
+                 [ngClass]="currentTheme.cardBg"
+                 class="group relative rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer border-2 overflow-hidden"
+                 (click)="seleccionarCategoria(tag.name)"
+                 (mouseenter)="onCardHover($event, tag.color)"
+                 (mouseleave)="onCardLeave($event)">
+                
+                <!-- Gradient Background Effect -->
+                <div class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300"
+                     [style.background]="getGradient(tag.color)"></div>
+
+                <!-- Content -->
+                <div class="relative z-10">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
+                             [style.background-color]="getColor(tag.color)">
+                            <i class="fas {{tag.icon}} text-white text-2xl"></i>
+                        </div>
+                    </div>
+
+                    <h3 [ngClass]="currentTheme.textPrimaryClass" class="font-bold text-xl mb-2 transition-colors">
+                        {{tag.name}}
+                    </h3>
+
+                    <div class="flex items-center justify-between mt-4">
+                        <div [ngClass]="currentTheme.textSecondaryClass" class="flex items-center gap-2">
+                            <i class="fas fa-file-alt text-sm"></i>
+                            <span class="text-sm font-semibold">{{tag.posts | number}} posts</span>
+                        </div>
+                        <div class="opacity-0 group-hover:opacity-100 text-white px-4 py-2 rounded-xl text-sm font-bold transition-opacity duration-300 border-none cursor-pointer"
+                            [style.background-color]="getColor(tag.color)">
+                            Explorar <i class="fas fa-arrow-right ml-1"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decorative Circle -->
+                <div class="absolute -bottom-6 -right-6 w-24 h-24 rounded-full opacity-10"
+                     [style.background-color]="getColor(tag.color)"></div>
+            </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div *ngIf="filteredTags.length === 0" class="text-center py-20">
+            <div [ngClass]="currentTheme.cardBg" class="inline-block p-8 rounded-3xl shadow-xl">
+                <i [ngClass]="currentTheme.textSecondaryClass" class="fas fa-search text-6xl mb-4 opacity-50"></i>
+                <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-bold mb-2">
+                    No encontramos resultados
+                </h3>
+                <p [ngClass]="currentTheme.textSecondaryClass">Intenta con otra búsqueda</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA DE POSTS - Mostrar cuando hay categoría seleccionada -->
+    <div *ngIf="selectedCategory" class="mb-8">
+        <!-- Botón volver -->
+        <div class="mb-6">
+            <button (click)="seleccionarCategoria(selectedCategory || '')"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition"
+                    [ngClass]="[currentTheme.textPrimaryClass, currentTheme.hoverBgLight || '']">
+                <i class="fas fa-arrow-left"></i>
+                Volver a categorías
+            </button>
+        </div>
+
+        <!-- Título de categoría -->
+        <h2 [ngClass]="currentTheme.textPrimaryClass" class="text-3xl font-bold mb-6">
+            {{ selectedCategory }}
+            <span [ngClass]="currentTheme.textSecondaryClass" class="text-lg ml-2">
+                ({{ postsFilttrados.length }} posts)
+            </span>
+        </h2>
+
+        <!-- Posts usando estilos de Principal -->
+        <div class="flex justify-center">
+            <div class="max-w-2xl w-full space-y-3 sm:space-y-4">
+                
+                <!-- Loading State -->
+                <div *ngIf="isLoading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2"
+                         [style.border-color]="currentTheme.color"></div>
+                    <p class="text-sm font-medium mt-3" [ngClass]="currentTheme.textSecondaryClass">
+                        Cargando publicaciones...
+                    </p>
+                </div>
+
+                <!-- Posts Grid -->
+                <div *ngFor="let post of postsFilttrados; trackBy: trackByPostId"
+                     class="border rounded-xl shadow-sm hover:shadow-md transition relative"
+                     [ngClass]="currentTheme.cardBg || ''">
+
+                    <!-- Post Header -->
+                    <div class="px-4 pt-3 pb-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <!-- Conditionally display avatar or profile picture -->
+                                <ng-container *ngIf="post.fotoPerfil; else avatarInitials">
+                                    <img [src]="post.fotoPerfil" alt="Profile Picture" class="w-11 h-11 rounded-full object-cover">
+                                </ng-container>
+                                <ng-template #avatarInitials>
+                                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+                                         [style.background]="post.avatarColor">
+                                        {{ post.avatar }}
+                                    </div>
+                                </ng-template>
+                                <div>
+                                    <h3 class="font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">{{ post.author }}</h3>
+                                    <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ post.time }}</p>
+                                </div>
+                            </div>
+                            <button class="transition p-2" [ngClass]="currentTheme.textSecondaryClass || ''">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Post Content -->
+                    <div class="px-4 pb-3">
+                        <p class="leading-relaxed text-sm sm:text-base" [ngClass]="currentTheme.textPrimaryClass || ''">
+                            {{ post.content }}
+                        </p>
+                    </div>
+
+                    <!-- Post Image - Con detección de altura -->
+                    <div *ngIf="post.image" class="cursor-pointer hover:opacity-95 transition overflow-hidden relative"
+                         [ngClass]="post['isTooLong'] ? 'max-h-96' : ''">
+                        <img [src]="post.image" 
+                             [alt]="post.category" 
+                             class="w-full h-auto object-cover"
+                             (load)="onImageLoad($event, post)">
+                    </div>
+
+                    <!-- Post Stats -->
+                    <div class="px-4 py-3 flex items-center justify-between text-sm border-t"
+                         [ngClass]="[currentTheme.borderColor || '', currentTheme.textSecondaryClass || '']">
+                        <span class="font-medium">
+                            {{ post.likes }} Me gusta
+                        </span>
+                        <span class="font-medium">
+                            {{ post.totalComments || 0 }} comentarios · {{ post.shares }} compartidos
+                        </span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="border-t px-2 py-1.5 flex items-center gap-1" [ngClass]="currentTheme.borderColor || ''">
+                        <button (click)="toggleLike(post.id)"
+                                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+                                [ngClass]="post.liked
+                                  ? ['text-pink-500', 'hover:bg-pink-50']
+                                  : [currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']">
+                            <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                            <span>Me gusta</span>
+                        </button>
+
+                        <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+                                [ngClass]="[currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']">
+                            <i class="fas fa-comment"></i>
+                            <span>Comentar</span>
+                        </button>
+
+                        <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+                                [ngClass]="[currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']">
+                            <i class="fas fa-share"></i>
+                            <span>Compartir</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- No Posts Message -->
+                <div *ngIf="!isLoading && postsFilttrados.length === 0" class="text-center py-12">
+                    <div [ngClass]="currentTheme.cardBg" class="inline-block p-8 rounded-3xl shadow-xl">
+                        <i [ngClass]="currentTheme.textSecondaryClass" class="fas fa-inbox text-6xl mb-4 opacity-50"></i>
+                        <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-2xl font-bold mb-2">
+                            No hay posts en esta categoría
+                        </h3>
+                        <p [ngClass]="currentTheme.textSecondaryClass">Sé el primero en compartir algo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Decorative Elements -->
+<div [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' ? '#a855f7' : '#fed7aa'" 
+     style="position: fixed; top: 5rem; left: 2.5rem; width: 5rem; height: 5rem; border-radius: 9999px; opacity: 0.2; filter: blur(48px); pointer-events: none;">
+</div>
+<div [style.background-color]="currentTheme.id === 'midnight' || currentTheme.id === 'toxic' ? '#6366f1' : '#99f6e4'" 
+     style="position: fixed; bottom: 5rem; right: 2.5rem; width: 8rem; height: 8rem; border-radius: 9999px; opacity: 0.2; filter: blur(48px); pointer-events: none;">
+</div>

@@ -1,0 +1,426 @@
+<div *ngIf="isVisible && post"
+     (click)="onBackdropClick($event)"
+     class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-0 lg:p-4"
+     [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-white lg:bg-black lg:bg-opacity-90' : 'bg-white lg:bg-black lg:bg-opacity-90'">
+
+  <button (click)="closeModal()" 
+          class="fixed top-4 right-4 text-3xl z-[60] bg-opacity-70 w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
+          [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'text-gray-900 lg:text-white hover:text-gray-600 lg:hover:text-gray-300 bg-white lg:bg-black' : 'text-gray-900 lg:text-white hover:text-gray-600 lg:hover:text-gray-300 bg-white lg:bg-black'">
+    <i class="fas fa-times"></i>
+  </button>
+
+  <div class="w-full h-full lg:max-w-6xl lg:h-auto flex flex-col lg:flex-row gap-0 lg:gap-4 lg:bg-transparent"
+       [ngClass]="currentTheme.cardBg">
+    
+    <!-- Mobile Layout -->
+    <div class="lg:hidden w-full h-full overflow-y-auto">
+      <div class="p-4 sticky top-0 z-10 border-b"
+           [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
+        <div class="flex items-center gap-3">
+          <!-- 📸 AVATAR HEADER MOBILE (CLICKEABLE) -->
+          <div (click)="navegarAPerfil(post.usuarioId, $event)"
+               class="w-11 h-11 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition"
+               [ngClass]="post.avatarColor">
+            {{ post.avatar }}
+          </div>
+          <div class="flex-1">
+            <h3 (click)="navegarAPerfil(post.usuarioId, $event)"
+                class="font-bold cursor-pointer hover:underline" 
+                [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
+            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
+          </div>
+        </div>
+        <div class="mt-3">
+          <p class="text-sm leading-snug whitespace-pre-wrap" 
+             [ngClass]="[currentTheme.textPrimaryClass, showFullDescriptionMobile ? '' : 'line-clamp-3']">{{ post.content }}</p>
+          <button *ngIf="post.content.length > 150" 
+                  (click)="showFullDescriptionMobile = !showFullDescriptionMobile"
+                  class="text-xs font-semibold mt-1"
+                  [ngClass]="currentTheme.accentColor">
+            {{ showFullDescriptionMobile ? 'Ver menos' : 'Ver más' }}
+          </button>
+        </div>
+        <div class="mt-3">
+          <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
+                [ngClass]="post.categoryColor">
+            {{ post.category }}
+          </span>
+        </div>
+      </div>
+
+      <div *ngIf="post.image" class="w-full" [ngClass]="currentTheme.cardBg">
+        <img [src]="post.image" [alt]="post.category" class="w-full h-auto">
+      </div>
+
+      <div class="px-4 py-3 border-b"
+           [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
+        <div class="flex items-center justify-between text-sm mb-3">
+          <button (click)="toggleLike()" 
+                  class="flex items-center gap-2 font-semibold transition"
+                  [ngClass]="post.liked ? [currentTheme.accentColor, 'hover:opacity-80'] : [currentTheme.textSecondaryClass, currentTheme.hoverText]">
+            <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+            <span>{{ post.likes }}</span>
+          </button>
+          <span class="font-medium" [ngClass]="currentTheme.textSecondaryClass">
+            {{ comentariosFormateados.length }} {{ comentariosFormateados.length === 1 ? 'comentario' : 'comentarios' }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button (click)="toggleLike()" 
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition"
+                  [ngClass]="post.liked ? [currentTheme.accentColor, 'bg-opacity-10', currentTheme.accentBg] : [currentTheme.textSecondaryClass, currentTheme.hoverBgLight]">
+            <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+            <span>Me gusta</span>
+          </button>
+          <button (click)="openShareModal()" 
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition"
+                  [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]">
+            <i class="fas fa-share"></i>
+            <span>Compartir</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="px-4 py-4" [ngClass]="currentTheme.cardBg">
+        <h4 class="font-bold text-base mb-4 flex items-center gap-2" [ngClass]="currentTheme.textPrimaryClass">
+          <i class="fas fa-comments" [ngClass]="currentTheme.accentColor"></i>
+          Comentarios
+        </h4>
+        <div class="space-y-4 mb-4">
+          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES Y OPCIÓN ELIMINAR (MOBILE) -->
+          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3 relative group">
+            <!-- 📸 AVATAR CON FOTO O INICIALES (CLICKEABLE) -->
+            <div (click)="navegarAPerfil(comment.usuario_id, $event)"
+                 class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+                 [ngClass]="comment.foto_perfil_url ? '' : 'bg-gradient-to-br ' + comment.avatarColor">
+              
+              <!-- Si tiene foto (CLICKEABLE) -->
+              <img *ngIf="comment.foto_perfil_url && !comment.usandoIniciales"
+                   [src]="comment.foto_perfil_url"
+                   [alt]="comment.author"
+                   class="w-full h-full object-cover"
+                   (error)="handleImageError(comment)"
+                   (load)="onImageLoad(comment)">
+              
+              <!-- Si no tiene foto, mostrar iniciales (CLICKEABLE) -->
+              <div *ngIf="!comment.foto_perfil_url || comment.usandoIniciales"
+                   class="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                {{ comment.avatar }}
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="rounded-2xl px-4 py-2.5 break-words"
+                   [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
+                <p (click)="navegarAPerfil(comment.usuario_id, $event)"
+                   class="font-bold text-sm mb-1 cursor-pointer hover:underline" 
+                   [ngClass]="currentTheme.textPrimaryClass">{{ comment.author }}</p>
+                <p class="text-sm leading-relaxed" [ngClass]="currentTheme.textPrimaryClass">{{ comment.text }}</p>
+              </div>
+              <div class="flex items-center gap-4 mt-2 px-3">
+                <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ comment.time }}</p>
+                <!-- ⭐ BOTÓN ELIMINAR (solo si puede eliminar) -->
+                <button *ngIf="comment.canDelete"
+                        (click)="eliminarComentario(comment.id)"
+                        class="text-xs font-semibold transition hover:opacity-70"
+                        [ngClass]="currentTheme.accentColor">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="comentariosFormateados.length === 0" class="text-center py-12">
+            <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                 [ngClass]="'bg-opacity-10 ' + currentTheme.accentBg">
+              <i class="fas fa-comments text-2xl" [ngClass]="currentTheme.accentColor"></i>
+            </div>
+            <p class="text-base font-semibold mb-1" [ngClass]="currentTheme.textPrimaryClass">No hay comentarios aún</p>
+            <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass">Sé el primero en comentar esta publicación</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sticky bottom-0 left-0 right-0 p-4 border-t shadow-lg"
+           [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
+        <div class="flex items-center gap-2.5">
+          <input type="text" 
+                 [(ngModel)]="commentInput" 
+                 (keypress)="onCommentKeyPress($event)" 
+                 placeholder="Añade un comentario..." 
+                 class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
+                 [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100', 'focus:ring-' + currentTheme.accentColor.replace('text-', '')]">
+          <button (click)="addComment()" 
+                  [disabled]="!commentInput.trim()" 
+                  class="active:scale-95 transition-all p-2"
+                  [ngClass]="commentInput.trim() ? [currentTheme.accentColor, 'hover:opacity-80'] : 'text-gray-400 cursor-not-allowed'">
+            <i class="fas fa-paper-plane text-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Layout -->
+    <div class="hidden lg:flex flex-1 items-center justify-center overflow-auto bg-black rounded-lg">
+      <div class="w-full">
+        <div *ngIf="post.image" class="w-full">
+          <img [src]="post.image" [alt]="post.category" class="w-full h-auto object-contain max-h-[85vh]">
+        </div>
+        <div class="rounded-lg p-8 mx-auto max-w-2xl" 
+             *ngIf="!post.image"
+             [ngClass]="currentTheme.cardBg">
+          <div class="flex items-center gap-3 mb-4">
+            <!-- 📸 AVATAR HEADER DESKTOP (CLICKEABLE) -->
+            <div (click)="navegarAPerfil(post.usuarioId, $event)"
+                 class="w-14 h-14 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg cursor-pointer hover:opacity-80 transition"
+                 [ngClass]="post.avatarColor">
+              {{ post.avatar }}
+            </div>
+            <div class="flex-1">
+              <h3 (click)="navegarAPerfil(post.usuarioId, $event)"
+                  class="font-bold text-lg cursor-pointer hover:underline" 
+                  [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
+              <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
+            </div>
+            <span class="inline-block text-white px-4 py-2 rounded-full text-sm font-semibold"
+                  [ngClass]="post.categoryColor">
+              {{ post.category }}
+            </span>
+          </div>
+          <p class="leading-relaxed text-lg whitespace-pre-wrap" [ngClass]="currentTheme.textPrimaryClass">{{ post.content }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hidden lg:flex w-full lg:w-96 lg:rounded-lg flex-col lg:h-[85vh]"
+         [ngClass]="currentTheme.cardBg">
+      <div class="p-4 border-b sticky top-0 z-10" [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
+        <div class="flex items-start gap-3 mb-3">
+          <!-- 📸 AVATAR SIDEBAR DESKTOP (CLICKEABLE) -->
+          <div (click)="navegarAPerfil(post.usuarioId, $event)"
+               class="w-11 h-11 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+               [ngClass]="post.avatarColor">
+            {{ post.avatar }}
+          </div>
+          <div class="flex-1 min-w-0 pr-2">
+            <h3 (click)="navegarAPerfil(post.usuarioId, $event)"
+                class="font-bold text-base truncate cursor-pointer hover:underline" 
+                [ngClass]="currentTheme.textPrimaryClass">{{ post.author }}</h3>
+            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ post.time }}</p>
+          </div>
+          <span class="inline-block text-white px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0"
+                [ngClass]="post.categoryColor">
+            {{ post.category }}
+          </span>
+        </div>
+        <div>
+          <p class="text-sm leading-snug whitespace-pre-wrap" 
+             [ngClass]="[currentTheme.textPrimaryClass, showFullDescription ? '' : 'line-clamp-3']">{{ post.content }}</p>
+          <button *ngIf="post.content.length > 150" 
+                  (click)="showFullDescription = !showFullDescription"
+                  class="text-xs font-semibold mt-1 transition"
+                  [ngClass]="[currentTheme.accentColor, 'hover:opacity-80']">
+            {{ showFullDescription ? 'Ver menos' : 'Ver más' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="px-4 py-2 border-b flex items-center justify-between" [ngClass]="currentTheme.navbarBorder">
+        <div class="flex items-center gap-2">
+          <button (click)="toggleLike()" 
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition text-sm"
+                  [ngClass]="post.liked ? [currentTheme.accentColor, 'bg-opacity-10', currentTheme.accentBg, 'hover:bg-opacity-20'] : [currentTheme.textSecondaryClass, currentTheme.hoverBgLight]">
+            <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+            <span>{{ post.likes }}</span>
+          </button>
+          
+          <button (click)="openShareModal()" 
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition text-sm"
+                  [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]">
+            <i class="fas fa-share"></i>
+            <span>Compartir</span>
+          </button>
+        </div>
+        
+        <span class="text-sm font-medium" [ngClass]="currentTheme.textSecondaryClass">
+          {{ comentariosFormateados.length }} comentario{{ comentariosFormateados.length === 1 ? '' : 's' }}
+        </span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-4 py-4">
+        <h4 class="font-bold text-base mb-4 flex items-center gap-2" [ngClass]="currentTheme.textPrimaryClass">
+          <i class="fas fa-comments" [ngClass]="currentTheme.accentColor"></i>
+          Comentarios
+        </h4>
+        
+        <div class="space-y-4">
+          <!-- ✅ COMENTARIOS CON FOTOS DE PERFIL CLICKEABLES Y OPCIÓN ELIMINAR (DESKTOP) -->
+          <div *ngFor="let comment of comentariosFormateados; trackBy: trackByCommentId" class="flex gap-3 relative group">
+            <!-- 📸 AVATAR CON FOTO O INICIALES (CLICKEABLE) -->
+            <div (click)="navegarAPerfil(comment.usuario_id, $event)"
+                 class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+                 [ngClass]="comment.foto_perfil_url ? '' : 'bg-gradient-to-br ' + comment.avatarColor">
+              
+              <!-- Si tiene foto (CLICKEABLE) -->
+              <img *ngIf="comment.foto_perfil_url && !comment.usandoIniciales"
+                   [src]="comment.foto_perfil_url"
+                   [alt]="comment.author"
+                   class="w-full h-full object-cover"
+                   (error)="handleImageError(comment)"
+                   (load)="onImageLoad(comment)">
+              
+              <!-- Si no tiene foto, mostrar iniciales (CLICKEABLE) -->
+              <div *ngIf="!comment.foto_perfil_url || comment.usandoIniciales"
+                   class="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                {{ comment.avatar }}
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="rounded-2xl px-4 py-2.5 break-words"
+                   [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
+                <p (click)="navegarAPerfil(comment.usuario_id, $event)"
+                   class="font-bold text-sm mb-1 cursor-pointer hover:underline" 
+                   [ngClass]="currentTheme.textPrimaryClass">{{ comment.author }}</p>
+                <p class="text-sm leading-relaxed" [ngClass]="currentTheme.textPrimaryClass">{{ comment.text }}</p>
+              </div>
+              <div class="flex items-center gap-4 mt-2 px-3">
+                <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass">{{ comment.time }}</p>
+                <!-- ⭐ BOTÓN ELIMINAR (solo si puede eliminar) -->
+                <button *ngIf="comment.canDelete"
+                        (click)="eliminarComentario(comment.id)"
+                        class="text-xs font-semibold transition hover:opacity-70"
+                        [ngClass]="currentTheme.accentColor">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="comentariosFormateados.length === 0" class="text-center py-12">
+            <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                 [ngClass]="'bg-opacity-10 ' + currentTheme.accentBg">
+              <i class="fas fa-comments text-2xl" [ngClass]="currentTheme.accentColor"></i>
+            </div>
+            <p class="text-base font-semibold mb-1" [ngClass]="currentTheme.textPrimaryClass">No hay comentarios aún</p>
+            <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass">Sé el primero en comentar esta publicación</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t" [ngClass]="[currentTheme.cardBg, currentTheme.navbarBorder]">
+        <div class="flex items-center gap-2.5">
+          <input type="text" 
+                 [(ngModel)]="commentInput" 
+                 (keypress)="onCommentKeyPress($event)" 
+                 placeholder="Añade un comentario..." 
+                 class="flex-1 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 min-w-0 transition-all"
+                 [ngClass]="[currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100', 'focus:ring-' + currentTheme.accentColor.replace('text-', '')]">
+          <button (click)="addComment()" 
+                  [disabled]="!commentInput.trim()" 
+                  class="active:scale-95 transition-all p-2"
+                  [ngClass]="commentInput.trim() ? [currentTheme.accentColor, 'hover:opacity-80'] : 'text-gray-400 cursor-not-allowed'">
+            <i class="fas fa-paper-plane text-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Compartir - Solo Redes Sociales -->
+<div *ngIf="showShareModal" 
+     (click)="onShareBackdropClick($event)" 
+     class="share-modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-end lg:items-center justify-center">
+  <div onclick="event.stopPropagation()" 
+       class="rounded-t-3xl lg:rounded-3xl w-full lg:max-w-lg p-6 lg:m-4 max-h-[90vh] overflow-y-auto animate-slide-up"
+       [ngClass]="currentTheme.cardBg">
+
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-bold" [ngClass]="currentTheme.textPrimaryClass">Compartir publicación</h3>
+      <button (click)="closeShareModal()" 
+              class="w-10 h-10 rounded-full flex items-center justify-center transition"
+              [ngClass]="[currentTheme.textSecondaryClass, currentTheme.hoverBgLight]">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <button (click)="shareToSocial('whatsapp')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-whatsapp"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">WhatsApp</span>
+      </button>
+
+      <button (click)="shareToSocial('facebook')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-facebook-f"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Facebook</span>
+      </button>
+
+      <button (click)="shareToSocial('twitter')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-sky-500 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-twitter"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Twitter</span>
+      </button>
+
+      <button (click)="shareToSocial('linkedin')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-linkedin-in"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">LinkedIn</span>
+      </button>
+
+      <button (click)="shareToSocial('telegram')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-sky-600 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fab fa-telegram-plane"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Telegram</span>
+      </button>
+
+      <button (click)="shareToSocial('email')" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl shadow-lg">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Email</span>
+      </button>
+
+      <button (click)="copyLink()" class="flex flex-col items-center gap-2 p-4 rounded-xl transition transform hover:scale-105"
+              [ngClass]="currentTheme.hoverBgLight">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
+             [ngClass]="currentTheme.accentBg">
+          <i class="fas fa-link"></i>
+        </div>
+        <span class="text-xs font-semibold" [ngClass]="currentTheme.textPrimaryClass">Copiar</span>
+      </button>
+    </div>
+
+    <div class="border-t pt-4" [ngClass]="currentTheme.navbarBorder">
+      <div class="flex items-center gap-3 rounded-xl p-3"
+           [ngClass]="currentTheme.id === 'midnight' || currentTheme.id === 'neon' || currentTheme.id === 'toxic' ? 'bg-opacity-10 ' + currentTheme.accentBg : 'bg-gray-100'">
+        <i class="fas fa-link" [ngClass]="currentTheme.accentColor"></i>
+        <input type="text" 
+               [value]="'http://3.146.83.30:4200/principal/post/' + post?.id" 
+               readonly 
+               class="flex-1 bg-transparent text-sm outline-none"
+               [ngClass]="currentTheme.textSecondaryClass">
+        <button (click)="copyLink()" 
+                class="font-semibold text-sm transition"
+                [ngClass]="linkCopied ? 'text-green-500' : [currentTheme.accentColor, 'hover:opacity-80']">
+          {{ linkCopied ? '✓ Copiado' : 'Copiar' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

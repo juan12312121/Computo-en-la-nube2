@@ -1,0 +1,153 @@
+<app-navbar (openCreate)="openCreateModal()"></app-navbar>
+
+<!-- Loading State -->
+<app-profile-loading 
+  *ngIf="cargandoPerfil"
+  [currentTheme]="currentTheme">
+</app-profile-loading>
+
+<!-- Error State -->
+<app-profile-error
+  *ngIf="errorCarga && !cargandoPerfil"
+  [currentTheme]="currentTheme"
+  (reintentar)="reintentarCarga()">
+</app-profile-error>
+
+<!-- Profile Container -->
+<div *ngIf="!cargandoPerfil && !errorCarga && usuario" class="max-w-5xl mx-auto px-4 py-6">
+  
+  <!-- Profile Header Card -->
+  <app-profile-header
+    [usuario]="usuario"
+    [currentTheme]="currentTheme"
+    [isOwnProfile]="isOwnProfile"
+    [estaSiguiendo]="estaSiguiendo"
+    [cargandoAccion]="cargandoSeguir"
+    [profileImage]="getProfileImage()"
+    [coverImage]="getCoverImage()"
+    [iniciales]="getInitials()"
+    [totalPublicaciones]="publicacionesFiltradas.length"
+    [totalSeguidores]="usuario.total_seguidores || 0"
+    [totalSiguiendo]="usuario.total_siguiendo || 0"
+    [textoBoton]="getButtonText()"
+    [iconoBoton]="getButtonIcon()"
+    (cambiarBanner)="abrirModalCambiarBanner()"
+    (accionBoton)="toggleProfileMode()"
+    (abrirSeguidores)="abrirSeguidores()"
+    (abrirSiguiendo)="abrirSiguiendo()">
+  </app-profile-header>
+
+  <!-- Tabs Navigation -->
+  <app-profile-tabs
+    [activeTab]="activeTab"
+    [currentTheme]="currentTheme"
+    (cambiarTab)="switchTab($event)">
+  </app-profile-tabs>
+
+  <!-- Content Area -->
+  <div>
+    <!-- Todo Tab Content - ✅ CON EVENTO DE REPORTES -->
+    <div *ngIf="activeTab === 'todo'">
+      <app-publicaciones-perfil
+        [publicaciones]="publicacionesFiltradas"
+        [cargando]="cargandoPublicaciones"
+        [usuarioNombre]="usuario ? usuario.nombre_completo : 'Usuario'"
+        [usuarioIniciales]="getInitials()"
+        [apiBaseUrl]="'http://3.146.83.30:3000'"
+        [usuarioFotoPerfil]="getProfileImage()"
+        (likeToggled)="onLikeToggled($event)"
+        (reportarPublicacion)="abrirModalReporte($event)">
+      </app-publicaciones-perfil>
+    </div>
+
+    <!-- Fotos Tab Content -->
+    <div *ngIf="activeTab === 'fotos'">
+      <app-fotos-perfil
+        [usuarioId]="usuario.id">
+      </app-fotos-perfil>
+    </div>
+
+    <!-- Documentos Tab Content -->
+    <div *ngIf="activeTab === 'documentos'">
+      <app-documentos-lista
+        [currentTheme]="currentTheme"
+        [usuarioId]="!isOwnProfile ? usuario.id : undefined"
+        [soloLectura]="!isOwnProfile"
+        (downloadDocument)="onDocumentDownload($event)">
+      </app-documentos-lista>
+    </div>
+
+    <!-- Secciones Tab Content -->
+ <!-- Secciones Tab Content -->
+<!-- Secciones Tab Content -->
+<div *ngIf="activeTab === 'secciones'">
+  <app-secciones-grid
+    [sections]="sections"
+    [currentTheme]="currentTheme"
+    [usuarioId]="usuario?.id"
+    [soloLectura]="!isOwnProfile"
+    (sectionSelected)="onSectionSelected($event)"
+    (sectionCreated)="recargarSecciones()">
+  </app-secciones-grid>
+</div>
+
+  </div>
+</div>
+
+<!-- Modal de Editar Perfil -->
+<app-modal-editar-perfil
+  *ngIf="isOwnProfile"
+  [isVisible]="showEditModal"
+  [usuario]="$any(usuario)"
+  [currentTheme]="currentTheme"
+  [guardando]="guardandoPerfil"
+  [errorGuardado]="errorGuardado"
+  [mensajeError]="mensajeError"
+  [s3BaseUrl]="getS3BaseUrl()"
+  (close)="cerrarModalEdicion()"
+  (guardar)="guardarPerfil($event)">
+</app-modal-editar-perfil>
+
+<!-- Modal de Cambiar Banner -->
+<app-modal-cambiar-banner
+  *ngIf="isOwnProfile"
+  [isVisible]="showBannerModal"
+  [usuario]="$any(usuario)"
+  [currentTheme]="currentTheme"
+  [guardando]="guardandoBanner"
+  [errorBanner]="errorBanner"
+  [s3BaseUrl]="getS3BaseUrl()"
+  (close)="cerrarModalBanner()"
+  (guardar)="guardarBanner($event)">
+</app-modal-cambiar-banner>
+
+<!-- Modal de Seguidores/Siguiendo -->
+<app-modal-seguidores
+  [isVisible]="showSeguidoresModal"
+  [tipo]="tipoModalSeguidores"
+  [usuarioId]="usuario?.id || null"
+  [currentTheme]="currentTheme"
+  [s3BaseUrl]="getS3BaseUrl()"
+  (close)="cerrarModalSeguidores()">
+</app-modal-seguidores>
+
+<!-- 🆕 MODAL DE REPORTES -->
+<app-modal-reporte
+  [isVisible]="showReporteModal"
+  [loading]="reporteLoading"
+  [success]="reporteSuccess"
+  [error]="reporteError"
+  [motivo]="reporteMotivo"
+  [descripcion]="reporteDescripcion"
+  [motivosValidos]="motivosValidos"
+  [cardBg]="currentTheme.cardBg"
+  [borderColor]="currentTheme.borderColor"
+  [textPrimaryClass]="currentTheme.textPrimaryClass"
+  [textSecondaryClass]="currentTheme.textSecondaryClass"
+  [btnCancelar]="currentTheme.textSecondaryClass + ' hover:bg-opacity-10'"
+  [ringColor]="currentTheme.color"
+  (cerrar)="cerrarModalReporte()"
+  (enviarReporte)="enviarReporte()"
+  (motivoChange)="onMotivoChange($event)"
+  (descripcionChange)="onDescripcionChange($event)">
+</app-modal-reporte>

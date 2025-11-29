@@ -1,0 +1,482 @@
+<!-- NAVBAR PRINCIPAL -->
+<nav class="navbar sticky top-0 z-50 shadow-sm"
+     [ngClass]="[currentTheme.navbarBg || '', 'border-b', currentTheme.navbarBorder || '']">
+  <div class="max-w-7x1 mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center h-14 flex-nowrap w-full gap-4">
+
+      <!-- ========== LOGO ========== -->
+      <div class="flex items-center gap-4 logo flex-shrink-0 mr-12">
+        <a routerLink="/principal" class="flex items-center gap-2" (click)="$event.stopPropagation()">
+          <i class="fas fa-paper-plane text-3xl transition-all duration-300"
+             [ngClass]="currentThemeData.icon || ''"
+             aria-hidden="true"></i>
+          <span class="font-extrabold text-2xl leading-none tracking-tight transition-all duration-300 logo-gradient-text hidden sm:inline"
+                [attr.data-theme]="currentThemeId"
+                style="letter-spacing: -0.02em;">
+            TrinoFlow
+          </span>
+        </a>
+      </div>
+
+      <!-- ========== BUSCADOR DESKTOP ========== -->
+      <div *ngIf="isLoggedIn" class="flex-1 hidden md:flex justify-center max-w-md mx-auto">
+        <div class="relative w-full search-container">
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-2/3 -translate-y-1/2"
+               [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchInput(searchQuery)"
+              (focus)="showSearchResults = searchQuery.length > 0 && searchResults.length > 0"
+              placeholder="Buscar usuarios..."
+              class="w-full pl-10 pr-10 py-2 rounded-full border transition-all duration-200 focus:outline-none focus:ring-2"
+              [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '', currentTheme.textPrimaryClass || '']"
+              [style.--tw-ring-color]="currentTheme.color">
+            <button
+              *ngIf="searchQuery"
+              (click)="limpiarBusqueda()"
+              class="absolute right-3 top-4/5 -translate-y-1/2 hover:opacity-70 transition"
+              [ngClass]="currentTheme.textSecondaryClass || ''">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- RESULTADOS BÚSQUEDA DESKTOP -->
+          <div *ngIf="showSearchResults"
+               class="search-results absolute top-full mt-2 w-full border rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+               [ngClass]="[currentTheme.cardBg || '']">
+            <div *ngIf="isSearching" class="px-4 py-8 text-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto"
+                   [style.border-color]="currentTheme.color"></div>
+              <p class="mt-2 text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">Buscando...</p>
+            </div>
+
+            <div *ngIf="!isSearching && searchResults.length === 0 && searchQuery" class="px-4 py-8 text-center">
+              <i class="fas fa-user-slash text-4xl mb-2 opacity-50" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+              <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">No se encontraron usuarios</p>
+            </div>
+
+            <button *ngFor="let usuario of searchResults"
+                    (click)="verPerfil(usuario)"
+                    class="w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 border-b hover:scale-[1.02]"
+                    [ngClass]="[currentTheme.hoverBgLight || '', currentTheme.borderColor || '']">
+              <img [src]="getUsuarioAvatar(usuario)"
+                   [alt]="usuario.nombre_completo"
+                   (error)="$any($event.target).src='https://ui-avatars.com/api/?name=' + usuario.nombre_completo"
+                   class="w-12 h-12 rounded-full object-cover border-2 flex-shrink-0"
+                   [ngClass]="currentTheme.borderColor || ''">
+              <div class="flex-1 min-w-0 text-left">
+                <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ usuario.nombre_completo }}
+                </p>
+                <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  @{{ usuario.nombre_usuario }}
+                </p>
+                <p *ngIf="usuario.carrera" class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  {{ usuario.carrera }}
+                </p>
+              </div>
+              <i class="fas fa-chevron-right text-xs" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== LINKS NAVEGACIÓN DESKTOP (AUTENTICADO) ========== -->
+      <div *ngIf="isLoggedIn" class="hidden md:flex justify-center gap-8">
+        <a routerLink="/principal"
+           class="flex items-center gap-2 font-semibold transition"
+           [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverText || '']"
+           (click)="$event.stopPropagation()">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </a>
+        <a routerLink="/explorar"
+           class="flex items-center gap-2 font-semibold transition"
+           [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverText || '']"
+           (click)="$event.stopPropagation()">
+          <i class="fas fa-compass"></i>
+          <span>Explorar</span>
+        </a>
+      </div>
+
+      <!-- ========== LINKS NAVEGACIÓN DESKTOP (NO AUTENTICADO) ========== -->
+      <div *ngIf="!isLoggedIn" class="hidden md:flex flex-1 justify-center">
+        <div class="flex items-center gap-6">
+          <a routerLink="/principal"
+             class="flex items-center gap-2 font-semibold transition"
+             [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+             (click)="$event.stopPropagation()">
+            <i class="fas fa-home"></i><span>Inicio</span>
+          </a>
+          <a routerLink="/explorar"
+             class="flex items-center gap-2 font-semibold transition"
+             [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+             (click)="$event.stopPropagation()">
+            <i class="fas fa-compass"></i><span>Explorar</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ========== ACCIONES DERECHA ========== -->
+      <div class="ml-auto flex items-center gap-3 actions flex-shrink-0">
+
+        <!-- BOTÓN BUSCAR MÓVIL -->
+        <button *ngIf="isLoggedIn"
+                (click)="toggleMobileSearch()"
+                class="md:hidden p-2 rounded-md transition"
+                [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+                aria-label="Buscar">
+          <i class="fas fa-search text-lg"></i>
+        </button>
+
+        <!-- SELECTOR TEMA DESKTOP -->
+        <div class="relative hidden md:block">
+          <button (click)="toggleThemeMenu($event)"
+                  class="flex items-center gap-2 p-2 rounded-md transition"
+                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+                  aria-label="Cambiar tema">
+            <i class="fas fa-palette" aria-hidden="true"></i>
+            <span class="hidden lg:inline text-xs ml-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+              {{ currentThemeData.name }}
+            </span>
+          </button>
+
+          <!-- DROPDOWN TEMAS DESKTOP -->
+          <div *ngIf="showThemeMenu"
+               class="theme-dropdown border rounded-xl shadow-2xl overflow-hidden absolute right-0 top-full mt-2 w-56 z-50"
+               [ngClass]="[currentTheme.cardBg || '']">
+            <div class="px-4 py-3 border-b" [ngClass]="currentTheme.borderColor || ''">
+              <p class="text-sm font-semibold" [ngClass]="currentTheme.textPrimaryClass || ''">Seleccionar tema</p>
+            </div>
+            <div class="p-2 max-h-96 overflow-y-auto">
+              <button *ngFor="let theme of themes"
+                      (click)="applyTheme(theme.id); $event.stopPropagation()"
+                      class="w-full flex items-center gap-3 px-3 py-2 rounded-md transition"
+                      [ngClass]="currentTheme.hoverBgLight || ''">
+                <span class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+                      [style.background]="theme.color"
+                      [title]="theme.name"></span>
+                <div class="flex-1 text-left">
+                  <div class="text-sm font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">{{ theme.name }}</div>
+                  <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ theme.id }}</div>
+                </div>
+                <div *ngIf="currentThemeId === theme.id" [class]="theme.checkIcon || ''">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICACIONES DESKTOP -->
+        <app-notificaciones
+          [currentTheme]="currentTheme"
+          [isMobile]="false"
+          class="hidden md:block">
+        </app-notificaciones>
+
+        <!-- NOTIFICACIONES MÓVIL -->
+        <app-notificaciones
+          [currentTheme]="currentTheme"
+          [isMobile]="true"
+          class="md:hidden">
+        </app-notificaciones>
+
+        <!-- PERFIL DESKTOP (AUTENTICADO) -->
+        <div *ngIf="isLoggedIn" class="relative hidden md:flex">
+          <button (click)="toggleProfileMenu($event)"
+                  class="profile-toggle flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200"
+                  [ngClass]="currentTheme.hoverBgLight || ''"
+                  aria-label="Abrir perfil">
+            <img [src]="userAvatar"
+                 [alt]="userName"
+                 (error)="$any($event.target).src='https://ui-avatars.com/api/?name=' + userName + '&background=random&size=200'"
+                 class="w-9 h-9 rounded-full border-2 object-cover shadow-sm"
+                 [ngClass]="currentTheme.borderColor || ''">
+            <span class="hidden lg:inline text-sm font-semibold" [ngClass]="currentTheme.textPrimaryClass || ''">{{ userName }}</span>
+            <i class="fas fa-chevron-down text-xs transition-transform duration-200"
+               [ngClass]="currentTheme.textSecondaryClass || ''"
+               [class.rotate-180]="showProfileMenu"
+               aria-hidden="true"></i>
+          </button>
+
+          <!-- DROPDOWN PERFIL -->
+          <div *ngIf="showProfileMenu"
+               class="profile-dropdown absolute right-0 top-full mt-2 w-56 border rounded-lg shadow-xl overflow-hidden z-50 animate-fadeIn"
+               [ngClass]="[currentTheme.cardBg || '']">
+            <div class="px-4 py-3 border-b"
+                 [ngClass]="[currentTheme.borderColor || '', currentTheme.hoverBgLight || '']">
+              <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">{{ userName }}</p>
+              <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">{{ userUsername }}</p>
+            </div>
+            <div class="py-1.5">
+              <a routerLink="/perfil"
+                 (click)="showProfileMenu = false"
+                 class="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 group"
+                 [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+                <i class="fas fa-user w-4 text-sm group-hover:scale-110 transition-transform"
+                   [ngClass]="currentThemeData.textPrimary || ''"></i>
+                <span class="font-medium">Mi Perfil</span>
+              </a>
+              <hr class="my-1.5" [ngClass]="currentTheme.borderColor || ''">
+              <button (click)="logout()"
+                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all duration-200 text-left group">
+                <i class="fas fa-sign-out-alt w-4 text-sm group-hover:scale-110 transition-transform"></i>
+                <span class="font-semibold">Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOGIN/REGISTRO DESKTOP (NO AUTENTICADO) -->
+        <div *ngIf="!isLoggedIn" class="hidden md:flex items-center gap-2">
+          <a routerLink="/login"
+             class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200"
+             [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Iniciar sesión</span>
+          </a>
+          <a routerLink="/registro"
+             class="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-md"
+             [ngClass]="'btn-publicar-' + (currentThemeId || 'default')">
+            <i class="fas fa-user-plus"></i>
+            <span>Registrarse</span>
+          </a>
+        </div>
+
+        <!-- BOTÓN PUBLICAR DESKTOP (AUTENTICADO) -->
+        <div *ngIf="isLoggedIn" class="hidden sm:block">
+          <button (click)="onOpenCreate()"
+                  class="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm text-white transition-all duration-300 hover:shadow-md"
+                  [ngClass]="'btn-publicar-' + (currentThemeId || 'default')">
+            <i class="fas fa-plus-circle"></i> Publicar
+          </button>
+        </div>
+
+        <!-- HAMBURGER MÓVIL -->
+        <div class="md:hidden">
+          <button (click)="toggleMobileMenu()"
+                  class="p-2 rounded-md transition"
+                  [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverText || '']"
+                  aria-label="Abrir menú móvil">
+            <i [ngClass]="showMobileMenu ? 'fas fa-times text-2xl' : 'fas fa-bars text-2xl'"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== BUSCADOR MÓVIL EXPANDIDO ========== -->
+  <div *ngIf="showMobileSearch && isLoggedIn" class="md:hidden border-t px-4 py-3" [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+    <div class="relative">
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2"
+         [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (input)="onSearchInput(searchQuery)"
+        placeholder="Buscar usuarios..."
+        class="w-full pl-10 pr-10 py-2.5 rounded-full border transition-all duration-200 focus:outline-none focus:ring-2"
+        [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '', currentTheme.textPrimaryClass || '']"
+        [style.--tw-ring-color]="currentTheme.color"
+        autofocus>
+      <button
+        *ngIf="searchQuery"
+        (click)="limpiarBusqueda()"
+        class="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-70 transition"
+        [ngClass]="currentTheme.textSecondaryClass || ''">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- RESULTADOS BÚSQUEDA MÓVIL -->
+    <div *ngIf="searchQuery && (isSearching || searchResults.length > 0)" class="mt-3 max-h-80 overflow-y-auto rounded-xl border" [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+      <div *ngIf="isSearching" class="px-4 py-8 text-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto"
+             [style.border-color]="currentTheme.color"></div>
+        <p class="mt-2 text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">Buscando...</p>
+      </div>
+
+      <div *ngIf="!isSearching && searchResults.length === 0 && searchQuery" class="px-4 py-8 text-center">
+        <i class="fas fa-user-slash text-4xl mb-2 opacity-50" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+        <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">No se encontraron usuarios</p>
+      </div>
+
+      <button *ngFor="let usuario of searchResults"
+              (click)="verPerfil(usuario)"
+              class="w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 border-b active:opacity-75"
+              [ngClass]="[currentTheme.hoverBgLight || '', currentTheme.borderColor || '']">
+        <img [src]="getUsuarioAvatar(usuario)"
+             [alt]="usuario.nombre_completo"
+             (error)="$any($event.target).src='https://ui-avatars.com/api/?name=' + usuario.nombre_completo"
+             class="w-12 h-12 rounded-full object-cover border-2 flex-shrink-0"
+             [ngClass]="currentTheme.borderColor || ''">
+        <div class="flex-1 min-w-0 text-left">
+          <p class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">
+            {{ usuario.nombre_completo }}
+          </p>
+          <p class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+            @{{ usuario.nombre_usuario }}
+          </p>
+          <p *ngIf="usuario.carrera" class="text-xs truncate" [ngClass]="currentTheme.textSecondaryClass || ''">
+            {{ usuario.carrera }}
+          </p>
+        </div>
+        <i class="fas fa-chevron-right text-xs" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== MENÚ MÓVIL ========== -->
+  <div *ngIf="showMobileMenu" class="md:hidden border-t" [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+    <div class="px-4 py-2 space-y-2">
+
+      <!-- LINKS NAVEGACIÓN MÓVIL (AUTENTICADO) -->
+      <a *ngIf="isLoggedIn" routerLink="/principal"
+         (click)="toggleMobileMenu(); $event.stopPropagation()"
+         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+         [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+        <i class="fas fa-home w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Inicio
+      </a>
+
+      <a *ngIf="isLoggedIn" routerLink="/explorar"
+         (click)="toggleMobileMenu(); $event.stopPropagation()"
+         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+         [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+        <i class="fas fa-compass w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Explorar
+      </a>
+
+      <!-- LINKS NAVEGACIÓN MÓVIL (NO AUTENTICADO) -->
+      <a *ngIf="!isLoggedIn" routerLink="/principal"
+         (click)="toggleMobileMenu(); $event.stopPropagation()"
+         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+         [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+        <i class="fas fa-home w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Inicio
+      </a>
+
+      <a *ngIf="!isLoggedIn" routerLink="/explorar"
+         (click)="toggleMobileMenu(); $event.stopPropagation()"
+         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+         [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+        <i class="fas fa-compass w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Explorar
+      </a>
+
+      <!-- SECCIÓN USUARIO MÓVIL (AUTENTICADO) -->
+      <div *ngIf="isLoggedIn" class="border-t pt-2" [ngClass]="currentTheme.borderColor || ''">
+        <a routerLink="/perfil"
+           (click)="toggleMobileMenu(); $event.stopPropagation()"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+           [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+          <img [src]="userAvatar"
+               [alt]="userName"
+               (error)="$any($event.target).src='https://ui-avatars.com/api/?name=' + userName + '&background=random&size=200'"
+               class="w-10 h-10 rounded-full border-2 object-cover shadow-sm"
+               [ngClass]="currentTheme.borderColor || ''">
+          <div class="flex-1">
+            <div class="font-semibold text-sm truncate" [ngClass]="currentTheme.textPrimaryClass || ''">{{ userName }}</div>
+            <div class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">{{ userUsername }}</div>
+          </div>
+          <i class="fas fa-chevron-right text-xs" [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+        </a>
+
+        <button (click)="logout()"
+                class="flex items-center gap-3 px-4 py-3 w-full text-left rounded-lg transition-all duration-200 text-red-600 hover:bg-red-50 active:bg-red-100">
+          <i class="fas fa-sign-out-alt w-5"></i>
+          <span class="font-semibold">Cerrar sesión</span>
+        </button>
+      </div>
+
+      <!-- SECCIÓN LOGIN/REGISTRO MÓVIL (NO AUTENTICADO) -->
+      <div *ngIf="!isLoggedIn" class="space-y-2 border-t pt-2" [ngClass]="currentTheme.borderColor || ''">
+        <a routerLink="/login"
+           (click)="toggleMobileMenu(); $event.stopPropagation()"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+           [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+          <i class="fas fa-sign-in-alt w-5" [ngClass]="currentThemeData.textPrimary || ''"></i> Iniciar sesión
+        </a>
+
+        <a routerLink="/registro"
+           (click)="toggleMobileMenu(); $event.stopPropagation()"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+           [ngClass]="[currentTheme.textPrimaryClass || '', currentThemeData.hoverBackground || '']">
+          <i class="fas fa-user-plus w-5 text-blue-500"></i> Registrarse
+        </a>
+      </div>
+
+      <!-- SELECTOR TEMA MÓVIL -->
+      <div class="pt-2 border-t" [ngClass]="currentTheme.borderColor || ''">
+        <div class="text-sm font-semibold px-2 pb-3" [ngClass]="currentTheme.textSecondaryClass || ''">Tema</div>
+
+        <div class="relative px-2">
+          <!-- BOTÓN SCROLL IZQUIERDA MÓVIL -->
+          <button *ngIf="canScrollLeftMobile"
+                  (click)="scrollThemesMobile('left'); $event.stopPropagation()"
+                  class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
+                  [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']"
+                  style="border: 1px solid;">
+            <i class="fas fa-chevron-left" [ngClass]="currentTheme.textPrimaryClass || ''"></i>
+          </button>
+
+          <!-- CONTENEDOR TEMAS MÓVIL -->
+          <div #themeSliderMobile
+               class="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth py-2"
+               (scroll)="onThemeScrollMobile()">
+            <button *ngFor="let theme of themes"
+                    (click)="applyTheme(theme.id); toggleMobileMenu(); $event.stopPropagation()"
+                    class="flex-shrink-0 relative">
+              <div class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 active:scale-95 shadow-lg"
+                   [style.background]="theme.color"
+                   [title]="theme.name">
+                <div *ngIf="currentThemeId === theme.id"
+                     class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-lg">
+                  <i class="fas fa-check" [style.color]="theme.color.split(',')[0].replace('linear-gradient(to right, ', '')"></i>
+                </div>
+              </div>
+
+              <div class="text-center mt-2">
+                <p class="text-sm font-medium truncate max-w-[90px]"
+                   [ngClass]="currentTheme.textPrimaryClass || ''">
+                  {{ theme.name }}
+                </p>
+                <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+                  {{ theme.id }}
+                </p>
+              </div>
+            </button>
+
+          </div>
+          
+    
+
+          <!-- BOTÓN SCROLL DERECHA MÓVIL -->
+          <button *ngIf="canScrollRightMobile"
+                  (click)="scrollThemesMobile('right'); $event.stopPropagation()"
+                  class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
+                  [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']"
+                  style="border: 1px solid;">
+            <i class="fas fa-chevron-right" [ngClass]="currentTheme.textPrimaryClass || ''"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTÓN PUBLICAR MÓVIL (AUTENTICADO) -->
+      <div *ngIf="isLoggedIn" class="pt-3">
+        <button (click)="onOpenCreate(); toggleMobileMenu(); $event.stopPropagation()"
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold text-white transition-all duration-300"
+                [ngClass]="'btn-publicar-' + (currentThemeId || 'default')">
+          <i class="fas fa-plus-circle mr-1"></i> Publicar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR POST -->
+ <app-boton-crear-post 
+     *ngIf="showCrearPost" 
+     (close)="onCloseModal()"
+     (publicacionCreada)="onPostCreado($event)">
+   </app-boton-crear-post>
+</nav>
