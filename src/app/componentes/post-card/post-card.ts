@@ -136,6 +136,28 @@ export class PostCard implements OnInit, OnDestroy {
     if (this.post.usuarioId && !this.fotosPerfilCache.has(this.post.usuarioId)) {
       this.cargarFotosPerfilBatch([this.post.usuarioId]);
     }
+    
+    // ✅ Verificar si el usuario actual ya dio like a esta publicación
+    if (this.autenticacionService.isAuthenticated()) {
+      this.verificarLikeUsuario();
+    }
+  }
+  
+  private verificarLikeUsuario(): void {
+    this.likesService.verificarLike(this.post.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Actualizar estado de like según el backend
+            this.post.liked = response.data.usuario_dio_like || false;
+            this.cdr.detectChanges();
+          }
+        },
+        error: (error) => {
+          console.error('Error al verificar like:', error);
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -186,26 +208,62 @@ export class PostCard implements OnInit, OnDestroy {
     const likeAnterior = this.post.liked;
     const likesAnterior = this.post.likes;
 
-    this.post.liked = !this.post.liked;
-    this.post.likes += this.post.liked ? 1 : -1;
+    // ✅ TOGGLE: Si ya tiene like, lo quitamos. Si no tiene, lo agregamos
+    const nuevoEstado = !this.post.liked;
+    
+    console.log('🔄 Toggle Like:', {
+      publicacionId: this.post.id,
+      estadoAnterior: likeAnterior,
+      nuevoEstado: nuevoEstado,
+      likesAnterior: likesAnterior
+    });
+
+    // ✅ Actualización optimista INMEDIATA en la UI
+    this.post.liked = nuevoEstado;
+    this.post.likes += nuevoEstado ? 1 : -1;
     this.likeLoading = true;
+
+    // ✅ Forzar actualización visual AHORA
+    this.cdr.detectChanges();
 
     this.likesService.toggleLike(this.post.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: (response) => {
+          console.log('✅ Respuesta del servidor:', response);
+          
+          // ✅ Sincronizar con el estado real del servidor
+          if (response.success && response.data) {
+            // El backend debe devolver el estado actualizado
+            if (response.data.usuario_dio_like !== undefined) {
+              this.post.liked = response.data.usuario_dio_like;
+            }
+            if (response.data.total_likes !== undefined) {
+              this.post.likes = response.data.total_likes;
+            }
+            
+            console.log('📊 Estado sincronizado:', {
+              liked: this.post.liked,
+              likes: this.post.likes
+            });
+          }
+          
           this.likeLoading = false;
           this.postLikeChanged.emit({
             postId: this.post.id,
             liked: this.post.liked,
             likes: this.post.likes
           });
+          this.cdr.detectChanges();
         },
         error: (error) => {
+          console.error('❌ Error en toggle like:', error);
+          // ✅ Revertir SOLO en caso de error
           this.post.liked = likeAnterior;
           this.post.likes = likesAnterior;
           this.likeLoading = false;
           if (error.status === 401) this.router.navigate(['/login']);
+          this.cdr.detectChanges();
         }
       });
   }
@@ -302,6 +360,7 @@ export class PostCard implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
+          console.error('❌ Error al crear comentario:', error);
           if (error.status === 401) this.router.navigate(['/login']);
         }
       });
@@ -316,6 +375,7 @@ export class PostCard implements OnInit, OnDestroy {
           if (res.success) {
             this.comments = this.comments.filter(c => c.id !== comentarioId);
             this.post.totalComments = Math.max(0, (this.post.totalComments || 0) - 1);
+            this.cdr.detectChanges();
           }
         },
         error: () => alert('Error al eliminar el comentario')

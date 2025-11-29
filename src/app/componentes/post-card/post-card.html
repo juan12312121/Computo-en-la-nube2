@@ -229,32 +229,43 @@
     </button>
   </div>
 
-  <!-- ACTION BUTTONS -->
+  <!-- ✅ ACTION BUTTONS - CON TOGGLE DE LIKE CORREGIDO -->
   <div class="border-t px-2 py-1.5 flex items-center gap-1" [ngClass]="currentTheme.borderColor || ''">
+    
+    <!-- ✅ BOTÓN DE LIKE CON VISUAL MEJORADO -->
     <button (click)="toggleLike()"
             [disabled]="isEditing || likeLoading"
-            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
+            [title]="post.liked ? 'Quitar me gusta' : 'Me gusta'"
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all duration-200 text-sm"
             [ngClass]="post.liked
-              ? [currentThemeData.textPrimary || '', 'bg-opacity-10', currentThemeData.accentBg || '']
-              : [currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '', (isEditing || likeLoading) ? 'opacity-50 cursor-not-allowed' : '']">
-      <i [class]="likeLoading ? 'fas fa-spinner fa-spin' : (post.liked ? 'fas fa-heart' : 'far fa-heart')"></i>
-      <span>Me gusta</span>
+              ? [currentThemeData.textPrimary || 'text-orange-500', 'bg-opacity-10', currentThemeData.accentBg || 'bg-orange-500', 'hover:bg-opacity-20']
+              : [currentTheme.textSecondaryClass || 'text-gray-600', currentThemeData.hoverBackground || 'hover:bg-gray-100', (isEditing || likeLoading) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105']">
+      
+      <!-- ✅ ICONO QUE CAMBIA: Corazón lleno (❤️) o vacío (🤍) -->
+      <i [class]="likeLoading 
+        ? 'fas fa-spinner fa-spin text-base' 
+        : (post.liked ? 'fas fa-heart text-base animate-pulse' : 'far fa-heart text-base')"></i>
+      
+      <span class="hidden sm:inline">{{ post.liked ? 'Te gusta' : 'Me gusta' }}</span>
+      <span class="sm:hidden">Like</span>
     </button>
 
     <button (click)="toggleCommentsSection()"
             [disabled]="isEditing"
-            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '', isEditing ? 'opacity-50 cursor-not-allowed' : '']">
-      <i class="fas fa-comment"></i>
-      <span>Comentar</span>
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all duration-200 text-sm"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '', isEditing ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105']">
+      <i class="fas fa-comment text-base"></i>
+      <span class="hidden sm:inline">Comentar</span>
+      <span class="sm:hidden">Comentar</span>
     </button>
 
     <button (click)="openShareModal($event)"
             [disabled]="isEditing"
-            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition text-sm"
-            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '', isEditing ? 'opacity-50 cursor-not-allowed' : '']">
-      <i class="fas fa-share"></i>
-      <span>Compartir</span>
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all duration-200 text-sm"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentThemeData.hoverBackground || '', isEditing ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105']">
+      <i class="fas fa-share text-base"></i>
+      <span class="hidden sm:inline">Compartir</span>
+      <span class="sm:hidden">Compartir</span>
     </button>
   </div>
 
