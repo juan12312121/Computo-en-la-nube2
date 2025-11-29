@@ -1,4 +1,4 @@
-// secciones-grid.component.ts - CON PERMISOS CORRECTOS
+// secciones-grid.component.ts - CON DETECCIÓN DE TEMA PIZARRA
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
@@ -28,8 +28,8 @@ export interface Section {
 export class SeccionesGrid implements OnInit, OnChanges {
   @Input() sections: Section[] = [];
   @Input() currentTheme!: Theme;
-  @Input() usuarioId?: number; // ID del usuario cuyas secciones se están viendo
-  @Input() soloLectura: boolean = false; // ⭐ Si es de solo lectura (perfil de otro usuario)
+  @Input() usuarioId?: number;
+  @Input() soloLectura: boolean = false;
   
   @Output() sectionSelected = new EventEmitter<number>();
   @Output() sectionCreated = new EventEmitter<void>();
@@ -55,6 +55,38 @@ export class SeccionesGrid implements OnInit, OnChanges {
   // ⭐ COMPUTED: Si es propietario (inverso de soloLectura)
   get esPropietario(): boolean {
     return !this.soloLectura;
+  }
+
+  // ⭐ NUEVO: Computed para detectar si es tema Pizarra u oscuro
+  get esTemaOscuroOPizarra(): boolean {
+    return this.currentTheme.id === 'slate' || 
+           this.currentTheme.id === 'midnight' || 
+           this.currentTheme.id === 'neon' ||
+           this.currentTheme.id === 'toxic';
+  }
+
+  // ⭐ NUEVO: Clase de texto adaptada para Pizarra
+  get textoPrimariaAdaptado(): string {
+    if (this.currentTheme.id === 'slate') {
+      return 'text-slate-900'; // Negro más fuerte para Pizarra
+    }
+    return this.currentTheme.textPrimaryClass;
+  }
+
+  // ⭐ NUEVO: Clase de texto secundaria adaptada para Pizarra
+  get textoSecundariaAdaptada(): string {
+    if (this.currentTheme.id === 'slate') {
+      return 'text-slate-700'; // Gris oscuro para Pizarra
+    }
+    return this.currentTheme.textSecondaryClass;
+  }
+
+  // ⭐ NUEVO: Fondo de acento adaptado para Pizarra
+  get fondoAcentoAdaptado(): string {
+    if (this.currentTheme.id === 'slate') {
+      return 'bg-slate-300'; // Fondo más claro para iconos en Pizarra
+    }
+    return this.currentTheme.accentBg;
   }
   
   nuevaSeccion: CrearSeccionRequest = {
@@ -99,6 +131,8 @@ export class SeccionesGrid implements OnInit, OnChanges {
     console.log('  🔐 soloLectura:', this.soloLectura);
     console.log('  📚 sections.length:', this.sections.length);
     console.log('  ✏️ esPropietario:', this.esPropietario);
+    console.log('  🎨 Tema actual:', this.currentTheme.id);
+    console.log('  🌙 Es tema Pizarra:', this.currentTheme.id === 'slate');
     console.log('═══════════════════════════════════════════════');
     
     if (this.sections.length > 0) {
@@ -128,6 +162,12 @@ export class SeccionesGrid implements OnInit, OnChanges {
       console.log('📚 sections cambió:');
       console.log('  Anterior length:', changes['sections'].previousValue?.length || 0);
       console.log('  Nuevo length:', changes['sections'].currentValue?.length || 0);
+    }
+
+    if (changes['currentTheme']) {
+      console.log('🎨 currentTheme cambió:');
+      console.log('  Tema actual:', this.currentTheme?.id);
+      console.log('  Es Pizarra:', this.currentTheme?.id === 'slate');
     }
     
     console.log('═══════════════════════════════════════════════');
@@ -237,7 +277,6 @@ export class SeccionesGrid implements OnInit, OnChanges {
     
     this.cargandoPublicaciones = true;
     
-    // ⭐ CAMBIO: Usar endpoint público si NO es propietario
     if (this.soloLectura && this.usuarioId) {
       console.log('🌍 Usando endpoint PÚBLICO');
       console.log('  URL: /api/secciones/usuario/' + this.usuarioId + '/seccion/' + seccionId);
