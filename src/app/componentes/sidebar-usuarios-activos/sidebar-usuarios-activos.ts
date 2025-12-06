@@ -1,3 +1,4 @@
+// sidebar-usuarios-activos.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
@@ -78,10 +79,11 @@ export class SidebarUsuariosActivos implements OnInit, OnDestroy {
         });
         
         if (this.estaAutenticado) {
-          console.log('✅ [SIDEBAR] Usuario autenticado - Activando servicios');
+          console.log('✅ [SIDEBAR] Usuario autenticado - Cargando seguidores');
           
-          // Activar manualmente al usuario
-          this.actividadService.activarManualmente();
+          // ✅ ELIMINADO: No es necesario activar manualmente aquí
+          // El servicio ActividadService ya lo hace automáticamente en su constructor
+          // this.actividadService.activarManualmente(); ❌ REMOVIDO
           
           // Cargar seguidores activos
           this.cargarSeguidoresActivos();

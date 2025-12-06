@@ -27,7 +27,9 @@ export class ActividadService {
         this.activarManualmente();
         this.detectorInicializado = true;
       } else if (!usuario && this.detectorInicializado) {
-        this.desactivarManualmente();
+        // ❌ REMOVIDO: No desactivar al cerrar sesión
+        // Solo detener el monitoreo
+        this.detenerMonitoreo();
         this.detectorInicializado = false;
       }
     });
@@ -124,6 +126,16 @@ export class ActividadService {
   }
 
   /**
+   * 🔧 NUEVO: Detener todo el monitoreo sin desactivar el usuario
+   */
+  private detenerMonitoreo(): void {
+    console.log('⏹️ Deteniendo monitoreo de actividad (sin desactivar usuario)');
+    this.activo$.next(false);
+    this.detenerHeartbeat();
+    // NO llamar a usuarioService.actualizarActividad(0)
+  }
+
+  /**
    * Observable para saber si el usuario está activo
    */
   obtenerEstadoActividad(): Observable<boolean> {
@@ -145,9 +157,11 @@ export class ActividadService {
   }
 
   /**
-   * Fuerza marcar como inactivo (útil al cerrar sesión)
+   * ❌ DEPRECADO: Ya no se usa al cerrar sesión
+   * Mantener solo para casos específicos donde se necesite marcar inactivo
    */
   desactivarManualmente(): void {
+    console.warn('⚠️ desactivarManualmente() está deprecado');
     this.activo$.next(false);
     if (this.authService.isAuthenticated()) {
       this.usuarioService.actualizarActividad(0).subscribe({
