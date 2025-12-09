@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, fromEvent, merge, timer } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { AutenticacionService } from '../autenticacion/autenticacion';
 import { UsuarioService } from '../usuarios/usuarios';
 
@@ -8,10 +7,8 @@ import { UsuarioService } from '../usuarios/usuarios';
   providedIn: 'root'
 })
 export class ActividadService {
-  private readonly TIEMPO_INACTIVIDAD = 5 * 60 * 1000; // 5 minutos
   private readonly INTERVALO_HEARTBEAT = 60 * 1000; // 1 minuto
-  
-  private ultimaActividad: number = Date.now();
+
   private activo$ = new BehaviorSubject<boolean>(false);
   private heartbeatTimer: any;
   private detectorInicializado = false;
@@ -23,80 +20,17 @@ export class ActividadService {
     // Inicializar solo si está autenticado
     this.authService.currentUser.subscribe(usuario => {
       if (usuario && !this.detectorInicializado) {
-        this.inicializarDetectorActividad();
+        console.log('✅ Usuario autenticado - Iniciando heartbeat');
         this.activarManualmente();
+        this.iniciarHeartbeat();
         this.detectorInicializado = true;
       } else if (!usuario && this.detectorInicializado) {
-        // ❌ REMOVIDO: No desactivar al cerrar sesión
-        // Solo detener el monitoreo
-        this.detenerMonitoreo();
+        console.log('⏹️ Usuario desconectado - Deteniendo heartbeat');
+        this.detenerHeartbeat();
+        this.activo$.next(false);
         this.detectorInicializado = false;
       }
     });
-  }
-
-  /**
-   * Inicializa los listeners de eventos para detectar actividad del usuario
-   */
-  private inicializarDetectorActividad(): void {
-    // Eventos que indican actividad del usuario
-    const eventos$ = merge(
-      fromEvent(document, 'mousemove'),
-      fromEvent(document, 'mousedown'),
-      fromEvent(document, 'keypress'),
-      fromEvent(document, 'scroll'),
-      fromEvent(document, 'touchstart'),
-      fromEvent(document, 'click')
-    );
-
-    // Actualizar última actividad con debounce
-    eventos$.pipe(
-      debounceTime(1000)
-    ).subscribe(() => {
-      this.registrarActividad();
-    });
-
-    // Verificar inactividad cada minuto
-    timer(0, 60000).subscribe(() => {
-      this.verificarInactividad();
-    });
-
-    // Iniciar heartbeat al servidor
-    this.iniciarHeartbeat();
-  }
-
-  /**
-   * Registra que el usuario está activo
-   */
-  private registrarActividad(): void {
-    if (!this.authService.isAuthenticated()) return;
-
-    this.ultimaActividad = Date.now();
-    
-    if (!this.activo$.value) {
-      this.activo$.next(true);
-      this.usuarioService.actualizarActividad(1).subscribe({
-        next: () => console.log('✅ Usuario marcado como activo'),
-        error: (err) => console.error('❌ Error al marcar activo:', err)
-      });
-    }
-  }
-
-  /**
-   * Verifica si el usuario está inactivo
-   */
-  private verificarInactividad(): void {
-    if (!this.authService.isAuthenticated()) return;
-
-    const tiempoInactivo = Date.now() - this.ultimaActividad;
-    
-    if (tiempoInactivo >= this.TIEMPO_INACTIVIDAD && this.activo$.value) {
-      this.activo$.next(false);
-      this.usuarioService.actualizarActividad(0).subscribe({
-        next: () => console.log('⏰ Usuario marcado como inactivo por tiempo'),
-        error: (err) => console.error('❌ Error al marcar inactivo:', err)
-      });
-    }
   }
 
   /**
@@ -116,23 +50,14 @@ export class ActividadService {
   }
 
   /**
-   * Detiene el heartbeat (llamar al cerrar sesión)
+   * Detiene el heartbeat
    */
-  detenerHeartbeat(): void {
+  private detenerHeartbeat(): void {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
+      console.log('🛑 Heartbeat detenido');
     }
-  }
-
-  /**
-   * 🔧 NUEVO: Detener todo el monitoreo sin desactivar el usuario
-   */
-  private detenerMonitoreo(): void {
-    console.log('⏹️ Deteniendo monitoreo de actividad (sin desactivar usuario)');
-    this.activo$.next(false);
-    this.detenerHeartbeat();
-    // NO llamar a usuarioService.actualizarActividad(0)
   }
 
   /**
@@ -143,32 +68,15 @@ export class ActividadService {
   }
 
   /**
-   * Fuerza marcar como activo (útil al iniciar sesión)
+   * Marca al usuario como activo en el servidor
    */
   activarManualmente(): void {
     if (!this.authService.isAuthenticated()) return;
 
-    this.ultimaActividad = Date.now();
     this.activo$.next(true);
     this.usuarioService.actualizarActividad(1).subscribe({
-      next: () => console.log('✅ Usuario activado manualmente'),
+      next: () => console.log('✅ Usuario marcado como activo'),
       error: (err) => console.error('❌ Error al activar:', err)
     });
-  }
-
-  /**
-   * ❌ DEPRECADO: Ya no se usa al cerrar sesión
-   * Mantener solo para casos específicos donde se necesite marcar inactivo
-   */
-  desactivarManualmente(): void {
-    console.warn('⚠️ desactivarManualmente() está deprecado');
-    this.activo$.next(false);
-    if (this.authService.isAuthenticated()) {
-      this.usuarioService.actualizarActividad(0).subscribe({
-        next: () => console.log('👋 Usuario desactivado manualmente'),
-        error: (err) => console.error('❌ Error al desactivar:', err)
-      });
-    }
-    this.detenerHeartbeat();
   }
 }
