@@ -1,0 +1,104 @@
+<div class="refined-modal-backdrop" (click)="cerrar()">
+    <div class="refined-modal-container" (click)="$event.stopPropagation()" [class]="currentTheme().id">
+        <!-- Header -->
+        <header class="modal-header-refined">
+            <div class="header-left">
+                <div class="header-icon-badge">
+                    <lucide-icon name="users" size="20"></lucide-icon>
+                </div>
+                <div class="header-text">
+                    <h2>Nueva Comunidad</h2>
+                    <p>Inicia un espacio para compartir y aprender</p>
+                </div>
+            </div>
+            <button class="btn-close-minimal" (click)="cerrar()">
+                <lucide-icon name="x" size="20"></lucide-icon>
+            </button>
+        </header>
+
+        <!-- Form Body -->
+        <main class="modal-body-refined">
+            <form [formGroup]="grupoForm" (ngSubmit)="crear()" class="refined-form">
+                <div class="form-grid-refined">
+                    <!-- Name & Description -->
+                    <div class="form-section-main">
+                        <div class="input-group-refined">
+                            <label>Nombre del Grupo</label>
+                            <input type="text" formControlName="nombre"
+                                placeholder="Ej. Facultad de Ingeniería, Club de Ajedrez...">
+                            @if (grupoForm.get('nombre')?.touched && grupoForm.get('nombre')?.invalid) {
+                            <span class="error-msg">El nombre es requerido</span>
+                            }
+                        </div>
+
+                        <div class="input-group-refined">
+                            <label>Descripción</label>
+                            <textarea formControlName="descripcion" placeholder="¿De qué trata este grupo?"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Privacy & Settings -->
+                    <div class="form-section-settings">
+                        <div class="input-group-refined">
+                            <label>Privacidad</label>
+                            <div class="radio-cards-refined">
+                                <label class="radio-card"
+                                    [class.selected]="grupoForm.get('privacidad')?.value === 'publico'">
+                                    <input type="radio" formControlName="privacidad" value="publico">
+                                    <lucide-icon name="globe" size="18"></lucide-icon>
+                                    <div class="radio-info">
+                                        <span class="radio-label">Público</span>
+                                        <span class="radio-desc">Cualquiera puede unirse</span>
+                                    </div>
+                                </label>
+                                <label class="radio-card"
+                                    [class.selected]="grupoForm.get('privacidad')?.value === 'privado'">
+                                    <input type="radio" formControlName="privacidad" value="privado">
+                                    <lucide-icon name="lock" size="18"></lucide-icon>
+                                    <div class="radio-info">
+                                        <span class="radio-label">Privado</span>
+                                        <span class="radio-desc">Solo por invitación</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Image Upload Area -->
+                        <div class="upload-area-minimal flex flex-col gap-3">
+                            <label
+                                class="w-full flex items-center justify-center p-3 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                                [ngClass]="currentTheme().borderColor || ''">
+                                <lucide-icon name="image" size="20" class="mr-3"
+                                    [ngClass]="currentTheme().textSecondaryClass || ''"></lucide-icon>
+                                <div class="upload-text text-sm">
+                                    <span [ngClass]="currentTheme().textPrimaryClass || ''">{{ portadaFile() ?
+                                        portadaFile()!.name : 'Portada del grupo' }}</span>
+                                </div>
+                                <input type="file" class="hidden" (change)="onPortadaSelected($event)" accept="image/*">
+                            </label>
+
+                            <label
+                                class="w-full flex items-center justify-center p-3 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                                [ngClass]="currentTheme().borderColor || ''">
+                                <lucide-icon name="user" size="20" class="mr-3"
+                                    [ngClass]="currentTheme().textSecondaryClass || ''"></lucide-icon>
+                                <div class="upload-text text-sm">
+                                    <span [ngClass]="currentTheme().textPrimaryClass || ''">{{ perfilFile() ?
+                                        perfilFile()!.name : 'Foto de perfil' }}</span>
+                                </div>
+                                <input type="file" class="hidden" (change)="onPerfilSelected($event)" accept="image/*">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="modal-footer-refined">
+                    <button type="button" class="btn-cancel-minimal" (click)="cerrar()">Cancelar</button>
+                    <button type="submit" class="btn-submit-refined" [disabled]="grupoForm.invalid || cargando()">
+                        {{ cargando() ? 'Creando...' : 'Crear Comunidad' }}
+                    </button>
+                </footer>
+            </form>
+        </main>
+    </div>
+</div>

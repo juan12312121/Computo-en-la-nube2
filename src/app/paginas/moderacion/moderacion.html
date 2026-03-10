@@ -1,0 +1,127 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-red-100 text-red-600 rounded-xl">
+          <lucide-icon [name]="Shield" class="w-8 h-8"></lucide-icon>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Panel de Moderación</h1>
+          <p class="text-gray-500">Gestión de reportes y seguridad estudiantil</p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 p-1 bg-gray-100 rounded-xl">
+        <button 
+          (click)="cambiarVista('reportes')"
+          class="px-4 py-2 rounded-lg transition-all"
+          [class.bg-white]="vistaActiva() === 'reportes'"
+          [class.shadow-sm]="vistaActiva() === 'reportes'"
+          [class.text-red-600]="vistaActiva() === 'reportes'"
+          [class.text-gray-600]="vistaActiva() !== 'reportes'"
+        >
+          Reportes
+        </button>
+        <button 
+          (click)="cambiarVista('logs')"
+          class="px-4 py-2 rounded-lg transition-all"
+          [class.bg-white]="vistaActiva() === 'logs'"
+          [class.shadow-sm]="vistaActiva() === 'logs'"
+          [class.text-red-600]="vistaActiva() === 'logs'"
+          [class.text-gray-600]="vistaActiva() !== 'logs'"
+        >
+          Logs de Seguridad
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    @if (cargando()) {
+      <div class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
+        <p class="text-gray-500">Cargando datos...</p>
+      </div>
+    } @else {
+      @if (vistaActiva() === 'reportes') {
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <table class="w-full text-left">
+            <thead class="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th class="px-6 py-4 text-sm font-semibold text-gray-600">Post / Contenido</th>
+                <th class="px-6 py-4 text-sm font-semibold text-gray-600">Reportante</th>
+                <th class="px-6 py-4 text-sm font-semibold text-gray-600">Motivo</th>
+                <th class="px-6 py-4 text-sm font-semibold text-gray-600">Fecha</th>
+                <th class="px-6 py-4 text-sm font-semibold text-gray-600">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (reporte of reportes(); track reporte.id) {
+                <tr class="hover:bg-gray-50/50 transition-colors">
+                  <td class="px-6 py-4">
+                    <p class="font-medium text-gray-900 line-clamp-2">{{ reporte.post_contenido }}</p>
+                    <span class="text-xs text-gray-400">ID Pub: {{ reporte.publicacion_id }}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">@{{ reporte.reportante }}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-2 text-amber-600">
+                      <lucide-icon [name]="AlertTriangle" class="w-4 h-4"></lucide-icon>
+                      <span class="text-sm">{{ reporte.motivo }}</span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500">
+                    {{ reporte.fecha_reporte | date:'short' }}
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex gap-2">
+                      <button (click)="eliminarPost(reporte.publicacion_id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar Publicación">
+                        <lucide-icon [name]="Trash2" class="w-5 h-5"></lucide-icon>
+                      </button>
+                      <button (click)="suspenderUsuario(reporte.post_usuario_id)" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Suspender Usuario">
+                        <lucide-icon [name]="UserX" class="w-5 h-5"></lucide-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="px-6 py-20 text-center text-gray-400">
+                    No hay reportes pendientes de moderación.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <!-- Logs View -->
+        <div class="space-y-4">
+          @for (log of logs(); track log.id) {
+            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <lucide-icon [name]="Clock" class="w-5 h-5"></lucide-icon>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-900">{{ log.evento }}</span>
+                    <span class="text-xs text-gray-400">• @{{ log.nombre_usuario || 'Sistema' }}</span>
+                  </div>
+                  <p class="text-sm text-gray-600">{{ log.detalles }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-400">{{ log.fecha_creacion | date:'medium' }}</p>
+                <p class="text-xs font-mono text-gray-300">{{ log.ip }}</p>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-center py-20 text-gray-400 bg-white rounded-3xl border border-gray-100">No hay registros de auditoría disponibles.</p>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

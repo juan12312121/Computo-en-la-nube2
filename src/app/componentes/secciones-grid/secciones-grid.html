@@ -1,0 +1,472 @@
+<!-- secciones-grid.html - ADAPTADO CON DETECCIÓN DE TEMA PIZARRA -->
+<div class="space-y-4">
+
+  <!-- Header con botón para crear nueva carpeta -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div>
+      <h2 [ngClass]="textoPrimariaAdaptado" class="text-xl sm:text-2xl font-black">
+        <i class="fas fa-folder-open mr-2"></i>
+        {{ esPropietario ? 'Mis Carpetas de Contenido' : 'Carpetas de Contenido' }}
+      </h2>
+      <p [ngClass]="textoSecundariaAdaptada" class="text-sm mt-1">
+        {{ esPropietario ? 'Organiza tus publicaciones en carpetas temáticas' : 'Contenido organizado por temas' }}
+      </p>
+    </div>
+    <!-- Solo mostrar botón si es propietario - ADAPTADO AL TEMA -->
+    <button
+      *ngIf="esPropietario"
+      (click)="openCreateModal()"
+      [ngClass]="currentTheme.cardBg"
+      class="gradient-button border-2 px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl font-bold shadow-lg flex items-center gap-2 whitespace-nowrap hover:shadow-xl transition-all"
+      [style.border-color]="currentTheme.borderColor">
+      <i [ngClass]="textoPrimariaAdaptado" class="fas fa-plus-circle text-lg"></i>
+      <span [ngClass]="textoPrimariaAdaptado">Nueva Carpeta</span>
+    </button>
+  </div>
+
+  <!-- Grid de secciones -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div *ngFor="let section of sections"
+         (click)="onSectionClick(section.id)"
+         [ngClass]="currentTheme.cardBg"
+         class="section-card border-2 rounded-2xl p-6 sm:p-7 cursor-pointer"
+         [style.border-color]="currentTheme.borderColor">
+      <div class="flex items-center justify-between mb-5">
+        <!-- Ícono ADAPTADO AL TEMA -->
+        <div [ngClass]="[fondoAcentoAdaptado, textoPrimariaAdaptado]" 
+             class="section-icon w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl shadow-lg">
+          <i [class]="'fas ' + section.icono"></i>
+        </div>
+        <span [ngClass]="[textoSecundariaAdaptada, fondoAcentoAdaptado]" 
+              class="post-count-badge text-xs sm:text-sm font-black px-4 py-2 rounded-full shadow-sm">
+          {{ section.total_posts }} {{ section.total_posts === 1 ? 'post' : 'posts' }}
+        </span>
+      </div>
+      <h3 [ngClass]="textoPrimariaAdaptado" class="font-black text-lg sm:text-xl tracking-tight">
+        {{ section.nombre }}
+      </h3>
+    </div>
+  </div>
+
+  <!-- Mensaje cuando no hay secciones -->
+  <div *ngIf="sections.length === 0" 
+       [ngClass]="currentTheme.cardBg" 
+       class="empty-state border-2 border-dashed rounded-2xl p-12 sm:p-16 text-center"
+       [style.border-color]="currentTheme.borderColor">
+    <div class="empty-state-emoji text-6xl sm:text-7xl mb-6">📁</div>
+    <h3 [ngClass]="textoPrimariaAdaptado" class="text-xl sm:text-2xl font-black mb-3">
+      {{ esPropietario ? '¡Crea tu primera carpeta!' : 'Sin carpetas de contenido' }}
+    </h3>
+    <p [ngClass]="textoSecundariaAdaptada" class="mb-8 text-base sm:text-lg max-w-md mx-auto">
+      {{ esPropietario ? 'Organiza tus publicaciones por temas, materias o proyectos' : 'Este usuario aún no ha organizado sus publicaciones en carpetas' }}
+    </p>
+    <!-- Solo mostrar botón si es propietario - ADAPTADO AL TEMA -->
+    <button
+      *ngIf="esPropietario"
+      (click)="openCreateModal()"
+      [ngClass]="currentTheme.cardBg"
+      class="gradient-button border-2 px-8 py-4 rounded-xl font-bold shadow-lg inline-flex items-center gap-3 hover:shadow-xl transition-all"
+      [style.border-color]="currentTheme.borderColor">
+      <i [ngClass]="textoPrimariaAdaptado" class="fas fa-plus-circle text-lg"></i>
+      <span [ngClass]="textoPrimariaAdaptado">Crear mi primera carpeta</span>
+    </button>
+  </div>
+
+  <!-- Modal para ver sección -->
+  <div *ngIf="showModal && selectedSection"
+       (click)="onModalBackdropClick($event)"
+       class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div [ngClass]="currentTheme.cardBg" 
+         class="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Header del modal -->
+      <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
+           [ngClass]="currentTheme.cardBg"
+           [style.border-color]="currentTheme.borderColor">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <!-- Ícono ADAPTADO AL TEMA -->
+          <div [ngClass]="[fondoAcentoAdaptado, textoPrimariaAdaptado]" 
+               class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">
+            <i [class]="'fas ' + selectedSection.icono"></i>
+          </div>
+          <div>
+            <h2 [ngClass]="textoPrimariaAdaptado" class="text-lg sm:text-xl font-black">
+              {{ selectedSection.nombre }}
+            </h2>
+            <p [ngClass]="textoSecundariaAdaptada" class="text-xs sm:text-sm">
+              {{ selectedSection.total_posts }} {{ selectedSection.total_posts === 1 ? 'publicación' : 'publicaciones' }}
+            </p>
+          </div>
+        </div>
+        <button 
+          (click)="closeModal()"
+          [ngClass]="textoSecundariaAdaptada"
+          class="hover:opacity-70 transition text-xl sm:text-2xl">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-6">
+        <!-- Badge de solo lectura si NO es propietario -->
+        <div *ngIf="!esPropietario" class="mb-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-lg">
+          <div class="flex items-center">
+            <i class="fas fa-eye mr-2"></i>
+            <span class="text-sm">Vista de solo lectura - No puedes modificar esta carpeta</span>
+          </div>
+        </div>
+
+        <!-- Botón para agregar publicaciones (solo propietario) - ADAPTADO AL TEMA -->
+        <div *ngIf="esPropietario" class="mb-6">
+          <button
+            (click)="mostrarListaPublicaciones()"
+            [ngClass]="currentTheme.cardBg"
+            class="w-full border-2 px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+            [style.border-color]="currentTheme.borderColor">
+            <i [ngClass]="textoPrimariaAdaptado" class="fas fa-plus-circle"></i>
+            <span [ngClass]="textoPrimariaAdaptado">Agregar publicaciones a esta carpeta</span>
+          </button>
+        </div>
+
+        <!-- CARGANDO PUBLICACIONES -->
+        <div *ngIf="cargandoPublicaciones" class="text-center py-8">
+          <i class="fas fa-spinner fa-spin text-3xl sm:text-4xl text-blue-500 mb-3"></i>
+          <p [ngClass]="textoSecundariaAdaptada" class="text-sm sm:text-base">
+            Cargando publicaciones de la carpeta...
+          </p>
+        </div>
+
+        <!-- PUBLICACIONES DE LA SECCIÓN -->
+        <div *ngIf="!cargandoPublicaciones && publicaciones.length > 0" class="space-y-3">
+          <h3 [ngClass]="textoPrimariaAdaptado" class="text-sm font-bold mb-3">
+            <i class="fas fa-clipboard-list mr-2"></i>
+            Publicaciones en esta carpeta
+          </h3>
+          <div *ngFor="let pub of publicaciones"
+               [ngClass]="currentTheme.cardBg"
+               class="border rounded-xl p-4 hover:shadow-md transition"
+               [style.border-color]="currentTheme.borderColor">
+            <!-- Header de la publicación -->
+            <div class="flex items-center gap-3 mb-3">
+              <img [src]="obtenerAvatarUrl(pub)" 
+                   [alt]="obtenerNombreAutor(pub)"
+                   class="w-10 h-10 rounded-full object-cover">
+              <div class="flex-1 min-w-0">
+                <p [ngClass]="textoPrimariaAdaptado" class="font-bold text-sm truncate">
+                  {{ obtenerNombreAutor(pub) }}
+                </p>
+                <p [ngClass]="textoSecundariaAdaptada" class="text-xs">
+                  {{ formatearFecha(pub.fecha_creacion) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Contenido de la publicación -->
+            <p [ngClass]="textoPrimariaAdaptado" class="text-sm mb-3 line-clamp-3">
+              {{ pub.contenido }}
+            </p>
+
+            <!-- Imagen si existe -->
+            <img *ngIf="pub.imagen_url" 
+                 [src]="obtenerImagenUrl(pub.imagen_url)" 
+                 [alt]="'Imagen de publicación'"
+                 class="w-full h-48 rounded-lg object-cover mb-3">
+          </div>
+        </div>
+
+        <!-- Sin publicaciones en la sección -->
+        <div *ngIf="!cargandoPublicaciones && publicaciones.length === 0" class="text-center py-8">
+          <div class="text-4xl sm:text-5xl mb-3">📝</div>
+          <p [ngClass]="textoSecundariaAdaptada" class="text-sm sm:text-base">
+            {{ esPropietario ? 'Aún no hay publicaciones en esta carpeta' : 'Esta carpeta aún no tiene publicaciones' }}
+          </p>
+          <p *ngIf="esPropietario" [ngClass]="textoSecundariaAdaptada" class="text-xs sm:text-sm mt-2">
+            Usa el botón de arriba para agregar publicaciones a esta carpeta
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para agregar publicaciones (solo propietario) -->
+  <div *ngIf="showModal && mostrarPublicacionesModal && esPropietario"
+       (click)="onPublicacionesModalBackdropClick($event)"
+       class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+    <div [ngClass]="currentTheme.cardBg" 
+         class="rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
+           [ngClass]="currentTheme.cardBg"
+           [style.border-color]="currentTheme.borderColor">
+        <h2 [ngClass]="textoPrimariaAdaptado" class="text-lg sm:text-xl font-black">
+          <i class="fas fa-file-alt mr-2"></i>
+          Agregar Publicaciones a la Carpeta
+        </h2>
+        <button 
+          (click)="cerrarPublicacionesModal()"
+          [ngClass]="textoSecundariaAdaptada"
+          class="hover:opacity-70 transition text-xl sm:text-2xl">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-6">
+        <!-- Mensajes de éxito/error -->
+        <div *ngIf="mensajeExito" class="alert-message bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 text-green-700 dark:text-green-300 px-5 py-4 rounded-xl mb-5 shadow-sm">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-check-circle text-xl"></i>
+            <span class="text-sm sm:text-base font-semibold">{{ mensajeExito }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="mensajeError" class="alert-message bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-5 py-4 rounded-xl mb-5 shadow-sm">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-exclamation-circle text-xl"></i>
+            <span class="text-sm sm:text-base font-semibold">{{ mensajeError }}</span>
+          </div>
+        </div>
+
+        <!-- Estado de carga -->
+        <div *ngIf="cargandoPublicaciones" class="text-center py-8">
+          <i class="fas fa-spinner fa-spin text-3xl sm:text-4xl text-blue-500 mb-3"></i>
+          <p [ngClass]="textoSecundariaAdaptada" class="text-sm sm:text-base">
+            Cargando tus publicaciones...
+          </p>
+        </div>
+
+        <!-- Error al cargar -->
+        <div *ngIf="!cargandoPublicaciones && errorCargaPublicaciones" 
+             class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span class="text-sm sm:text-base">{{ errorCargaPublicaciones }}</span>
+          </div>
+        </div>
+
+        <!-- Lista de publicaciones disponibles -->
+        <div *ngIf="!cargandoPublicaciones && !errorCargaPublicaciones && publicaciones.length > 0" 
+             class="space-y-3">
+          <div *ngFor="let pub of publicaciones"
+               [ngClass]="currentTheme.cardBg"
+               class="border rounded-xl p-4 hover:shadow-md transition cursor-pointer"
+               [style.border-color]="currentTheme.borderColor"
+               (click)="toggleSeleccionPublicacion(pub.id)">
+            <div class="flex items-start gap-3">
+              <!-- Checkbox -->
+              <div class="flex-shrink-0 pt-1">
+                <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition"
+                     [ngClass]="publicacionesSeleccionadas.includes(pub.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'">
+                  <i *ngIf="publicacionesSeleccionadas.includes(pub.id)" class="fas fa-check text-white text-xs"></i>
+                </div>
+              </div>
+
+              <!-- Contenido de la publicación -->
+              <div class="flex-1 min-w-0">
+                <!-- Header de la publicación -->
+                <div class="flex items-center gap-2 mb-2">
+                  <img [src]="obtenerAvatarUrl(pub)" 
+                       [alt]="obtenerNombreAutor(pub)"
+                       class="w-8 h-8 rounded-full object-cover">
+                  <div class="flex-1 min-w-0">
+                    <p [ngClass]="textoPrimariaAdaptado" class="font-bold text-xs truncate">
+                      {{ obtenerNombreAutor(pub) }}
+                    </p>
+                    <p [ngClass]="textoSecundariaAdaptada" class="text-xs">
+                      {{ formatearFecha(pub.fecha_creacion) }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Contenido (truncado) -->
+                <p [ngClass]="textoPrimariaAdaptado" class="text-sm line-clamp-2">
+                  {{ pub.contenido }}
+                </p>
+
+                <!-- Miniatura de imagen si existe -->
+                <img *ngIf="pub.imagen_url" 
+                     [src]="obtenerImagenUrl(pub.imagen_url)" 
+                     [alt]="'Imagen de publicación'"
+                     class="w-full h-32 rounded-lg mt-2 object-cover">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sin publicaciones disponibles -->
+        <div *ngIf="!cargandoPublicaciones && !errorCargaPublicaciones && publicaciones.length === 0" 
+             class="text-center py-8">
+          <div class="text-4xl sm:text-5xl mb-3">📭</div>
+          <p [ngClass]="textoSecundariaAdaptada" class="text-sm sm:text-base">
+            No tienes publicaciones disponibles
+          </p>
+          <p [ngClass]="textoSecundariaAdaptada" class="text-xs sm:text-sm mt-2">
+            Crea tu primera publicación para poder organizarla en una carpeta
+          </p>
+        </div>
+
+        <!-- Botón para confirmar selección - ADAPTADO AL TEMA -->
+        <div *ngIf="publicaciones.length > 0 && !agregandoPublicaciones" 
+             class="mt-6 pt-6 border-t" 
+             [style.border-color]="currentTheme.borderColor">
+          <div class="flex items-center justify-between mb-4">
+            <p [ngClass]="textoSecundariaAdaptada" class="text-sm">
+              {{ publicacionesSeleccionadas.length }} {{ publicacionesSeleccionadas.length === 1 ? 'publicación seleccionada' : 'publicaciones seleccionadas' }}
+            </p>
+            <button
+              *ngIf="publicacionesSeleccionadas.length > 0"
+              (click)="limpiarSeleccion()"
+              [ngClass]="textoSecundariaAdaptada"
+              class="text-sm hover:opacity-70 transition">
+              Limpiar selección
+            </button>
+          </div>
+          <button
+            (click)="agregarPublicacionesASeccion()"
+            [disabled]="publicacionesSeleccionadas.length === 0"
+            [ngClass]="currentTheme.cardBg"
+            class="w-full border-2 px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            [style.border-color]="currentTheme.borderColor">
+            <i [ngClass]="textoPrimariaAdaptado" class="fas fa-check-circle mr-2"></i>
+            <span [ngClass]="textoPrimariaAdaptado">
+              Agregar {{ publicacionesSeleccionadas.length > 0 ? '(' + publicacionesSeleccionadas.length + ')' : '' }} a {{ selectedSection?.nombre }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Estado de agregando -->
+        <div *ngIf="agregandoPublicaciones" 
+             class="mt-6 pt-6 border-t" 
+             [style.border-color]="currentTheme.borderColor">
+          <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-3"></i>
+            <p [ngClass]="textoSecundariaAdaptada" class="text-sm">
+              Agregando publicaciones a la carpeta...
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para crear carpeta (solo propietario) -->
+  <div *ngIf="showCreateModal && esPropietario"
+       (click)="onCreateModalBackdropClick($event)"
+       class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div [ngClass]="currentTheme.cardBg" 
+         class="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b"
+           [ngClass]="currentTheme.cardBg"
+           [style.border-color]="currentTheme.borderColor">
+        <h2 [ngClass]="textoPrimariaAdaptado" class="text-lg sm:text-xl font-black">
+          <i class="fas fa-folder-plus mr-2"></i>
+          Crear Nueva Carpeta
+        </h2>
+        <button 
+          (click)="closeCreateModal()"
+          [ngClass]="textoSecundariaAdaptada"
+          class="hover:opacity-70 transition text-xl sm:text-2xl">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-6 space-y-6">
+        <!-- Nombre de la carpeta -->
+        <div>
+          <label [ngClass]="textoPrimariaAdaptado" class="block text-sm font-bold mb-2">
+            Nombre de la carpeta *
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="nuevaSeccion.nombre"
+            [ngClass]="textoPrimariaAdaptado"
+            class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-transparent"
+            [style.border-color]="currentTheme.borderColor"
+            placeholder="Ej: Matemáticas II, Proyecto Final, Apuntes de Física..."
+            maxlength="50">
+          <p [ngClass]="textoSecundariaAdaptada" class="text-xs mt-1">
+            {{ nuevaSeccion.nombre.length }}/50 caracteres
+          </p>
+        </div>
+
+        <!-- Selector de ícono -->
+        <div>
+          <label [ngClass]="textoPrimariaAdaptado" class="block text-sm font-bold mb-3">
+            Ícono de la carpeta
+          </label>
+          <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-48 overflow-y-auto p-3 border rounded-xl"
+               [style.border-color]="currentTheme.borderColor"
+               [ngClass]="currentTheme.cardBg">
+            <button
+              *ngFor="let icono of iconosDisponibles"
+              (click)="seleccionarIcono(icono)"
+              type="button"
+              [ngClass]="nuevaSeccion.icono === icono ? 'bg-blue-500 text-white scale-110 shadow-lg' : fondoAcentoAdaptado + ' ' + textoPrimariaAdaptado"
+              class="icon-selector-button w-12 h-12 rounded-lg flex items-center justify-center text-lg hover:scale-105 hover:shadow-md">
+              <i [class]="'fas ' + icono"></i>
+            </button>
+          </div>
+        </div>
+
+        
+
+        <!-- Vista previa -->
+        <div>
+          <label [ngClass]="textoPrimariaAdaptado" class="block text-sm font-bold mb-3">
+            Vista previa de la carpeta
+          </label>
+          <div [ngClass]="currentTheme.cardBg"
+               class="preview-card border-2 border-dashed rounded-xl p-5 sm:p-6"
+               [style.border-color]="currentTheme.borderColor">
+            <div class="flex items-center justify-between mb-4">
+              <!-- Ícono ADAPTADO AL TEMA en vista previa -->
+              <div [ngClass]="[fondoAcentoAdaptado, textoPrimariaAdaptado]" 
+                   class="preview-icon w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl sm:text-3xl shadow-lg">
+                <i [class]="'fas ' + nuevaSeccion.icono"></i>
+              </div>
+              <span [ngClass]="[textoSecundariaAdaptada, fondoAcentoAdaptado]" 
+                    class="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full">
+                0 publicaciones
+              </span>
+            </div>
+            <h3 [ngClass]="textoPrimariaAdaptado" class="font-black text-base sm:text-lg">
+              {{ nuevaSeccion.nombre || 'Nombre de la carpeta' }}
+            </h3>
+          </div>
+        </div>
+
+        <!-- Mensaje de error -->
+        <div *ngIf="errorCreacion" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span>{{ errorCreacion }}</span>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+          <button
+            (click)="closeCreateModal()"
+            [ngClass]="textoSecundariaAdaptada"
+            class="flex-1 px-6 py-3 rounded-xl border-2 font-bold hover:opacity-70 transition"
+            [style.border-color]="currentTheme.borderColor">
+            Cancelar
+          </button>
+          <button
+            (click)="crearSeccion()"
+            [disabled]="creandoSeccion || !nuevaSeccion.nombre.trim()"
+            [ngClass]="currentTheme.cardBg"
+            class="flex-1 border-2 px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            [style.border-color]="currentTheme.borderColor">
+            <span *ngIf="!creandoSeccion" [ngClass]="textoPrimariaAdaptado">
+              <i class="fas fa-check-circle mr-2"></i>
+              Crear Carpeta
+            </span>
+            <span *ngIf="creandoSeccion" [ngClass]="textoPrimariaAdaptado">
+              <i class="fas fa-spinner fa-spin mr-2"></i>
+              Creando...
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

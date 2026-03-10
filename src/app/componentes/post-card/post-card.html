@@ -1,0 +1,224 @@
+<div [attr.data-post-id]="post().id" class="border rounded-xl shadow-sm hover:shadow-md transition relative"
+  [ngClass]="currentTheme().cardBg || ''">
+
+  <!-- POST HEADER -->
+  <div class="px-4 pt-3 pb-2">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+        (click)="navegarAPerfil(post().usuario_id, $event)">
+
+        <!-- AVATAR DEL AUTOR -->
+        <div
+          class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden hover:opacity-90 transition"
+          [style.background]="post().avatarColor">
+          <img *ngIf="post().image" [src]="post().image" [alt]="post().author" class="w-full h-full object-cover">
+          <span *ngIf="!post().image">{{ post().avatar }}</span>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <h3 class="font-bold truncate hover:underline" [ngClass]="currentTheme().textPrimaryClass || ''">
+            {{ post().author }}
+          </h3>
+
+          <div class="flex items-center gap-1.5 text-xs" [ngClass]="currentTheme().textSecondaryClass || ''">
+            <span>{{ post().time }}</span>
+            <span>·</span>
+            <span [title]="getVisibilidadTexto()">{{ getVisibilidadIcon() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span class="inline-block text-white px-3 py-1.5 rounded-full text-xs font-semibold"
+          [ngClass]="currentTheme().accentBg || ''">
+          {{ post().category }}
+        </span>
+
+        <span *ngIf="post().usuario_id === usuarioActualId() && post().visibilidad !== 'publico'"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+          [ngClass]="getVisibilidadClasses()">
+          {{ getVisibilidadIcon() }}
+          <span class="hidden sm:inline">{{ getVisibilidadTexto() }}</span>
+        </span>
+
+        <div class="relative">
+          <button (click)="toggleOptions($event)" class="transition p-2 hover:opacity-70"
+            [ngClass]="currentTheme().textSecondaryClass || ''">
+            <i class="fas fa-ellipsis-h"></i>
+          </button>
+
+          <div *ngIf="showOptions()" (click)="closeOptions()"
+            class="absolute right-0 top-10 z-50 rounded-lg shadow-lg border min-w-[200px]"
+            [ngClass]="currentTheme().cardBg || ''">
+
+            <button *ngIf="post().usuario_id !== usuarioActualId()" (click)="openNoInteresaModal($event)"
+              class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm"
+              [ngClass]="currentTheme().textPrimaryClass || ''">
+              <i class="fas fa-thumbs-down text-orange-500"></i>
+              No me interesa
+            </button>
+
+            <button (click)="ocultarPublicacion($event)"
+              class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm"
+              [ngClass]="currentTheme().textPrimaryClass || ''">
+              <i class="fas fa-eye-slash text-gray-500"></i>
+              Ocultar publicación
+            </button>
+
+            <button *ngIf="post().usuario_id !== usuarioActualId()" (click)="openReportModal($event)"
+              class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm border-t"
+              [ngClass]="[currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']">
+              <i class="fas fa-flag text-red-500"></i>
+              Reportar publicación
+            </button>
+
+            <button *ngIf="post().usuario_id === usuarioActualId()" (click)="iniciarEdicion($event)"
+              class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm border-t"
+              [ngClass]="[currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']">
+              <i class="fas fa-edit text-blue-500"></i>
+              Editar publicación
+            </button>
+
+            <button *ngIf="post().usuario_id === usuarioActualId()" (click)="eliminarPublicacion($event)"
+              class="w-full text-left px-4 py-2.5 hover:opacity-80 transition flex items-center gap-2 text-sm text-red-500">
+              <i class="fas fa-trash-alt"></i>
+              Eliminar publicación
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="px-4 pb-3">
+    <p *ngIf="!isEditing()" class="leading-relaxed text-sm sm:text-base whitespace-pre-wrap"
+      [ngClass]="currentTheme().textPrimaryClass || ''">
+      {{ post().content }}
+    </p>
+
+    <div *ngIf="isEditing()" class="space-y-3">
+      <textarea [ngModel]="editedContent()" (ngModelChange)="editedContent.set($event)" rows="5"
+        class="w-full px-4 py-3 rounded-lg border-2 resize-none focus:outline-none focus:ring-2 transition-all text-sm"
+        [ngClass]="[currentTheme().bodyClass || '', currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']"
+        [style.--tw-ring-color]="getThemeRingColor()" placeholder="Escribe aquí..."></textarea>
+
+      <div class="flex items-center justify-end gap-2">
+        <button (click)="cancelarEdicion()" class="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-gray-100">
+          Cancelar
+        </button>
+        <button (click)="guardarEdicion()" [disabled]="!editedContent().trim()"
+          class="px-4 py-2 rounded-lg font-medium text-sm text-white transition-all bg-orange-500">
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS -->
+  <div *ngIf="post().documentos && post().documentos!.length > 0" class="px-4 pb-3 space-y-2">
+    <div *ngFor="let doc of post().documentos" (click)="descargarDocumento(doc.documento_s3, doc.nombre_archivo)"
+      class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:shadow-md transition-all"
+      [ngClass]="[currentTheme().cardBg || '', currentTheme().borderColor || '']">
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-opacity-10"
+        [ngClass]="doc.color.replace('text-', 'bg-')">
+        <i [class]="'fas ' + doc.icono + ' text-xl ' + doc.color"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm truncate" [ngClass]="currentTheme().textPrimaryClass">{{ doc.nombre_archivo }}
+        </p>
+        <p class="text-xs" [ngClass]="currentTheme().textSecondaryClass">{{ formatearTamanoArchivo(doc.tamano_archivo)
+          }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE -->
+  <div *ngIf="post().image && !isEditing()" (click)="openPostDetail()"
+    class="cursor-pointer hover:opacity-95 transition">
+    <img [src]="post().image" class="w-full h-auto">
+  </div>
+
+  <!-- STATS -->
+  <div class="px-4 py-3 flex items-center justify-between text-sm border-t"
+    [ngClass]="[currentTheme().borderColor || '', currentTheme().textSecondaryClass || '']">
+    <button (click)="openPostDetail()" class="hover:underline font-medium">
+      {{ post().likes }} Me gusta
+    </button>
+    <button (click)="toggleCommentsSection()" class="hover:underline font-medium">
+      {{ post().totalComments || 0 }} comentarios · {{ post().shares }} compartidos
+    </button>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="border-t px-2 py-1.5 flex items-center gap-1" [ngClass]="currentTheme().borderColor || ''">
+    <button (click)="toggleLike()" [disabled]="isEditing() || likeLoading()"
+      class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all text-sm"
+      [ngClass]="post().liked ? 'text-rose-500 bg-rose-50' : currentTheme().textSecondaryClass || ''">
+      <i [class]="likeLoading() ? 'fas fa-spinner fa-spin' : (post().liked ? 'fas fa-heart' : 'far fa-heart')"></i>
+      <span>{{ post().liked ? 'Te gusta' : 'Me gusta' }}</span>
+    </button>
+
+    <button (click)="toggleCommentsSection()"
+      class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all text-sm"
+      [ngClass]="currentTheme().textSecondaryClass || ''">
+      <i class="fas fa-comment"></i>
+      <span>Comentar</span>
+    </button>
+
+    <button (click)="openShareModal($event)"
+      class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold transition-all text-sm"
+      [ngClass]="currentTheme().textSecondaryClass || ''">
+      <i class="fas fa-share"></i>
+      <span>Compartir</span>
+    </button>
+  </div>
+
+  <!-- COMMENTS -->
+  <div *ngIf="showComments() && !isEditing()" class="border-t" [ngClass]="currentTheme().borderColor || ''">
+    <div *ngIf="loadingComments()" class="px-4 py-8 text-center animate-pulse">
+      Cargando...
+    </div>
+
+    <div *ngIf="!loadingComments() && comments().length > 0" class="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
+      <div *ngFor="let comment of comments(); trackBy: trackByCommentId" class="flex gap-2.5">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0"
+          [style.background]="comment.usandoIniciales ? comment.avatarColor : 'transparent'">
+          <img *ngIf="!comment.usandoIniciales" [src]="comment.foto_perfil_url"
+            class="w-full h-full object-cover rounded-full">
+          <span *ngIf="comment.usandoIniciales">{{ comment.avatar }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="rounded-2xl px-3 py-2 bg-gray-50" [ngClass]="currentTheme().cardBg || ''">
+            <p class="font-bold text-xs">{{ comment.author }}</p>
+            <p class="text-xs mt-1">{{ comment.text }}</p>
+          </div>
+          <div class="flex items-center gap-3 mt-1 text-[10px]" [ngClass]="currentTheme().textSecondaryClass || ''">
+            <span>{{ comment.time }}</span>
+            <button *ngIf="comment.usuario_id === usuarioActualId()" (click)="eliminarComentario(comment.id)"
+              class="text-red-500">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTA CENSURA -->
+    <div *ngIf="mostrandoAlertaCensura()" class="mx-4 mb-3 p-2 rounded border text-xs flex justify-between items-center"
+      [ngClass]="obtenerColorCensura(nivelCensura())">
+      <span>{{ obtenerIconoCensura(nivelCensura()) }} {{ comentarioCensuradoMensaje() }}</span>
+      <button (click)="cerrarAlertaCensura()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- INPUT -->
+    <div class="px-4 py-3 border-t flex items-center gap-2">
+      <input type="text" [ngModel]="commentInput()" (ngModelChange)="commentInput.set($event)"
+        (keypress)="onCommentKeyPress($event)" placeholder="Escribe un comentario..."
+        class="flex-1 rounded-full px-4 py-2 text-xs border outline-none focus:ring-1"
+        [ngClass]="currentTheme().borderColor || ''">
+      <button (click)="addComment()" [disabled]="!commentInput().trim()" class="text-orange-500 disabled:opacity-50">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>

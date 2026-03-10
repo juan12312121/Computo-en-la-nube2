@@ -1,0 +1,75 @@
+<div class="fixed bottom-6 right-6 z-50">
+    <!-- Floating Button -->
+    <button (click)="toggleChat()"
+        class="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-2xl shadow-xl shadow-orange-500/20 transition-all transform hover:scale-110 active:scale-95 flex items-center gap-2 group">
+        <lucide-icon [name]="isOpen() ? X : MessageSquare" class="w-6 h-6"></lucide-icon>
+        @if (!isOpen()) {
+        <span class="font-bold pr-2">TRINO AI</span>
+        }
+    </button>
+
+    <!-- Chat Window -->
+    @if (isOpen()) {
+    <div
+        class="absolute bottom-20 right-0 w-[380px] h-[550px] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-xl">
+                    <lucide-icon [name]="Bot" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg leading-tight">Asistente TRINO</h3>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        <span class="text-xs text-orange-100 font-medium">En línea para ayudarte</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
+            @for (chat of chats(); track $index) {
+            <div class="flex flex-col" [class.items-end]="chat.rol === 'usuario'">
+                <div class="max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed" [class.bg-white]="chat.rol === 'ia'"
+                    [class.shadow-sm]="chat.rol === 'ia'" [class.border]="chat.rol === 'ia'"
+                    [class.border-gray-100]="chat.rol === 'ia'" [class.bg-orange-500]="chat.rol === 'usuario'"
+                    [class.text-white]="chat.rol === 'usuario'" [class.rounded-tr-none]="chat.rol === 'usuario'"
+                    [class.rounded-tl-none]="chat.rol === 'ia'">
+                    {{ chat.texto }}
+                </div>
+                <span class="text-[10px] text-gray-400 mt-1 px-1">
+                    {{ chat.rol === 'ia' ? 'TRINO' : 'Tú' }}
+                </span>
+            </div>
+            }
+            @if (cargando()) {
+            <div class="flex items-start gap-2">
+                <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm flex gap-1">
+                    <span class="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>
+            </div>
+            }
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-gray-100 shrink-0">
+            <form (submit)="enviarMensaje()" class="relative">
+                <input [(ngModel)]="mensaje" name="mensaje" type="text" placeholder="Escribe tu duda académica..."
+                    class="w-full pl-4 pr-12 py-3 bg-gray-100 border-none rounded-2xl text-sm focus:ring-2 focus:ring-orange-500 transition-all outline-none"
+                    autocomplete="off">
+                <button type="submit" [disabled]="!mensaje().trim() || cargando()"
+                    class="absolute right-2 top-1.5 p-2 text-orange-600 hover:bg-white rounded-xl transition-all disabled:opacity-30 disabled:hover:bg-transparent">
+                    <lucide-icon [name]="Send" class="w-5 h-5"></lucide-icon>
+                </button>
+            </form>
+            <p class="text-[10px] text-center text-gray-400 mt-3">
+                TRINO puede cometer errores. Verifica la información importante.
+            </p>
+        </div>
+    </div>
+    }
+</div>

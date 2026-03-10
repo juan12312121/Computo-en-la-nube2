@@ -1,0 +1,170 @@
+<app-navbar (openCreate)="openCreateModal()"></app-navbar>
+
+<div class="exp-wrap" [class]="currentTheme().id">
+
+    <!-- Search sticky -->
+    <div class="exp-search-bar" [ngClass]="currentTheme().navbarBg">
+        <div class="exp-search-inner">
+            <i class="fas fa-search exp-search-ico"></i>
+            <input type="text" class="exp-search-field"
+                [ngClass]="[currentTheme().cardBg, currentTheme().textPrimaryClass]" [ngModel]="searchTerm()"
+                (ngModelChange)="searchTerm.set($event)" placeholder="Buscar temas, publicaciones…">
+        </div>
+    </div>
+
+    <div class="exp-body">
+
+        <!-- ══ CATEGORÍAS ══ -->
+        <div *ngIf="!selectedCategory()">
+
+            <div class="exp-header-row">
+                <h2 class="exp-title" [ngClass]="currentTheme().textPrimaryClass">Explorar</h2>
+                <span class="exp-subtitle" [ngClass]="currentTheme().textSecondaryClass">{{ filteredTags().length }}
+                    categorías</span>
+            </div>
+
+            <div class="exp-cat-grid">
+                @for (tag of filteredTags(); track tag.name) {
+                <button class="exp-cat-card" [ngClass]="currentTheme().cardBg" (click)="seleccionarCategoria(tag.name)"
+                    [style.--accent]="getColor(tag.color)">
+                    <!-- Fondo: imagen por categoria + overlay de color -->
+                    <div class="exp-card-bg" [ngSwitch]="tag.name"
+                        style="background-size:cover;background-position:center">
+                        <div *ngSwitchCase="'Tecnología'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Ciencias'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Artes y Cultura'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Deportes'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Salud y Bienestar'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Vida Universitaria'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Opinión'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchCase="'Entrevistas'"
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1478737270197-f6c45c5b6be8?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                        <div *ngSwitchDefault
+                            style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600&q=80');background-size:cover;background-position:center">
+                        </div>
+                    </div>
+                    <div class="exp-card-overlay" [style.background]="getGradient(tag.color)"></div>
+
+                    <!-- Ícono grande -->
+                    <div class="exp-card-icon" [style.background-color]="getColor(tag.color)">
+                        <i class="fas {{ tag.icon }}"></i>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="exp-card-info">
+                        <span class="exp-card-name" [ngClass]="currentTheme().textPrimaryClass">{{ tag.name }}</span>
+                        <span class="exp-card-count" [ngClass]="currentTheme().textSecondaryClass">
+                            {{ tag.posts | number }} publicaciones
+                        </span>
+                    </div>
+
+                    <!-- Badge si tiene posts -->
+                    <span *ngIf="tag.posts > 0" class="exp-card-badge" [style.background-color]="getColor(tag.color)">
+                        {{ tag.posts }}
+                    </span>
+
+                    <i class="fas fa-chevron-right exp-card-arrow" [ngClass]="currentTheme().textSecondaryClass"></i>
+                </button>
+                }
+            </div>
+
+            <div *ngIf="filteredTags().length === 0" class="exp-empty">
+                <i class="fas fa-search exp-empty-ico" [ngClass]="currentTheme().textSecondaryClass"></i>
+                <p [ngClass]="currentTheme().textPrimaryClass">Sin resultados para "{{ searchTerm() }}"</p>
+            </div>
+
+        </div>
+
+        <!-- ══ FEED DE CATEGORÍA ══ -->
+        <div *ngIf="selectedCategory()">
+
+            <div class="exp-feed-header">
+                <button class="exp-back-btn" [ngClass]="[currentTheme().cardBg, currentTheme().textPrimaryClass]"
+                    (click)="seleccionarCategoria(selectedCategory() || '')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 class="exp-feed-title" [ngClass]="currentTheme().textPrimaryClass">{{ selectedCategory() }}</h2>
+                    <p class="exp-feed-sub" [ngClass]="currentTheme().textSecondaryClass">{{ postsFilttrados().length }}
+                        publicaciones</p>
+                </div>
+            </div>
+
+            <div *ngIf="isLoading()" class="exp-loader">
+                <div class="exp-spinner" [style.border-top-color]="currentTheme().color"></div>
+            </div>
+
+            <div class="exp-posts">
+                @for (post of postsFilttrados(); track post.id) {
+                <div class="exp-post" [ngClass]="currentTheme().cardBg">
+
+                    <div class="exp-post-author" (click)="navegarAPerfil(post.usuario_id, $event)">
+                        <img *ngIf="post.fotoPerfil" [ngSrc]="post.fotoPerfil!" width="40" height="40"
+                            class="exp-avatar">
+                        <div *ngIf="!post.fotoPerfil" class="exp-avatar exp-avatar-ph"
+                            [style.background]="post.avatarColor">
+                            {{ post.avatar }}
+                        </div>
+                        <div>
+                            <p class="exp-post-name" [ngClass]="currentTheme().textPrimaryClass">{{ post.author }}</p>
+                            <p class="exp-post-time" [ngClass]="currentTheme().textSecondaryClass">{{ post.time }}</p>
+                        </div>
+                    </div>
+
+                    <div class="exp-post-content" (click)="openPostDetail(post.id)">
+                        <p class="exp-post-text" [ngClass]="currentTheme().textPrimaryClass">
+                            {{ post.content | slice:0:200 }}{{ post.content.length > 200 ? '…' : '' }}
+                        </p>
+                        <div class="exp-post-img-wrap" *ngIf="post.image">
+                            <img [ngSrc]="post.image!" fill class="exp-post-img" (load)="onImageLoad($event, post)">
+                        </div>
+                    </div>
+
+                    <div class="exp-post-actions">
+                        <button class="exp-action-btn" (click)="toggleLike(post.id)" [class.active]="post.liked"
+                            [ngClass]="currentTheme().textSecondaryClass">
+                            <i [class]="post.liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                            <span>{{ post.likes }}</span>
+                        </button>
+                        <button class="exp-action-btn" (click)="openPostDetail(post.id)"
+                            [ngClass]="currentTheme().textSecondaryClass">
+                            <i class="far fa-comment"></i>
+                            <span>{{ post.totalComments || 0 }}</span>
+                        </button>
+                        <button class="exp-action-btn" (click)="openShareModal(post.id, $event)"
+                            [ngClass]="currentTheme().textSecondaryClass">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </div>
+
+                </div>
+                }
+            </div>
+
+            <div *ngIf="!isLoading() && postsFilttrados().length === 0" class="exp-empty">
+                <i class="fas fa-feather-alt exp-empty-ico" [ngClass]="currentTheme().textSecondaryClass"></i>
+                <p [ngClass]="currentTheme().textPrimaryClass">Sin publicaciones en {{ selectedCategory() }}</p>
+                <p [ngClass]="currentTheme().textSecondaryClass">Sé el primero en publicar aquí</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<app-detalle-post [post]="selectedPost()" [isVisible]="showPostDetailModal()" (close)="closePostDetail()">
+</app-detalle-post>

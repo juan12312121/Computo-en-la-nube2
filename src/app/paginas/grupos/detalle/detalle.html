@@ -1,0 +1,164 @@
+<app-navbar></app-navbar>
+<div class="refined-detail-wrapper" [ngClass]="[currentTheme().bodyClass || '', currentTheme().id]">
+    <!-- Cinema Hero (Balanced Proportions) -->
+    <header class="cinema-hero-refined"
+        [ngClass]="[currentTheme().navbarBg || '', currentTheme().navbarBorder || '', 'border-b']">
+        <div class="hero-cover-canvas">
+            @if (grupo()?.imagen_portada_url) {
+            <img [src]="grupo()?.imagen_portada_url" class="hero-cover-img" alt="Cover">
+            } @else {
+            <div class="cover-fallback-refined" [style.background]="currentTheme().color"></div>
+            }
+            <div class="hero-gradient-top"></div>
+        </div>
+
+        <div class="hero-bottom-info">
+            <div class="detail-limit-container">
+                <div class="identity-profile-block">
+                    <div class="profile-avatar-wrapper">
+                        @if (grupo()?.imagen_url) {
+                        <img [src]="grupo()?.imagen_url" class="profile-avatar-img" [alt]="grupo()?.nombre"
+                            [style.border-color]="currentTheme().cardBg || 'white'">
+                        } @else {
+                        <div class="profile-avatar-fallback" [style.border-color]="currentTheme().cardBg || 'white'"
+                            [style.background]="currentTheme().color">
+                            {{ grupo()?.nombre?.charAt(0) }}
+                        </div>
+                        }
+                    </div>
+                    <div class="profile-text">
+                        <h1 class="profile-title" [ngClass]="currentTheme().textPrimaryClass || ''">{{ grupo()?.nombre
+                            }}</h1>
+                        <div class="profile-meta-row">
+                            <span class="meta-item-refined" [ngClass]="currentTheme().textSecondaryClass || ''">
+                                <lucide-icon [name]="grupo()?.privacidad === 'publico' ? 'globe' : 'lock'"
+                                    size="14"></lucide-icon>
+                                {{ grupo()?.privacidad }}
+                            </span>
+                            <span class="meta-dot-refined"
+                                [style.background]="currentTheme().textSecondaryClass"></span>
+                            <span class="meta-item-refined" [ngClass]="currentTheme().textSecondaryClass || ''">{{
+                                grupo()?.total_miembros }} miembros</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-action-buttons">
+                    @if (!esMiembro() && !solicitudPendiente()) {
+                    <button class="btn-action-refined primary" (click)="unirse()"
+                        [style.background]="currentTheme().color">
+                        <lucide-icon name="plus" size="18"></lucide-icon>
+                        <span>Unirme al grupo</span>
+                    </button>
+                    } @else if (solicitudPendiente()) {
+                    <button class="btn-action-refined secondary opacity-70 cursor-not-allowed"
+                        [ngClass]="[currentTheme().cardBg || '', currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']">
+                        <lucide-icon name="shield" size="18"></lucide-icon>
+                        <span>Solicitud pendiente</span>
+                    </button>
+                    } @else {
+                    <button class="btn-action-refined secondary"
+                        [ngClass]="[currentTheme().cardBg || '', currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']">
+                        <lucide-icon name="users" size="18"></lucide-icon>
+                        <span>Eres miembro</span>
+                    </button>
+                    }
+                    <button class="btn-icon-refined"
+                        [ngClass]="[currentTheme().cardBg || '', currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']"><lucide-icon
+                            name="more-horizontal"></lucide-icon></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="detail-grid-refined">
+        <!-- Feed Column -->
+        <div class="feed-column-refined">
+            <!-- Simplified Professional Composer -->
+            @if (esMiembro()) {
+            <div class="minimal-composer-card"
+                [ngClass]="[currentTheme().cardBg || '', currentTheme().borderColor || '']">
+                <div class="composer-header-minimal" [ngClass]="currentTheme().borderColor || ''">
+                    <div class="user-pill-mini">
+                        <div class="mini-avatar" [style.background]="currentTheme().color">
+                            {{ usuarioActual()?.nombre_completo?.charAt(0) }}
+                        </div>
+                    </div>
+                    <input type="text" [ngModel]="nuevoPostTexto()" (ngModelChange)="nuevoPostTexto.set($event)"
+                        placeholder="¿Qué quieres compartir con la comunidad?" (keyup.enter)="crearPost()"
+                        class="composer-simple-input"
+                        [ngClass]="[currentTheme().textPrimaryClass || '', currentTheme().bodyClass || '']"
+                        [style.caret-color]="currentTheme().color">
+                    <button class="btn-send-minimal" (click)="crearPost()" [disabled]="!nuevoPostTexto().trim()"
+                        [style.background]="currentTheme().color">
+                        Publicar
+                    </button>
+                </div>
+                <div class="composer-tools-minimal">
+                    <button class="tool-btn-refined" [ngClass]="currentTheme().textSecondaryClass || ''"><lucide-icon
+                            name="image" size="16"></lucide-icon>
+                        Multimedia</button>
+                    <button class="tool-btn-refined" [ngClass]="currentTheme().textSecondaryClass || ''"><lucide-icon
+                            name="file-text" size="16"></lucide-icon>
+                        Archivo</button>
+                </div>
+            </div>
+            }
+
+            <!-- Feed Content -->
+            <div class="posts-feed-refined">
+                @for (post of publicaciones(); track post.id; let i = $index) {
+                <div class="post-item-refined" [style.--delay]="(i * 0.05) + 's'">
+                    <app-post-card [post]="post" [currentTheme]="currentTheme()"></app-post-card>
+                </div>
+                } @empty {
+                <div class="empty-feed-refined flex flex-col items-center justify-center py-10"
+                    [ngClass]="currentTheme().textSecondaryClass || ''">
+                    <lucide-icon name="message-square" size="40" class="mb-3 opacity-50"></lucide-icon>
+                    <h3 class="text-lg font-bold" [ngClass]="currentTheme().textPrimaryClass || ''">Aún no hay
+                        publicaciones</h3>
+                    <p class="text-sm mt-1">Sé el primero en iniciar una conversación en este grupo.</p>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <aside class="info-sidebar-refined">
+            <div class="sticky-sidebar-content">
+                <div class="sidebar-card-refined"
+                    [ngClass]="[currentTheme().cardBg || '', currentTheme().borderColor || '']">
+                    <h3 [ngClass]="currentTheme().textPrimaryClass || ''">Acerca de</h3>
+                    <p class="about-desc-refined" [ngClass]="currentTheme().textSecondaryClass || ''">{{
+                        grupo()?.descripcion || 'Esta comunidad aún no tiene una
+                        descripción detallada.' }}</p>
+
+                    <div class="detailed-specs">
+                        <div class="spec-row">
+                            <div class="spec-icon" [ngClass]="currentTheme().hoverBgLight || ''"
+                                [style.color]="currentTheme().color"><lucide-icon name="shield" size="16"></lucide-icon>
+                            </div>
+                            <div class="spec-info">
+                                <span class="spec-label"
+                                    [ngClass]="currentTheme().textSecondaryClass || ''">Seguridad</span>
+                                <span class="spec-val"
+                                    [ngClass]="currentTheme().textPrimaryClass || ''">Verificado</span>
+                            </div>
+                        </div>
+                        <div class="spec-row">
+                            <div class="spec-icon" [ngClass]="currentTheme().hoverBgLight || ''"
+                                [style.color]="currentTheme().color"><lucide-icon name="globe" size="16"></lucide-icon>
+                            </div>
+                            <div class="spec-info">
+                                <span class="spec-label"
+                                    [ngClass]="currentTheme().textSecondaryClass || ''">Visibilidad</span>
+                                <span class="spec-val" [ngClass]="currentTheme().textPrimaryClass || ''">{{
+                                    grupo()?.privacidad }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+</div>

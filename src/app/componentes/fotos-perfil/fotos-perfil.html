@@ -1,0 +1,177 @@
+<div *ngIf="photos" class="space-y-4">
+
+  <!-- Loading photos -->
+  <div *ngIf="cargando || cargandoAutomatico" [ngClass]="currentTheme.cardBg" class="rounded-2xl shadow-sm border p-8 text-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" 
+         [style.border-color]="currentTheme.color"></div>
+    <p [ngClass]="currentTheme.textSecondaryClass">Cargando fotos...</p>
+  </div>
+
+  <!-- ✅ NUEVO: Error al cargar fotos -->
+  <div *ngIf="!cargando && !cargandoAutomatico && errorCarga" 
+       [ngClass]="currentTheme.cardBg" 
+       class="rounded-2xl shadow-sm border p-8 text-center">
+    <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+    <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">
+      Error al cargar fotos
+    </h3>
+    <p [ngClass]="currentTheme.textSecondaryClass" class="mb-4">
+      {{ mensajeError }}
+    </p>
+    <button 
+      (click)="recargarFotos()"
+      class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
+      <i class="fas fa-redo mr-2"></i>
+      Reintentar
+    </button>
+  </div>
+
+  <!-- No photos -->
+  <div *ngIf="!cargando && !cargandoAutomatico && !errorCarga && photosProcessed.length === 0" 
+       [ngClass]="currentTheme.cardBg" 
+       class="rounded-2xl shadow-sm border p-12 text-center">
+    <i [ngClass]="currentTheme.textSecondaryClass" class="fas fa-images text-6xl mb-4 opacity-30"></i>
+    <h3 [ngClass]="currentTheme.textPrimaryClass" class="text-xl font-bold mb-2">
+      No hay fotos todavía
+    </h3>
+    <p [ngClass]="currentTheme.textSecondaryClass">
+      Este usuario aún no ha subido fotos
+    </p>
+  </div>
+
+  <!-- ✅ Photos grid - USANDO photosProcessed -->
+  <div *ngIf="!cargando && !cargandoAutomatico && !errorCarga && photosProcessed.length > 0" 
+       class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div *ngFor="let photo of photosProcessed"
+         class="relative aspect-square bg-gray-200 rounded-xl overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300"
+         [class.opacity-50]="photo.url.includes('undefined')"
+         (click)="openPhoto(photo.id)">
+      
+      <!-- ✅ Imagen con URL corregida -->
+      <img [src]="photo.url" 
+           [alt]="photo.caption" 
+           class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+           loading="lazy"
+           (error)="onImageError($event, photo)">
+      
+      <!-- Fallback cuando falla la imagen -->
+      <div style="display: none;" 
+           class="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 flex flex-col items-center justify-center text-gray-600 p-4">
+        <i class="fas fa-image-slash text-3xl sm:text-4xl mb-2 opacity-50"></i>
+        <p class="text-xs font-semibold text-center">Imagen no disponible</p>
+        <p class="text-[10px] text-gray-500 mt-1 text-center line-clamp-2">{{ photo.caption }}</p>
+      </div>
+      
+      <!-- Overlay -->
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <!-- Badge del tipo -->
+        <div class="absolute top-2 right-2">
+          <span [ngClass]="getBadgeClass(photo.tipo)" 
+                class="text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+            <i [class]="getIconClass(photo.tipo)"></i>
+            {{ getTipoLabel(photo.tipo) }}
+          </span>
+        </div>
+        
+        <!-- Icono de zoom -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <i class="fas fa-search-plus text-white text-2xl sm:text-3xl drop-shadow-lg"></i>
+        </div>
+        
+        <!-- Caption -->
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <p class="text-white text-sm font-semibold line-clamp-2 mb-1">
+            {{ photo.caption }}
+          </p>
+          <p *ngIf="photo.fecha" class="text-white/70 text-xs">
+            {{ formatFecha(photo.fecha) }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Modal -->
+  <div *ngIf="showPhotoModal && selectedPhoto" 
+       class="photo-modal-backdrop fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 animate-fadeIn"
+       (click)="onPhotoBackdropClick($event)">
+    
+    <div class="relative max-w-6xl w-full h-full flex flex-col items-center justify-center"
+         (click)="$event.stopPropagation()">
+      
+      <!-- Botón cerrar -->
+      <button 
+        (click)="closePhotoModal()"
+        class="absolute top-2 sm:top-4 right-2 sm:right-4 text-white hover:text-gray-300 text-3xl sm:text-4xl z-10 transition duration-200 drop-shadow-lg">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <!-- Contador de fotos -->
+      <div class="absolute top-2 sm:top-4 left-2 sm:left-4 text-white text-sm sm:text-base font-semibold z-10 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
+        {{ currentPhotoIndex + 1 }} / {{ photosProcessed.length }}
+      </div>
+
+      <!-- Badge del tipo de foto -->
+      <div class="absolute top-2 sm:top-4 left-1/2 transform -translate-x-1/2 z-10">
+        <span [ngClass]="getBadgeClass(selectedPhoto.tipo)" 
+              class="text-sm font-bold px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 shadow-lg">
+          <i [class]="getIconClass(selectedPhoto.tipo)"></i>
+          {{ getTipoLabel(selectedPhoto.tipo) }}
+        </span>
+      </div>
+
+      <!-- ✅ Imagen con URL corregida y fallback -->
+      <div class="relative flex-1 flex items-center justify-center max-h-[70vh] sm:max-h-[75vh] w-full">
+        <img [src]="selectedPhoto.url" 
+             [alt]="selectedPhoto.caption"
+             class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+             (error)="onModalImageError($event)">
+        
+        <!-- Fallback cuando falla la imagen en modal -->
+        <div style="display: none;" 
+             class="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-8 flex flex-col items-center justify-center text-white">
+          <i class="fas fa-image-slash text-6xl mb-4 opacity-50"></i>
+          <p class="text-lg font-semibold">Imagen no disponible</p>
+          <p class="text-sm text-gray-400 mt-2">La URL puede estar incorrecta</p>
+        </div>
+      </div>
+
+      <!-- Info de la foto -->
+      <div class="absolute bottom-16 sm:bottom-20 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-xl p-4 text-white">
+        <p class="font-semibold text-base sm:text-lg mb-1">{{ selectedPhoto.caption }}</p>
+        <div class="flex items-center gap-4 text-sm text-white/70">
+          <span *ngIf="selectedPhoto.fecha">
+            <i class="far fa-clock mr-1"></i>
+            {{ formatFecha(selectedPhoto.fecha) }}
+          </span>
+          <button *ngIf="selectedPhoto.postId" 
+                  (click)="goToPost(selectedPhoto.postId)"
+                  class="flex items-center gap-1 hover:text-white transition">
+            <i class="fas fa-external-link-alt"></i>
+            Ver publicación
+          </button>
+        </div>
+      </div>
+
+      <!-- Navegación - Flechas -->
+      <button *ngIf="currentPhotoIndex > 0"
+              (click)="previousPhoto()"
+              class="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition backdrop-blur-sm">
+        <i class="fas fa-chevron-left text-lg sm:text-xl"></i>
+      </button>
+
+      <button *ngIf="currentPhotoIndex < photosProcessed.length - 1"
+              (click)="nextPhoto()"
+              class="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition backdrop-blur-sm">
+        <i class="fas fa-chevron-right text-lg sm:text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Hint de navegación (solo desktop) -->
+    <div class="hidden sm:block absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/70 text-sm bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
+      <i class="fas fa-keyboard mr-2"></i>
+      Usa las flechas ← → o ESC para navegar
+    </div>
+  </div>
+
+</div>

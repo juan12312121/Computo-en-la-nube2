@@ -1,0 +1,368 @@
+<!-- OVERLAY PARA MÓVIL -->
+<div 
+  *ngIf="showNotifications"
+  class="notification-overlay fixed inset-0 z-40 md:hidden"
+  (click)="cerrarNotificaciones()">
+</div>
+
+<!-- BOTÓN DE NOTIFICACIONES -->
+<div class="relative notification-container">
+  <button 
+    (click)="toggleNotifications($event)"
+    class="notification-toggle relative p-2 rounded-md transition md:block"
+    [ngClass]="[currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']"
+    aria-label="Notificaciones">
+    
+    <i class="fas fa-bell text-lg"></i>
+    
+    <!-- Badge de contador -->
+    <span 
+      *ngIf="notificationsCount > 0"
+      class="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold text-white rounded-full shadow-lg animate-pulse"
+      [style.background]="currentTheme.color">
+      {{ notificationsCount > 99 ? '99+' : notificationsCount }}
+    </span>
+  </button>
+
+  <!-- PANEL DE NOTIFICACIONES (Desktop) -->
+  <div 
+    *ngIf="showNotifications"
+    class="notification-panel absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] border rounded-xl shadow-2xl overflow-hidden z-50 hidden md:flex md:flex-col"
+    [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+
+    <!-- HEADER -->
+    <div class="sticky top-0 z-10 px-4 py-3 border-b backdrop-blur-sm bg-opacity-95"
+         [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-bell" [ngClass]="currentTheme.textPrimaryClass || ''"></i>
+          <h3 class="font-bold text-lg" [ngClass]="currentTheme.textPrimaryClass || ''">
+            Notificaciones
+          </h3>
+          <span 
+            *ngIf="notificationsCount > 0"
+            class="px-2 py-0.5 text-xs font-bold text-white rounded-full"
+            [style.background]="currentTheme.color">
+            {{ notificationsCount }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <!-- Recargar -->
+          <button
+            (click)="recargar()"
+            [disabled]="cargando"
+            class="p-2 rounded-md transition-all duration-200 hover:scale-105 touch-manipulation"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']"
+            [class.opacity-50]="cargando"
+            title="Recargar"
+            aria-label="Recargar notificaciones">
+            <i class="fas fa-sync-alt text-base" [class.fa-spin]="cargando"></i>
+          </button>
+
+          <!-- Marcar todas como leídas -->
+          <button
+            *ngIf="notificationsCount > 0"
+            (click)="marcarTodasComoLeidas()"
+            class="p-2 rounded-md transition-all duration-200 hover:scale-105 touch-manipulation"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']"
+            title="Marcar todas como leídas"
+            aria-label="Marcar todas como leídas">
+            <i class="fas fa-check-double text-base"></i>
+          </button>
+
+          <!-- Cerrar -->
+          <button
+            (click)="cerrarNotificaciones()"
+            class="p-2 rounded-md transition-all duration-200 hover:scale-105 touch-manipulation"
+            [ngClass]="[currentTheme.textSecondaryClass || '', currentTheme.hoverBgLight || '']"
+            title="Cerrar"
+            aria-label="Cerrar panel">
+            <i class="fas fa-times text-base"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="max-h-[500px] overflow-y-auto">
+      
+      <!-- LOADING -->
+      <div *ngIf="cargando" class="px-4 py-12 text-center">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-3"
+             [style.border-color]="currentTheme.color"></div>
+        <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">
+          Cargando notificaciones...
+        </p>
+      </div>
+
+      <!-- ERROR -->
+      <div *ngIf="error && !cargando" class="px-4 py-12 text-center">
+        <i class="fas fa-exclamation-circle text-4xl mb-3 text-red-500"></i>
+        <p class="text-sm mb-3" [ngClass]="currentTheme.textSecondaryClass || ''">
+          Error al cargar notificaciones
+        </p>
+        <button
+          (click)="recargar()"
+          class="px-4 py-2 rounded-lg font-medium transition-all touch-manipulation"
+          [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']">
+          Reintentar
+        </button>
+      </div>
+
+      <!-- VACÍO -->
+      <div *ngIf="!cargando && !error && !hayNotificaciones" 
+           class="px-4 py-12 text-center">
+        <i class="fas fa-bell-slash text-5xl mb-3 opacity-30" 
+           [ngClass]="currentTheme.textSecondaryClass || ''"></i>
+        <p class="text-sm font-medium mb-1" [ngClass]="currentTheme.textPrimaryClass || ''">
+          No tienes notificaciones
+        </p>
+        <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+          Cuando recibas notificaciones aparecerán aquí
+        </p>
+      </div>
+
+      <!-- LISTA DE NOTIFICACIONES -->
+      <div *ngIf="!cargando && !error && hayNotificaciones">
+        <div
+          *ngFor="let notificacion of notificaciones; let i = index"
+          class="w-full flex items-start gap-3 px-4 py-3 transition-all duration-200 border-b group relative"
+          [ngClass]="[
+            currentTheme.borderColor || '',
+            notificacion.leida ? 'opacity-60' : ''
+          ]">
+          
+          <!-- Indicador de no leída -->
+          <div 
+            *ngIf="!notificacion.leida"
+            class="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full"
+            [style.background]="currentTheme.color"
+            aria-hidden="true"></div>
+
+          <!-- Avatar (clickeable) - DESKTOP -->
+          <button 
+            (click)="manejarClicNotificacion(notificacion)"
+            class="relative flex-shrink-0 ml-2 touch-manipulation"
+            [attr.aria-label]="'Ver notificación de ' + notificacion.nombre_completo">
+            
+            <img 
+              [src]="obtenerAvatar(notificacion)"
+              [alt]="notificacion.nombre_completo"
+              (error)="$any($event.target).src=obtenerAvatarFallback(notificacion.nombre_completo)"
+              class="w-12 h-12 rounded-full object-cover border-2"
+              [ngClass]="currentTheme.borderColor || ''"
+              loading="lazy">
+            
+            <!-- Icono de tipo -->
+            <div 
+              class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-lg border-2"
+              [ngClass]="currentTheme.cardBg || ''"
+              [style.border-color]="currentTheme.color"
+              aria-hidden="true">
+              {{ obtenerIconoTipo(notificacion.tipo) }}
+            </div>
+          </button>
+
+          <!-- Contenido (clickeable) -->
+          <button
+            (click)="manejarClicNotificacion(notificacion)"
+            class="flex-1 min-w-0 text-left touch-manipulation"
+            [ngClass]="currentTheme.hoverBgLight || ''"
+            [attr.aria-label]="'Notificación: ' + notificacion.mensaje">
+            <p class="text-sm font-medium mb-0.5 leading-snug" [ngClass]="currentTheme.textPrimaryClass || ''">
+              <span class="font-bold">{{ notificacion.nombre_completo }}</span>
+              <span class="font-normal ml-1">{{ obtenerMensajeCorto(notificacion.mensaje) }}</span>
+            </p>
+            
+            <p class="text-xs" [ngClass]="currentTheme.textSecondaryClass || ''">
+              {{ formatearTiempo(notificacion.fecha_creacion) }}
+            </p>
+          </button>
+
+          <!-- Botón eliminar (SIEMPRE VISIBLE) -->
+          <button
+            (click)="eliminarNotificacion(notificacion.id, $event)"
+            class="flex-shrink-0 p-2 rounded-md transition-all duration-200 hover:bg-red-50 hover:text-red-600 touch-manipulation"
+            title="Eliminar notificación"
+            aria-label="Eliminar notificación">
+            <i class="fas fa-trash text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER - BOTÓN BORRAR TODO -->
+    <div 
+      *ngIf="hayNotificaciones && !cargando"
+      class="sticky bottom-0 px-4 py-3 border-t backdrop-blur-sm bg-opacity-95"
+      [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+      <button
+        (click)="borrarTodo()"
+        class="w-full text-center text-sm font-medium py-2 rounded-lg transition-all touch-manipulation flex items-center justify-center gap-2 hover:bg-red-50 hover:text-red-600"
+        [ngClass]="currentTheme.textSecondaryClass || ''"
+        aria-label="Borrar todas las notificaciones">
+        <i class="fas fa-trash-alt text-sm"></i>
+        <span>Borrar todo</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================
+     PANTALLA COMPLETA - MÓVIL (ESTILO FACEBOOK)
+     ================================ -->
+<div 
+  *ngIf="showNotifications && isMobile"
+  class="fixed inset-0 z-50 flex flex-col md:hidden notification-fullscreen"
+  [ngClass]="currentTheme.cardBg || ''">
+
+  <!-- HEADER MINIMALISTA -->
+  <div class="sticky top-0 px-4 py-3 border-b flex items-center justify-between"
+       [ngClass]="[currentTheme.cardBg || '', currentTheme.borderColor || '']">
+    <h1 class="text-xl font-bold" [ngClass]="currentTheme.textPrimaryClass || ''">
+      Notificaciones
+    </h1>
+    
+    <div class="flex items-center gap-2">
+      <!-- Marcar todas como leídas (móvil) -->
+      <button
+        *ngIf="notificationsCount > 0"
+        (click)="marcarTodasComoLeidas()"
+        class="p-2 rounded-lg transition-all active:scale-90"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
+        title="Marcar todas como leídas"
+        aria-label="Marcar todas como leídas">
+        <i class="fas fa-check-double text-base"></i>
+      </button>
+
+      <!-- Borrar todo (móvil) -->
+      <button
+        *ngIf="hayNotificaciones"
+        (click)="borrarTodo()"
+        class="p-2 rounded-lg transition-all active:scale-90 hover:text-red-500"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
+        title="Borrar todas"
+        aria-label="Borrar todas las notificaciones">
+        <i class="fas fa-trash-alt text-base"></i>
+      </button>
+
+      <!-- Cerrar -->
+      <button
+        (click)="cerrarNotificaciones()"
+        class="p-2 rounded-lg transition-all active:scale-90"
+        [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']"
+        aria-label="Cerrar">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="flex-1 overflow-y-auto w-full">
+    
+    <!-- LOADING -->
+    <div *ngIf="cargando" class="flex items-center justify-center w-full h-full">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-3"
+             [style.border-color]="currentTheme.color"></div>
+        <p class="text-sm" [ngClass]="currentTheme.textSecondaryClass || ''">
+          Cargando...
+        </p>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div *ngIf="error && !cargando" class="flex items-center justify-center w-full h-full">
+      <div class="text-center px-4">
+        <i class="fas fa-exclamation-circle text-5xl mb-3 text-red-500"></i>
+        <p class="text-base mb-4" [ngClass]="currentTheme.textPrimaryClass || ''">
+          Error al cargar
+        </p>
+        <button
+          (click)="recargar()"
+          class="px-4 py-2 rounded-lg font-medium transition-all active:scale-95"
+          [ngClass]="[currentTheme.textPrimaryClass || '', currentTheme.hoverBgLight || '']">
+          Reintentar
+        </button>
+      </div>
+    </div>
+
+    <!-- VACÍO -->
+    <div *ngIf="!cargando && !error && !hayNotificaciones" 
+         class="flex items-center justify-center w-full h-full">
+      <div class="text-center px-4">
+        <i class="fas fa-bell-slash text-5xl mb-3 opacity-20" 
+           [ngClass]="currentTheme.textPrimaryClass || ''"></i>
+        <p class="text-base font-medium" [ngClass]="currentTheme.textPrimaryClass || ''">
+          No hay notificaciones
+        </p>
+      </div>
+    </div>
+
+    <!-- LISTA DE NOTIFICACIONES - MÓVIL -->
+    <div *ngIf="!cargando && !error && hayNotificaciones" class="divide-y"
+         [ngClass]="currentTheme.borderColor || ''">
+      <div
+        *ngFor="let notificacion of notificaciones; let i = index"
+        class="w-full flex items-center gap-3 px-4 py-3 relative"
+        [ngClass]="notificacion.leida ? 'opacity-60' : ''">
+        
+        <!-- Contenedor clickeable (Avatar + Contenido) -->
+        <button
+          (click)="manejarClicNotificacion(notificacion)"
+          class="flex items-center gap-3 flex-1 min-w-0 text-left transition-colors active:opacity-50"
+          [attr.aria-label]="'Notificación de ' + notificacion.nombre_completo">
+          
+          <!-- Avatar con icono de tipo - MÓVIL -->
+          <div class="relative flex-shrink-0">
+            
+            <img 
+              [src]="obtenerAvatar(notificacion)"
+              [alt]="notificacion.nombre_completo"
+              (error)="$any($event.target).src=obtenerAvatarFallback(notificacion.nombre_completo)"
+              class="w-12 h-12 rounded-full object-cover"
+              loading="lazy">
+            
+            <!-- Icono de tipo en móvil -->
+            <div 
+              class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-lg border-2"
+              [ngClass]="currentTheme.cardBg || ''"
+              [style.border-color]="currentTheme.color"
+              aria-hidden="true">
+              {{ obtenerIconoTipo(notificacion.tipo) }}
+            </div>
+          </div>
+          
+          <!-- Contenido -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm leading-tight" [ngClass]="currentTheme.textPrimaryClass || ''">
+              <span class="font-semibold">{{ notificacion.nombre_completo }}</span>
+              <span class="font-normal"> {{ obtenerMensajeCorto(notificacion.mensaje) }}</span>
+            </p>
+            <p class="text-xs mt-1" [ngClass]="currentTheme.textSecondaryClass || ''">
+              {{ formatearTiempo(notificacion.fecha_creacion) }}
+            </p>
+          </div>
+
+          <!-- Indicador no leído -->
+          <div 
+            *ngIf="!notificacion.leida"
+            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            [style.background]="currentTheme.color"
+            aria-hidden="true"></div>
+        </button>
+
+        <!-- Botón eliminar (SEPARADO Y SIEMPRE VISIBLE) -->
+        <button
+          (click)="eliminarNotificacion(notificacion.id, $event)"
+          class="flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 text-red-500"
+          [ngClass]="currentTheme.hoverBgLight || ''"
+          title="Eliminar notificación"
+          aria-label="Eliminar notificación">
+          <i class="fas fa-trash text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<div *ngIf="isVisible"
+     class="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4"
+     (click)="cerrar.emit()">
+  <div class="rounded-2xl max-w-md w-full shadow-2xl"
+       [ngClass]="cardBg"
+       onclick="event.stopPropagation()">
+
+    <!-- HEADER -->
+    <div class="px-6 pt-6 pb-4 border-b" [ngClass]="borderColor">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold flex items-center gap-2" [ngClass]="textPrimaryClass">
+          <i class="fas fa-thumbs-down text-orange-500"></i>
+          No me interesa
+        </h2>
+        <button (click)="cerrar.emit()"
+                class="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-70 transition"
+                [ngClass]="textSecondaryClass">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="px-6 py-4 space-y-4">
+
+      <!-- ERROR MESSAGE -->
+      <div *ngIf="error" 
+           class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex items-start gap-2">
+        <i class="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- SUCCESS MESSAGE -->
+      <div *ngIf="success" 
+           class="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700 text-sm flex items-start gap-2 animate-pulse">
+        <i class="fas fa-check-circle mt-0.5 flex-shrink-0"></i>
+        <span>✅ ¡Listo! Esta publicación no aparecerá más en tu feed.</span>
+      </div>
+
+      <!-- EXPLICACIÓN -->
+      <div *ngIf="!success" class="space-y-3">
+        <div class="rounded-lg p-4"
+             [ngClass]="bgInfo">
+          <div class="flex items-start gap-3">
+            <i class="fas fa-info-circle text-lg mt-0.5" [ngClass]="textPrimary"></i>
+            <div class="flex-1">
+              <p class="text-sm font-semibold mb-2" [ngClass]="textPrimaryClass">
+                ¿Qué significa "No me interesa"?
+              </p>
+              <ul class="text-sm space-y-1.5" [ngClass]="textSecondaryClass">
+                <li class="flex items-start gap-2">
+                  <i class="fas fa-times-circle text-orange-500 mt-1 flex-shrink-0"></i>
+                  <span>Esta publicación desaparecerá de tu feed</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <i class="fas fa-user-shield text-blue-500 mt-1 flex-shrink-0"></i>
+                  <span>Solo afecta tu feed, otros usuarios seguirán viéndola</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <i class="fas fa-ban text-red-500 mt-1 flex-shrink-0"></i>
+                  <span>Esta acción no se puede deshacer</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-xs text-center" [ngClass]="textSecondaryClass">
+          ⚠️ Esta acción es permanente. Asegúrate antes de continuar.
+        </p>
+      </div>
+    </div>
+
+    <!-- FOOTER/BUTTONS -->
+    <div class="px-6 py-4 border-t flex gap-3" [ngClass]="borderColor">
+      <button (click)="cerrar.emit()"
+              class="flex-1 px-4 py-2.5 rounded-lg font-semibold transition"
+              [ngClass]="btnCancelar">
+        Cancelar
+      </button>
+      <button (click)="confirmar.emit()"
+              [disabled]="loading || success"
+              class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-white transition flex items-center justify-center gap-2"
+              [ngClass]="loading || success
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-orange-500 hover:bg-orange-600 active:scale-95'">
+        <i *ngIf="loading" class="fas fa-spinner animate-spin"></i>
+        <i *ngIf="!loading && !success" class="fas fa-thumbs-down"></i>
+        <span>{{ loading ? 'Quitando...' : success ? '¡Listo!' : 'No me interesa' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

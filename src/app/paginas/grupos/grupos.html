@@ -1,0 +1,172 @@
+<app-navbar></app-navbar>
+<div class="grupos-refined-wrapper" [ngClass]="[currentTheme().bodyClass || '', currentTheme().id]">
+    <!-- Sophisticated Professional Header -->
+    <header class="refined-header"
+        [ngClass]="[currentTheme().navbarBg || '', currentTheme().navbarBorder || '', 'border-b']">
+        <div class="header-inner">
+            <div class="brand-section">
+                <div class="brand-badge" [ngClass]="[currentTheme().hoverBgLight || '']">
+                    <lucide-icon name="users" class="brand-icon" [style.color]="currentTheme().color"></lucide-icon>
+                </div>
+                <div class="brand-text">
+                    <h1 [ngClass]="currentTheme().textPrimaryClass || ''">Comunidades</h1>
+                    <p [ngClass]="currentTheme().textSecondaryClass || ''">Encuentra tu lugar entre miles de estudiantes
+                    </p>
+                </div>
+            </div>
+
+            <div class="search-compact-wrapper">
+                <div class="search-input-box">
+                    <lucide-icon name="search" class="search-icon-inner"
+                        [ngClass]="currentTheme().textSecondaryClass || ''"></lucide-icon>
+                    <input type="text" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
+                        placeholder="Buscar grupos, facultades o temas..."
+                        [ngClass]="[currentTheme().cardBg || '', currentTheme().textPrimaryClass || '']"
+                        [style.caret-color]="currentTheme().color">
+                </div>
+                <button class="btn-create-refined" (click)="showCrearModal.set(true)"
+                    [style.background]="currentTheme().color">
+                    <lucide-icon name="plus"></lucide-icon>
+                    <span>Crear Grupo</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="refined-main-layout">
+        <!-- Sidebar Navigation (Professional & Clean) -->
+        <aside class="refined-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-heading" [ngClass]="currentTheme().textSecondaryClass || ''">Tus Comunidades</h3>
+
+                @if (misGrupos().length > 0) {
+                <div class="my-groups-list">
+                    @for (grupo of misGrupos(); track grupo.id) {
+                    <a [routerLink]="['/grupos', grupo.id]" class="group-nav-item"
+                        [ngClass]="currentTheme().hoverBgLight || ''">
+                        <div class="nav-avatar" [ngClass]="currentTheme().cardBg || ''">
+                            @if (grupo.imagen_url) {
+                            <img [src]="grupo.imagen_url" [alt]="grupo.nombre">
+                            } @else {
+                            <div class="nav-avatar-fallback" [ngClass]="currentTheme().textSecondaryClass || ''">
+                                {{ grupo.nombre.charAt(0) }}
+                            </div>
+                            }
+                        </div>
+                        <div class="nav-info">
+                            <span class="nav-name" [ngClass]="currentTheme().textPrimaryClass || ''">{{ grupo.nombre
+                                }}</span>
+                            <span class="nav-meta" [ngClass]="currentTheme().textSecondaryClass || ''">{{
+                                grupo.total_miembros }} miembros</span>
+                        </div>
+                    </a>
+                    }
+                </div>
+                } @else {
+                <div class="empty-sidebar-state" [ngClass]="currentTheme().textSecondaryClass || ''">
+                    <p>Aún no te has unido a ningún grupo</p>
+                </div>
+                }
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="stats-card-refined" [style.background]="currentTheme().color">
+                    <span class="stats-label">Actividad Total</span>
+                    <span class="stats-value">{{ totalMiembros() }} Estudiantes</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Discovery Grid -->
+        <section class="discovery-section">
+            <div class="section-header-refined">
+                <div class="header-left">
+                    <h2 [ngClass]="currentTheme().textPrimaryClass || ''">Sugerencias para ti</h2>
+                    <div class="filter-pills">
+                        <button class="pill active" [style.background]="currentTheme().color"
+                            style="color: white">Todos</button>
+                        <button class="pill"
+                            [ngClass]="[currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || '']"
+                            style="border-width: 1px;">Populares</button>
+                        <button class="pill"
+                            [ngClass]="[currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || '']"
+                            style="border-width: 1px;">Recientes</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="refined-grid">
+                @for (grupo of gruposFiltrados(); track grupo.id) {
+                <div class="professional-card" [routerLink]="['/grupos', grupo.id]"
+                    [ngClass]="[currentTheme().cardBg || '', currentTheme().borderColor || '']">
+                    <div class="card-cover-refined" [ngClass]="currentTheme().hoverBgLight || ''">
+                        @if (grupo.imagen_portada_url) {
+                        <img [src]="grupo.imagen_portada_url" class="cover-img" [alt]="grupo.nombre">
+                        } @else {
+                        <div class="cover-placeholder-refined" [style.background]="currentTheme().color"></div>
+                        }
+                        <div class="privacy-tag"
+                            [ngClass]="[currentTheme().cardBg || '', currentTheme().textPrimaryClass || '']">
+                            <lucide-icon [name]="grupo.privacidad === 'publico' ? 'globe' : 'lock'"
+                                size="14"></lucide-icon>
+                            <span>{{ grupo.privacidad }}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body-refined">
+                        <div class="card-avatar-overlap" [ngClass]="[currentTheme().cardBg || '']"
+                            [style.border-color]="currentTheme().color">
+                            @if (grupo.imagen_url) {
+                            <img [src]="grupo.imagen_url" [alt]="grupo.nombre">
+                            } @else {
+                            <div class="avatar-fallback-refined"
+                                [ngClass]="[currentTheme().hoverBgLight || '', currentTheme().textPrimaryClass || '']">
+                                {{ grupo.nombre.charAt(0) }}</div>
+                            }
+                        </div>
+
+                        <div class="card-main-info">
+                            <h3 class="card-title-refined" [ngClass]="currentTheme().textPrimaryClass || ''">{{
+                                grupo.nombre }}</h3>
+                            <p class="card-desc-refined"
+                                [ngClass]="[currentTheme().textSecondaryClass || '', currentTheme().borderColor || '']">
+                                {{ grupo.descripcion || 'Sin descripción disponible' }}</p>
+                        </div>
+
+                        <div class="card-footer-refined" [ngClass]="currentTheme().borderColor || ''">
+                            <div class="members-overlap">
+                                <div class="overlap-dot" [style.background]="currentTheme().color"></div>
+                                <span class="member-count" [ngClass]="currentTheme().textSecondaryClass || ''">{{
+                                    grupo.total_miembros }} miembros</span>
+                            </div>
+
+                            @if (grupo.mi_estado === 'activo') {
+                            <button class="btn-join-minimal member-active" (click)="$event.stopPropagation()"
+                                [ngClass]="[currentTheme().hoverBgLight || '', currentTheme().textPrimaryClass || '']"
+                                [style.color]="currentTheme().color">
+                                Miembro
+                            </button>
+                            } @else if (grupo.mi_estado === 'pendiente') {
+                            <button class="btn-join-minimal pending-request italic opacity-60"
+                                (click)="$event.stopPropagation()"
+                                [ngClass]="[currentTheme().hoverBgLight || '', currentTheme().textPrimaryClass || '']">
+                                Pendiente
+                            </button>
+                            } @else {
+                            <button class="btn-join-minimal" (click)="$event.stopPropagation(); unirse(grupo.id)"
+                                [ngClass]="[currentTheme().hoverBgLight || '', currentTheme().textPrimaryClass || '']">
+                                Unirse
+                            </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        </section>
+    </main>
+
+    @if (showCrearModal()) {
+    <app-crear-grupo-modal (close)="showCrearModal.set(false)" (created)="cargarDatos()"></app-crear-grupo-modal>
+    }
+</div>
