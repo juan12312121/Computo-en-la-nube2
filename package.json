@@ -28,7 +28,7 @@
     "@angular/core": "^20.3.0",
     "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
-    "@angular/pwa": "^21.2.1",
+    "@angular/pwa": "^20.3.6",
     "@angular/router": "^20.3.0",
     "@tailwindcss/postcss": "^4.1.15",
     "lucide": "^0.577.0",
