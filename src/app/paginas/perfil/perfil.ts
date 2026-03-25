@@ -215,13 +215,7 @@ export class Perfil implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  getProfileImage(): string | null {
-    return Utils.normalizarUrlImagen(this.usuario()?.foto_perfil_url || '', this.apiBaseUrl, 'perfiles');
-  }
 
-  getCoverImage(): string | null {
-    return Utils.normalizarUrlImagen(this.usuario()?.foto_portada_url || '', this.apiBaseUrl, 'portadas');
-  }
 
   private resetEstados(): void {
     this.cargandoPerfil.set(true);
@@ -456,37 +450,216 @@ export class Perfil implements OnInit, OnDestroy {
     this.toggleBodyOverflow(false);
   }
 
-  guardarPerfil(data: { formulario: FormularioEditarPerfil, archivo: File | null }): void {
+ guardarPerfil(data: { formulario: FormularioEditarPerfil, archivo: File | null }): void {
     const user = this.usuario();
     if (!user) return;
+
+    console.group('%c[Perfil] guardarPerfil()', 'color: #6366f1; font-weight: bold; font-size: 14px;');
+    console.log('Usuario actual:', { id: user.id, nombre: user.nombre_completo });
+    console.log('Formulario recibido:', data.formulario);
+    console.log('¿Tiene archivo de foto?:', !!data.archivo);
+
+    if (data.archivo) {
+      console.group('📁 Archivo foto de perfil');
+      console.log('Nombre    :', data.archivo.name);
+      console.log('Tipo MIME :', data.archivo.type);
+      console.log('Tamaño    :', (data.archivo.size / 1024).toFixed(2) + ' KB');
+      console.log('Límite    :', (5 * 1024).toFixed(0) + ' KB (5 MB)');
+      console.log('¿Pasa límite?:', data.archivo.size <= 5 * 1024 * 1024 ? '✅ Sí' : '❌ No, demasiado grande');
+      console.log('Objeto File completo:', data.archivo);
+      console.groupEnd();
+    } else {
+      console.warn('⚠️ No se adjuntó archivo — solo se actualizan campos de texto');
+    }
 
     this.guardandoPerfil.set(true);
     const formData = new FormData();
     const fields = ['nombre_completo', 'biografia', 'ubicacion', 'carrera'] as const;
 
     fields.forEach(f => {
-      formData.append(f, data.formulario[f] || (user[f] as string) || '');
+      const valor = data.formulario[f] || (user[f] as string) || '';
+      formData.append(f, valor);
+      console.log(`FormData campo "${f}":`, valor);
     });
 
-    if (data.archivo) formData.append('foto_perfil', data.archivo);
+    if (data.archivo) {
+      formData.append('foto_perfil', data.archivo);
+      console.log('FormData campo "foto_perfil": [File adjuntado]');
+    }
+
+    // Verificar contenido del FormData
+    console.group('📦 Contenido final del FormData');
+    formData.forEach((value, key) => {
+      if (value instanceof File) {
+        console.log(`  ${key}:`, `[File: ${value.name}, ${(value.size/1024).toFixed(2)}KB, ${value.type}]`);
+      } else {
+        console.log(`  ${key}:`, value);
+      }
+    });
+    console.groupEnd();
+
+    console.log('🚀 Enviando petición a actualizarPerfil...');
 
     this.usuarioService.actualizarPerfil(formData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
+          console.group('%c✅ Respuesta servidor - guardarPerfil', 'color: green; font-weight: bold;');
+          console.log('res.success:', res.success);
+          console.log('res.data completo:', res.data);
+          console.log('foto_perfil_url nueva:', res.data?.foto_perfil_url);
+          console.log('foto_portada_url:', res.data?.foto_portada_url);
+          console.groupEnd();
+
           if (res.success && res.data) {
-            this.usuario.update(u => u ? { ...u, ...res.data } : null);
+            console.log('🔄 Actualizando signal usuario con:', res.data);
+            this.usuario.update(u => {
+              const actualizado = u ? { ...u, ...res.data } : null;
+              console.log('Signal usuario ANTES:', u);
+              console.log('Signal usuario DESPUÉS:', actualizado);
+              return actualizado;
+            });
+            console.log('📸 profileImage que se pasará al hijo:', this.getProfileImage());
             this.cerrarModalEdicion();
             this.fotosComponent?.recargarFotos();
             alert('✅ Perfil actualizado correctamente');
+          } else {
+            console.warn('⚠️ res.success es false o res.data vacío — no se actualiza el signal');
           }
           this.guardandoPerfil.set(false);
+          console.groupEnd();
         },
         error: (err) => {
+          console.group('%c❌ Error en guardarPerfil', 'color: red; font-weight: bold;');
+          console.error('HTTP Status  :', err.status);
+          console.error('URL          :', err.url);
+          console.error('err.error    :', err.error);
+          console.error('Mensaje      :', err.error?.mensaje || err.message);
+          console.error('Object completo:', err);
+          console.groupEnd();
           this.mensajeError.set(err.error?.mensaje || 'Error al actualizar');
           this.guardandoPerfil.set(false);
         }
       });
+  }
+
+  guardarBanner(archivo: File) {
+    console.group('%c[Perfil] guardarBanner()', 'color: #14b8a6; font-weight: bold; font-size: 14px;');
+    console.log('¿Es instancia de File?:', archivo instanceof File);
+
+    if (!archivo) {
+      console.error('❌ archivo es null/undefined — el modal no envió el archivo');
+      console.groupEnd();
+      return;
+    }
+
+    console.group('📁 Archivo portada');
+    console.log('Nombre    :', archivo.name);
+    console.log('Tipo MIME :', archivo.type);
+    console.log('Tamaño    :', (archivo.size / 1024).toFixed(2) + ' KB');
+    console.log('¿Pasa límite 5MB?:', archivo.size <= 5 * 1024 * 1024 ? '✅ Sí' : '❌ No');
+    console.log('Objeto File:', archivo);
+    console.groupEnd();
+
+    const user = this.usuario();
+    if (!user) {
+      console.error('❌ usuario() es null — no se puede continuar');
+      console.groupEnd();
+      return;
+    }
+
+    console.log('Usuario que sube portada:', { id: user.id, nombre: user.nombre_completo });
+
+    const formData = new FormData();
+    formData.append('nombre_completo', user.nombre_completo || '');
+    formData.append('biografia', user.biografia || '');
+    formData.append('ubicacion', user.ubicacion || '');
+    formData.append('carrera', user.carrera || '');
+    formData.append('foto_portada', archivo, archivo.name);
+
+    console.group('📦 Contenido final del FormData (banner)');
+    formData.forEach((value, key) => {
+      if (value instanceof File) {
+        console.log(`  ${key}:`, `[File: ${value.name}, ${(value.size/1024).toFixed(2)}KB, ${value.type}]`);
+      } else {
+        console.log(`  ${key}:`, value);
+      }
+    });
+    console.groupEnd();
+
+    console.log('🚀 Llamando a actualizarBanner...');
+    this.actualizarBanner(formData);
+    console.groupEnd();
+  }
+
+  actualizarBanner(formData: FormData) {
+    console.group('%c[Perfil] actualizarBanner() — petición HTTP', 'color: #14b8a6; font-weight: bold;');
+    this.guardandoBanner.set(true);
+    this.errorBanner.set('');
+
+    console.log('guardandoBanner → true');
+    console.log('Enviando FormData al servidor...');
+
+    this.usuarioService.actualizarPerfil(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.group('%c✅ Respuesta servidor - actualizarBanner', 'color: green; font-weight: bold;');
+          console.log('res.success          :', res.success);
+          console.log('res.data completo    :', res.data);
+          console.log('foto_portada_url nueva:', res.data?.foto_portada_url);
+          console.log('foto_perfil_url      :', res.data?.foto_perfil_url);
+          console.groupEnd();
+
+          if (res.success && res.data?.foto_portada_url) {
+            console.log('🔄 Actualizando signal usuario con nueva portada...');
+            this.usuario.update(u => {
+              const antes = u?.foto_portada_url;
+              const despues = res.data.foto_portada_url;
+              console.log('foto_portada_url ANTES  :', antes);
+              console.log('foto_portada_url DESPUÉS:', despues);
+              return u ? { ...u, foto_portada_url: despues } : null;
+            });
+            console.log('📸 coverImage que se pasará al hijo:', this.getCoverImage());
+            alert('✅ Portada actualizada correctamente');
+          } else {
+            console.warn('⚠️ res.data?.foto_portada_url está vacío — el signal NO se actualizará');
+            console.warn('Verifica que el backend devuelva foto_portada_url en res.data');
+          }
+
+          this.guardandoBanner.set(false);
+          this.showBannerModal.set(false);
+          console.log('guardandoBanner → false, modal cerrado');
+          console.groupEnd();
+        },
+        error: (err) => {
+          console.group('%c❌ Error en actualizarBanner', 'color: red; font-weight: bold;');
+          console.error('HTTP Status   :', err.status);
+          console.error('URL           :', err.url);
+          console.error('err.error     :', err.error);
+          console.error('Mensaje       :', err.error?.mensaje || err.message);
+          console.error('Headers       :', err.headers);
+          console.error('Objeto completo:', err);
+          console.groupEnd();
+          this.errorBanner.set(err.error?.mensaje || 'Error al actualizar la portada');
+          this.guardandoBanner.set(false);
+        }
+      });
+  }
+
+  // Log también en getProfileImage y getCoverImage
+  getProfileImage(): string | null {
+    const raw = this.usuario()?.foto_perfil_url || '';
+    const normalizada = Utils.normalizarUrlImagen(raw, this.apiBaseUrl, 'perfiles');
+    console.log('[getProfileImage] raw:', raw, '→ normalizada:', normalizada);
+    return normalizada;
+  }
+
+  getCoverImage(): string | null {
+    const raw = this.usuario()?.foto_portada_url || '';
+    const normalizada = Utils.normalizarUrlImagen(raw, this.apiBaseUrl, 'portadas');
+    console.log('[getCoverImage] raw:', raw, '→ normalizada:', normalizada);
+    return normalizada;
   }
 
   abrirModalCambiarBanner(): void {
@@ -499,21 +672,7 @@ export class Perfil implements OnInit, OnDestroy {
     this.toggleBodyOverflow(false);
   }
 
-  guardarBanner(archivo: File) {
-    console.log('📁 archivo recibido:', archivo instanceof File, archivo?.name);
-
-    const user = this.usuario();
-    if (!user) return;
-
-    const formData = new FormData();
-    formData.append('nombre_completo', user.nombre_completo || '');
-    formData.append('biografia', user.biografia || '');
-    formData.append('ubicacion', user.ubicacion || '');
-    formData.append('carrera', user.carrera || '');
-    formData.append('foto_portada', archivo, archivo.name);
-
-    this.actualizarBanner(formData);
-  }
+ 
 
 
   eliminarBanner(): void {
@@ -527,29 +686,7 @@ export class Perfil implements OnInit, OnDestroy {
   }
 
 
-  actualizarBanner(formData: FormData) {
-    this.guardandoBanner.set(true);
-    this.errorBanner.set('');
-
-    this.usuarioService.actualizarPerfil(formData)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          console.log('✅ Banner actualizado:', res);
-          if (res.success && res.data?.foto_portada_url) {
-            this.usuario.update(u => u ? { ...u, foto_portada_url: res.data.foto_portada_url } : null);
-            alert('✅ Portada actualizada correctamente');
-          }
-          this.guardandoBanner.set(false);
-          this.showBannerModal.set(false);
-        },
-        error: (err) => {
-          console.error('❌ Error:', err.error);
-          this.errorBanner.set(err.error?.mensaje || 'Error al actualizar la portada');
-          this.guardandoBanner.set(false);
-        }
-      });
-  }
+  
 
   switchTab(tab: TabType): void {
     this.activeTab.set(tab);
