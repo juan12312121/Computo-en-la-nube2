@@ -530,7 +530,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
 
     // Si ya es una URL completa de localhost, retornarla
     // Si es una URL completa de localhost o AWS antigua, reescribirla al backend real
-    if (ruta.startsWith('http://localhost:3000') || ruta.startsWith('http://3.146.83.30:3000')) {
+    if (ruta.startsWith('http://localhost:3000') || ruta.startsWith('https://bakcend-computo-1.onrender.com')) {
       return ruta.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.BASE_URL);
     }
 

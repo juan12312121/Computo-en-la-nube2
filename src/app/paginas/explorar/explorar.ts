@@ -339,7 +339,7 @@ export class Explorar implements OnInit, OnDestroy {
 
   private normalizarUrlImagen(url: string): string | null {
     if (!url) return null;
-    if (url.startsWith('http://localhost:3000') || url.startsWith('http://3.146.83.30:3000')) {
+    if (url.startsWith('http://localhost:3000') || url.startsWith('https://bakcend-computo-1.onrender.com')) {
       return url.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.apiBaseUrl);
     }
     if (url.startsWith('http')) return url;

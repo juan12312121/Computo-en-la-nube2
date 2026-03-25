@@ -68,7 +68,7 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
     if (!foto) return null;
 
     // Si es URL de localhost o AWS antigua, reescribir al backend real
-    if (foto.startsWith('http://localhost:3000') || foto.startsWith('http://3.146.83.30:3000')) {
+    if (foto.startsWith('http://localhost:3000') || foto.startsWith('https://bakcend-computo-1.onrender.com')) {
       return foto.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.BASE_URL);
     }
 

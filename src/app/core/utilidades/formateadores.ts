@@ -50,7 +50,7 @@ export function normalizarUrlImagen(url: string, apiBaseUrl: string, folder: 'pe
     }
 
     // Rewrite localhost and old AWS URLs to the real backend URL
-    if (url.startsWith('http://localhost:3000') || url.startsWith('http://3.146.83.30:3000')) {
+    if (url.startsWith('http://localhost:3000') || url.startsWith('https://bakcend-computo-1.onrender.com')) {
         return url.replace(/https?:\/\/[^/]+(:[0-9]+)?/, apiBaseUrl);
     }
 

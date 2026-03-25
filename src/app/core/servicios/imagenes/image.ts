@@ -59,7 +59,7 @@ export class ImageService {
     }
 
     // Si es una URL de localhost o AWS antigua, rewrite al backend real
-    if (imagePath.startsWith('http://localhost:3000') || imagePath.startsWith('http://3.146.83.30:3000')) {
+    if (imagePath.startsWith('http://localhost:3000') || imagePath.startsWith('https://bakcend-computo-1.onrender.com')) {
       return imagePath.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.apiBaseUrl);
     }
 
