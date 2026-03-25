@@ -182,6 +182,32 @@ export class Perfil implements OnInit, OnDestroy {
           return p;
         }));
       });
+
+    // Escuchar nuevas publicaciones
+    this.socketService.onEvent<any>('new_post')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(postData => {
+        const user = this.usuario();
+        if (user && postData.usuario_id === user.id) {
+          if (!this.publicacionesReales().some(p => p.id === postData.id)) {
+            this.publicacionesReales.update(list => [{ ...postData, liked: false }, ...list]);
+          }
+        }
+      });
+
+    // Escuchar actualizaciones de publicación
+    this.socketService.onEvent<any>('update_post')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(postData => {
+        this.publicacionesReales.update(list => list.map(p => p.id === postData.id ? { ...p, ...postData } : p));
+      });
+
+    // Escuchar borrado de publicación
+    this.socketService.onEvent<{ id: number }>('delete_post')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        this.publicacionesReales.update(list => list.filter(p => p.id !== data.id));
+      });
   }
 
   ngOnDestroy() {
@@ -190,11 +216,11 @@ export class Perfil implements OnInit, OnDestroy {
   }
 
   getProfileImage(): string | null {
-    return Utils.normalizarUrlImagen(this.usuario()?.foto_perfil_url || '', this.apiBaseUrl);
+    return Utils.normalizarUrlImagen(this.usuario()?.foto_perfil_url || '', this.apiBaseUrl, 'perfiles');
   }
 
   getCoverImage(): string | null {
-    return Utils.normalizarUrlImagen(this.usuario()?.foto_portada_url || '', this.apiBaseUrl);
+    return Utils.normalizarUrlImagen(this.usuario()?.foto_portada_url || '', this.apiBaseUrl, 'portadas');
   }
 
   private resetEstados(): void {
@@ -439,7 +465,7 @@ export class Perfil implements OnInit, OnDestroy {
     const fields = ['nombre_completo', 'biografia', 'ubicacion', 'carrera'] as const;
 
     fields.forEach(f => {
-      if (data.formulario[f] !== (user[f] || '')) formData.append(f, data.formulario[f]);
+      formData.append(f, data.formulario[f] || (user[f] as string) || '');
     });
 
     if (data.archivo) formData.append('foto_perfil', data.archivo);
@@ -452,6 +478,7 @@ export class Perfil implements OnInit, OnDestroy {
             this.usuario.update(u => u ? { ...u, ...res.data } : null);
             this.cerrarModalEdicion();
             this.fotosComponent?.recargarFotos();
+            alert('✅ Perfil actualizado correctamente');
           }
           this.guardandoPerfil.set(false);
         },
@@ -472,34 +499,53 @@ export class Perfil implements OnInit, OnDestroy {
     this.toggleBodyOverflow(false);
   }
 
-  guardarBanner(archivo: File): void {
-    this.actualizarBanner(archivo);
+  guardarBanner(archivo: File) {
+    console.log('📁 archivo recibido:', archivo instanceof File, archivo?.name);
+
+    const user = this.usuario();
+    if (!user) return;
+
+    const formData = new FormData();
+    formData.append('nombre_completo', user.nombre_completo || '');
+    formData.append('biografia', user.biografia || '');
+    formData.append('ubicacion', user.ubicacion || '');
+    formData.append('carrera', user.carrera || '');
+    formData.append('foto_portada', archivo, archivo.name);
+
+    this.actualizarBanner(formData);
   }
 
+
   eliminarBanner(): void {
+    const user = this.usuario();
+    if (!user) return;
+
     const fd = new FormData();
+    fd.append('nombre_completo', user.nombre_completo || '');
     fd.append('foto_portada', '');
     this.actualizarBanner(fd);
   }
 
-  private actualizarBanner(data: File | FormData): void {
-    this.guardandoBanner.set(true);
-    const fd = data instanceof FormData ? data : new FormData();
-    if (data instanceof File) fd.append('foto_portada', data);
 
-    this.usuarioService.actualizarPerfil(fd)
+  actualizarBanner(formData: FormData) {
+    this.guardandoBanner.set(true);
+    this.errorBanner.set('');
+
+    this.usuarioService.actualizarPerfil(formData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          if (res.success && res.data) {
-            this.usuario.update(u => u ? { ...u, ...res.data } : null);
-            this.cerrarModalBanner();
-            this.fotosComponent?.recargarFotos();
+          console.log('✅ Banner actualizado:', res);
+          if (res.success && res.data?.foto_portada_url) {
+            this.usuario.update(u => u ? { ...u, foto_portada_url: res.data.foto_portada_url } : null);
+            alert('✅ Portada actualizada correctamente');
           }
           this.guardandoBanner.set(false);
+          this.showBannerModal.set(false);
         },
         error: (err) => {
-          this.errorBanner.set(err.error?.mensaje || 'Error');
+          console.error('❌ Error:', err.error);
+          this.errorBanner.set(err.error?.mensaje || 'Error al actualizar la portada');
           this.guardandoBanner.set(false);
         }
       });

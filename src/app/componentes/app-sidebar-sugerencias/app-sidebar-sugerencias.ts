@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnInit, Output, OnDestroy } from '@angu
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { SeguidorService } from '../../core/servicios/seguidores/seguidores';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-app-sidebar-sugerencias',
@@ -26,8 +27,7 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
   isLoading: boolean = false;
   private destroy$ = new Subject<void>();
 
-  // ✅ BASE URL PARA LOCALHOST
-  private readonly BASE_URL = 'http://localhost:3000';
+  private readonly BASE_URL = environment.socketUrl;
 
   private readonly AVATAR_COLORS = [
     'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
@@ -67,9 +67,9 @@ export class AppSidebarSugerencias implements OnInit, OnDestroy {
   private construirUrlLocal(foto: string | null): string | null {
     if (!foto) return null;
 
-    // Si ya es URL completa de localhost
-    if (foto.startsWith('http://localhost:3000')) {
-      return foto;
+    // Si es URL de localhost o AWS antigua, reescribir al backend real
+    if (foto.startsWith('http://localhost:3000') || foto.startsWith('http://3.146.83.30:3000')) {
+      return foto.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.BASE_URL);
     }
 
     // Si es ruta relativa

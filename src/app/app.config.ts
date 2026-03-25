@@ -1,13 +1,20 @@
-// src/app/app.config.ts
-import { provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';
+import { LucideAngularModule, Search, Plus, Users, Shield, Globe, Lock, ArrowRight, MoreHorizontal, Image, FileText, MessageSquare, Camera, Edit, UserCheck, UserPlus, MessageCircle, X, User } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withFetch())  // ← Agregar esto
+    provideHttpClient(withFetch()),
+    importProvidersFrom(
+      LucideAngularModule.pick({ 
+        Search, Plus, Users, Shield, Globe, Lock, ArrowRight, 
+        MoreHorizontal, Image, FileText, MessageSquare,
+        Camera, Edit, UserCheck, UserPlus, MessageCircle, X, User
+      })
+    )
   ]
 };

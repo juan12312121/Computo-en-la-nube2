@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -14,6 +14,7 @@ import { NotificacionesService } from '../../core/servicios/notificacion/notific
 import { ChatModal } from '../chat-modal/chat-modal';
 import { ChatService } from '../../core/servicios/chat/chat';
 import { environment } from '../../../environments/environment';
+import * as Utils from '../../core/utilidades/formateadores';
 
 @Component({
   selector: 'app-navbar',
@@ -60,16 +61,9 @@ export class Navbar implements OnInit, OnDestroy {
   get userName(): string { return this.currentUser?.nombre_completo || 'Usuario'; }
   get userUsername(): string { return this.currentUser?.nombre_usuario ? `@${this.currentUser.nombre_usuario}` : '@usuario'; }
   get userAvatar(): string {
-    if (!this.currentUser?.foto_perfil_url) {
-      return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200';
-    }
-    if (this.currentUser.foto_perfil_url.startsWith('http')) {
-      return this.currentUser.foto_perfil_url;
-    }
-    const path = this.currentUser.foto_perfil_url.startsWith('/')
-      ? this.currentUser.foto_perfil_url
-      : `/${this.currentUser.foto_perfil_url}`;
-    return `${environment.socketUrl}${path}`;
+    const url = this.currentUser?.foto_perfil_url || '';
+    const normalized = Utils.normalizarUrlImagen(url, environment.socketUrl, 'perfiles');
+    return normalized || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(this.userName) + '&background=random&size=200');
   }
 
   constructor(
@@ -155,14 +149,9 @@ export class Navbar implements OnInit, OnDestroy {
   }
 
   getUsuarioAvatar(usuario: UsuarioBusqueda): string {
-    if (!usuario.foto_perfil_url) {
-      return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(usuario.nombre_completo) + '&background=random&size=100';
-    }
-    if (usuario.foto_perfil_url.startsWith('http')) {
-      return usuario.foto_perfil_url;
-    }
-    const path = usuario.foto_perfil_url.startsWith('/') ? usuario.foto_perfil_url : `/${usuario.foto_perfil_url}`;
-    return `${environment.socketUrl}${path}`;
+    const url = usuario.foto_perfil_url || '';
+    const normalized = Utils.normalizarUrlImagen(url, environment.socketUrl, 'perfiles');
+    return normalized || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(usuario.nombre_completo) + '&background=random&size=100');
   }
 
   verPerfil(usuario: UsuarioBusqueda): void {

@@ -5,6 +5,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { SeguidorService } from '../../core/servicios/seguidores/seguidores';
 import { Usuario } from '../../core/modelos/usuario.model';
+import { environment } from '../../../environments/environment';
+import * as Utils from '../../core/utilidades/formateadores';
 
 @Component({
   selector: 'app-sidebar-perfil',
@@ -36,8 +38,7 @@ export class SidebarPerfil implements OnInit, OnDestroy {
   // Estado de carga
   cargandoEstadisticas: boolean = false;
 
-  // ✅ BASE URL PARA LOCALHOST
-  private readonly BASE_URL = 'http://localhost:3000';
+  private readonly BASE_URL = environment.socketUrl;
 
   private destroy$ = new Subject<void>();
 
@@ -65,57 +66,16 @@ export class SidebarPerfil implements OnInit, OnDestroy {
    * ✅ NUEVA: Construir URL local para foto de perfil
    */
   obtenerUrlFotoPerfil(): string | null {
-    if (!this.usuario) return null;
-
-    // Priorizar foto_perfil_url
-    const foto = this.usuario.foto_perfil_url;
-
-    if (!foto) return null;
-
-    // Si ya es URL completa de localhost
-    if (foto.startsWith('http://localhost:3000')) {
-      return foto;
-    }
-
-    // Si es ruta relativa
-    if (foto.startsWith('/uploads/')) {
-      return `${this.BASE_URL}${foto}`;
-    }
-
-    // Si no tiene prefijo, construir
-    if (!foto.startsWith('http')) {
-      return `${this.BASE_URL}${foto.startsWith('/') ? foto : '/' + foto}`;
-    }
-
-    return foto;
+    if (!this.usuario?.foto_perfil_url) return null;
+    return Utils.normalizarUrlImagen(this.usuario.foto_perfil_url, this.BASE_URL, 'perfiles');
   }
 
   /**
    * ✅ NUEVA: Construir URL local para foto de portada
    */
   obtenerUrlFotoPortada(): string | null {
-    if (!this.usuario) return null;
-
-    const foto = this.usuario.foto_portada_url;
-
-    if (!foto) return null;
-
-    // Si ya es URL completa de localhost
-    if (foto.startsWith('http://localhost:3000')) {
-      return foto;
-    }
-
-    // Si es ruta relativa
-    if (foto.startsWith('/uploads/')) {
-      return `${this.BASE_URL}${foto}`;
-    }
-
-    // Si no tiene prefijo, construir
-    if (!foto.startsWith('http')) {
-      return `${this.BASE_URL}${foto.startsWith('/') ? foto : '/' + foto}`;
-    }
-
-    return foto;
+    if (!this.usuario?.foto_portada_url) return null;
+    return Utils.normalizarUrlImagen(this.usuario.foto_portada_url, this.BASE_URL, 'portadas');
   }
 
   /**

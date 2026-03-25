@@ -8,10 +8,12 @@ import { PublicacionesService } from '../../../core/servicios/publicaciones/publ
 import { PostCard } from '../../../componentes/post-card/post-card';
 import { ThemeService } from '../../../core/servicios/temas';
 import { AutenticacionService } from '../../../core/servicios/autenticacion/autenticacion';
-import { LucideAngularModule, Users, Globe, Lock, Shield, Plus, MessageSquare, Image, FileText, X } from 'lucide-angular';
+import { LucideAngularModule, Users, Globe, Lock, Shield, Plus, MessageSquare, Image, FileText, X, UserPlus } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 import { Navbar } from '../../../componentes/navbar/navbar';
 import { Subject, takeUntil } from 'rxjs';
+import { InvitarModalComponent } from '../invitar-modal/invitar-modal';
+import { SocketService } from '../../../core/servicios/socket/socket';
 
 @Component({
     selector: 'app-grupo-detalle',
@@ -20,12 +22,13 @@ import { Subject, takeUntil } from 'rxjs';
         LucideAngularModule,
         FormsModule,
         PostCard,
-        Navbar
+        Navbar,
+        InvitarModalComponent
     ],
     templateUrl: './detalle.html',
     styleUrls: ['./detalle.css'],
     providers: [
-        { provide: LucideAngularModule, useValue: LucideAngularModule.pick({ Users, Globe, Lock, Shield, Plus, MessageSquare, Image, FileText, X }) }
+        { provide: LucideAngularModule, useValue: LucideAngularModule.pick({ Users, Globe, Lock, Shield, Plus, MessageSquare, Image, FileText, X, UserPlus }) }
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -36,12 +39,14 @@ export class GrupoDetalleComponent implements OnInit, OnDestroy {
     private themeService = inject(ThemeService);
     private authService = inject(AutenticacionService);
     private router = inject(Router);
+    private socketService = inject(SocketService);
     private destroy$ = new Subject<void>();
 
     grupo = signal<Grupo | null>(null);
     publicaciones = signal<any[]>([]);
     nuevoPostTexto = signal('');
     estaCargando = signal(true);
+    showInvitarModal = signal(false);
     currentTheme = signal(this.themeService.getCurrentTheme());
     usuarioActual = signal(this.authService.obtenerUsuarioActual());
     usuarioActualId = computed(() => this.usuarioActual()?.id || null);
@@ -53,7 +58,10 @@ export class GrupoDetalleComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.route.params.subscribe(params => {
             const id = +params['id'];
-            if (id) this.cargarDetalle(id);
+            if (id) {
+                this.cargarDetalle(id);
+                this.setupSocketListeners(id);
+            }
         });
         this.themeService.currentTheme$
             .pipe(takeUntil(this.destroy$))
@@ -61,8 +69,37 @@ export class GrupoDetalleComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
+        if (this.grupo()) {
+            this.socketService.emit('leave_group', this.grupo()!.id);
+        }
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    setupSocketListeners(grupoId: number) {
+        this.socketService.emit('join_group', grupoId);
+
+        this.socketService.on('new_post', (p: any) => {
+            if (p.grupo_id === grupoId && !this.publicaciones().some(pub => pub.id === p.id)) {
+                const mapped = {
+                    id: p.id,
+                    author: p.nombre_completo || p.nombre_usuario || 'Usuario',
+                    avatar: p.foto_perfil_url || '',
+                    time: p.fecha_creacion,
+                    content: p.contenido,
+                    image: p.imagen_url,
+                    category: p.categoria || 'General',
+                    categoryColor: 'teal',
+                    likes: p.total_likes || 0,
+                    liked: false,
+                    shares: 0,
+                    avatarColor: 'blue',
+                    usuario_id: p.usuario_id,
+                    visibilidad: p.visibilidad
+                };
+                this.publicaciones.set([mapped, ...this.publicaciones()]);
+            }
+        });
     }
 
     cargarDetalle(id: number) {

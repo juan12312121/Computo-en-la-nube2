@@ -172,26 +172,24 @@ export class PublicacionesService {
    * Usuario no autenticado: solo ve públicas
    */
   obtenerPublicaciones(): Observable<ApiResponse<Publicacion[]>> {
-    console.log('🔄 Obteniendo publicaciones...');
-    console.log('📡 URL:', this.apiUrl);
-
+    console.log('🔄 [PublicacionesService] DEBUG: Iniciando obtenerPublicaciones()');
+    console.log('📡 [PublicacionesService] DEBUG: URL final:', this.apiUrl);
+    
     const headers = this.getHeaders();
-    console.log('📤 Headers:', headers);
+    console.log('📤 [PublicacionesService] DEBUG: Headers enviados:', headers);
 
     return this.http.get<ApiResponse<Publicacion[]>>(this.apiUrl, headers).pipe(
       tap((response: ApiResponse<Publicacion[]>) => {
-        console.log('✅ Respuesta recibida:', {
-          success: response.success,
-          cantidad: response.data?.length || 0,
-          mensaje: response.message || response.mensaje
-        });
+        console.log('✅ [PublicacionesService] DEBUG: Respuesta recibida del servidor:', response);
+        console.log('📊 [PublicacionesService] DEBUG: Cantidad de publicaciones en data:', response.data?.length || 0);
       }),
       catchError(error => {
-        console.error('❌ Error al obtener publicaciones:', {
+        console.error('❌ [PublicacionesService] DEBUG: Error al obtener publicaciones:', {
           status: error.status,
           statusText: error.statusText,
           mensaje: error.error?.mensaje || error.message,
-          url: error.url
+          url: error.url,
+          errorFull: error
         });
 
         return of({

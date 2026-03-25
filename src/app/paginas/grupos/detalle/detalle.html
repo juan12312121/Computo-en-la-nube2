@@ -45,7 +45,7 @@
 
                 <div class="hero-action-buttons">
                     @if (!esMiembro() && !solicitudPendiente()) {
-                    <button class="btn-action-refined primary" (click)="unirse()"
+                     <button class="btn-action-refined primary" (click)="unirse()"
                         [style.background]="currentTheme().color">
                         <lucide-icon name="plus" size="18"></lucide-icon>
                         <span>Unirme al grupo</span>
@@ -57,10 +57,10 @@
                         <span>Solicitud pendiente</span>
                     </button>
                     } @else {
-                    <button class="btn-action-refined secondary"
+                    <button class="btn-action-refined secondary" (click)="showInvitarModal.set(true)"
                         [ngClass]="[currentTheme().cardBg || '', currentTheme().textPrimaryClass || '', currentTheme().borderColor || '']">
-                        <lucide-icon name="users" size="18"></lucide-icon>
-                        <span>Eres miembro</span>
+                        <lucide-icon name="user-plus" size="18"></lucide-icon>
+                        <span>Invitar</span>
                     </button>
                     }
                     <button class="btn-icon-refined"
@@ -70,6 +70,10 @@
             </div>
         </div>
     </header>
+
+    @if (showInvitarModal()) {
+        <app-invitar-modal [grupoId]="grupo()!.id" (close)="showInvitarModal.set(false)"></app-invitar-modal>
+    }
 
     <main class="detail-grid-refined">
         <!-- Feed Column -->

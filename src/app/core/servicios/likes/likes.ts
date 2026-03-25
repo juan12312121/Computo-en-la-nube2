@@ -49,8 +49,8 @@ export class LikesService {
       tap(response => {
         console.log('✅ [LIKES] Like verificado:', {
           publicacionId,
-          usuario_dio_like: response.data?.usuario_dio_like,
-          total_likes: response.data?.total_likes
+          usuario_dio_like: response.data?.usuario_dio_like ?? response.data?.liked,
+          total_likes: response.data?.total_likes ?? response.data?.total
         });
       })
     );
@@ -72,8 +72,8 @@ export class LikesService {
         console.log('✅ [LIKES] Toggle completado:', {
           success: response.success,
           publicacionId,
-          usuario_dio_like: response.data?.usuario_dio_like,
-          total_likes: response.data?.total_likes
+          usuario_dio_like: response.data?.usuario_dio_like ?? response.data?.liked,
+          total_likes: response.data?.total_likes ?? response.data?.total
         });
 
         if (response.data) {

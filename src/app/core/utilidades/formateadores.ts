@@ -28,13 +28,40 @@ export function formatearTiempo(fecha: string | Date): string {
 /**
  * Normaliza la URL de una imagen para asegurar que tenga el prefijo de la API si es necesario.
  */
-export function normalizarUrlImagen(url: string, apiBaseUrl: string): string | null {
+export function normalizarUrlImagen(url: string, apiBaseUrl: string, folder: 'perfiles' | 'portadas' | 'publicaciones' = 'publicaciones'): string | null {
     if (!url || url.includes('/undefined')) return null;
-    if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) return url;
+
+    // Si la URL contiene múltiples esquemas http, quedarse con el último fragmento que parezca una ruta válida
+    if ((url.match(/https?:\/\//g) || []).length > 1) {
+        const parts = url.split(/https?:\/\//);
+        const lastPart = parts[parts.length - 1];
+        if (lastPart.includes('/uploads/')) {
+            url = `/uploads/${lastPart.split('/uploads/')[1]}`;
+        } else {
+            url = lastPart;
+        }
+    }
+
+    // Rewrite S3 URLs to backend URL
+    if (url.includes('s3.us-east-2.amazonaws.com') || url.includes('s3.amazonaws.com')) {
+        const match = url.match(/\/uploads\/(.+)$/);
+        if (match) return `${apiBaseUrl}/uploads/${match[1]}`;
+        return url;
+    }
+
+    // Rewrite localhost and old AWS URLs to the real backend URL
+    if (url.startsWith('http://localhost:3000') || url.startsWith('http://3.146.83.30:3000')) {
+        return url.replace(/https?:\/\/[^/]+(:[0-9]+)?/, apiBaseUrl);
+    }
+
     if (url.startsWith('http')) return url;
     if (url.startsWith('/uploads/')) return `${apiBaseUrl}${url}`;
-    if (!url.includes('/')) return `${apiBaseUrl}/uploads/publicaciones/${url}`;
-    return `${apiBaseUrl}${url}`;
+
+    // Si solo viene el nombre del archivo, usar el folder indicado
+    if (!url.includes('/')) return `${apiBaseUrl}/uploads/${folder}/${url}`;
+
+    // Si tiene ruta pero no es completa (ej. "perfiles/foto.jpg")
+    return `${apiBaseUrl}/uploads/${url.replace(/^\/+/, '').replace(/^uploads\//, '')}`;
 }
 
 /**

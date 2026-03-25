@@ -15,12 +15,11 @@
     font-family: 'Inter', -apple-system, sans-serif;
 }
 
-/* Header Refinado */
+/* Header Refinado - SIN STICKY (así no se separa del navbar) */
 .refined-header {
     padding: 1.5rem 0;
-    position: sticky;
-    top: 56px;
-    /* Below Navbar */
+    position: relative;
+    /* ✅ CAMBIO: De sticky a relative para evitar separación */
     z-index: 10;
     transition: all 0.3s ease;
 }
@@ -96,7 +95,6 @@
 
 .search-input-box input:focus {
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-    /* Soft focus ring */
     outline: none;
 }
 
@@ -109,7 +107,6 @@
     align-items: center;
     gap: 0.6rem;
     color: white;
-    /* Text stays white on bright buttons */
     border: none;
     padding: 0.75rem 1.25rem;
     border-radius: 10px;
@@ -133,41 +130,60 @@
     gap: 3rem;
 }
 
-/* Sidebar Refined */
+/* Sidebar Refined - STICKY OK (no genera separación) */
 .refined-sidebar {
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    position: sticky;
+    top: 56px;
+    /* ✅ CAMBIO: Ajustado a la altura real del navbar */
+    height: fit-content;
+}
+
+.sidebar-section {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .sidebar-section {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .sidebar-heading {
-    font-size: 0.875rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 1.25rem;
-    opacity: 0.7;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    opacity: 0.5;
 }
 
 .group-nav-item {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem;
+    padding: 0.8rem;
     border-radius: 12px;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
 .group-nav-item:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
 }
 
 .nav-avatar {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     overflow: hidden;
+    background: rgba(0,0,0,0.1);
 }
 
 .nav-avatar img {
@@ -182,40 +198,59 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+.nav-info {
+    display: flex;
+    flex-direction: column;
 }
 
 .nav-name {
-    display: block;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .nav-meta {
-    display: block;
-    font-size: 0.8rem;
-    opacity: 0.8;
+    font-size: 0.75rem;
+    opacity: 0.6;
 }
 
 .stats-card-refined {
     color: white;
-    /* Ensures text is white when background is colorful */
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    gap: 0.25rem;
+    margin-top: 1rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 16px -4px rgba(0,0,0,0.2);
+}
+
+.stats-card-refined::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 0 0 0 100%;
 }
 
 .stats-label {
-    font-size: 0.8rem;
-    opacity: 0.9;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0.8;
 }
 
 .stats-value {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
 }
 
 /* Discovery Grid */
@@ -261,16 +296,16 @@
 
 .professional-card {
     border: 1px solid transparent;
-    /* Managed by theme class */
     border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ✅ SOLUCIÓN 1: Avatar estático - Solo sombra, sin transform */
 .professional-card:hover {
-    transform: translateY(-6px);
     box-shadow: var(--refined-shadow-hover);
+    /* ✅ Removemos: transform: translateY(-6px); */
 }
 
 .card-cover-refined {
@@ -289,7 +324,6 @@
     width: 100%;
     height: 100%;
     opacity: 0.5;
-    /* Theme handles actual background via class later if needed, but for now we'll inject styling in HTML */
 }
 
 .privacy-tag {
@@ -313,6 +347,7 @@
     position: relative;
 }
 
+/* ✅ SOLUCIÓN 2: Avatar con posición fija relativa a la tarjeta */
 .card-avatar-overlap {
     position: absolute;
     top: -30px;
@@ -321,9 +356,9 @@
     height: 60px;
     border-radius: 14px;
     border: 4px solid transparent;
-    /* HTML applies border color */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+    /* ✅ Sin ningún transform en hover */
 }
 
 .card-avatar-overlap img {
@@ -447,7 +482,6 @@
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
@@ -458,7 +492,6 @@
         opacity: 0;
         transform: translateX(-30px);
     }
-
     to {
         opacity: 1;
         transform: translateX(0);
@@ -470,39 +503,188 @@
         opacity: 0;
         transform: scale(0.9);
     }
-
     to {
         opacity: 1;
         transform: scale(1);
     }
 }
 
+/* ================= Invitaciones Styles ================= */
+.invitations-container {
+    margin-bottom: 3rem;
+    padding: 1.5rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.05);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.dark .section-badge {
+    background: rgba(255,255,255,0.05);
+}
+
+.invitations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.invitation-card {
+    border-radius: 16px;
+    border-width: 1px;
+    border-style: solid;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.invitation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+}
+
+.inv-card-content {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.inv-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.inv-group-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.8rem;
+    color: white;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.inv-group-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+.inv-badge-mini {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.dark .inv-badge-mini {
+    border-color: #1a1a1a;
+}
+
+.inv-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.inv-sender {
+    font-size: 0.8rem;
+}
+
+.inv-group-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.inv-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-inv {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-accept {
+    color: white;
+}
+
+.btn-accept:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.btn-reject {
+    background: rgba(0,0,0,0.03);
+}
+
+.btn-reject:hover {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ef4444;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
-    .content-layout {
+    .refined-main-layout {
         grid-template-columns: 1fr;
     }
 
-    .sidebar {
+    .refined-sidebar {
         order: 2;
     }
 }
 
 @media (max-width: 768px) {
-    .page-header {
-        padding: 2rem;
-    }
-
-    .page-title {
-        font-size: 2rem;
-    }
-
-    .actions-section {
+    .header-inner {
         flex-direction: column;
-        align-items: stretch;
+        gap: 1.5rem;
+        align-items: flex-start;
     }
 
-    .search-wrapper {
-        max-width: none;
+    .search-compact-wrapper {
+        width: 100%;
+    }
+
+    .search-input-box {
+        width: 100%;
     }
 }

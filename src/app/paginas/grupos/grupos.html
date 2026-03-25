@@ -69,34 +69,120 @@
                 }
             </div>
 
-            <div class="sidebar-footer">
-                <div class="stats-card-refined" [style.background]="currentTheme().color">
-                    <span class="stats-label">Actividad Total</span>
-                    <span class="stats-value">{{ totalMiembros() }} Estudiantes</span>
-                </div>
-            </div>
+
         </aside>
 
         <!-- Main Discovery Grid -->
         <section class="discovery-section">
+            <!-- ========== Invitaciones ========== -->
+            @if (invitaciones().length > 0) {
+            <div class="invitations-container animate-fade-in">
+                <div class="section-badge" [style.color]="currentTheme().color">
+                    <lucide-icon name="bell" size="14"></lucide-icon>
+                    <span>Nuevas Invitaciones</span>
+                </div>
+                <h2 class="section-title-refined" [ngClass]="currentTheme().textPrimaryClass || ''">Te han invitado a unirte</h2>
+
+                <div class="invitations-grid">
+                    @for (inv of invitaciones(); track inv.id) {
+                    <div class="invitation-card" [ngClass]="[currentTheme().cardBg || '', currentTheme().borderColor || '']">
+                        <div class="inv-card-content">
+                            <div class="inv-header">
+                                <div class="inv-group-avatar" [style.background]="currentTheme().color">
+                                    @if (inv.grupo_imagen) {
+                                        <img [src]="inv.grupo_imagen" alt="Logo">
+                                    } @else {
+                                        <span>{{ inv.grupo_nombre.charAt(0) }}</span>
+                                    }
+                                    <div class="inv-badge-mini" [style.background]="currentTheme().color">
+                                        <lucide-icon name="plus" size="10"></lucide-icon>
+                                    </div>
+                                </div>
+                                <div class="inv-details">
+                                    <span class="inv-sender" [ngClass]="currentTheme().textSecondaryClass || ''">
+                                        <strong [style.color]="currentTheme().color">{{ inv.remitente_nombre }}</strong> te invitó
+                                    </span>
+                                    <h3 class="inv-group-name" [ngClass]="currentTheme().textPrimaryClass || ''">{{ inv.grupo_nombre }}</h3>
+                                </div>
+                            </div>
+
+                            <div class="inv-actions">
+                                <button class="btn-inv btn-accept" (click)="responderInvitacion(inv.id, 'aceptar')" [style.background]="currentTheme().color">
+                                    <lucide-icon name="check" size="16"></lucide-icon>
+                                    Aceptar
+                                </button>
+                                <button class="btn-inv btn-reject" (click)="responderInvitacion(inv.id, 'rechazar')" [ngClass]="currentTheme().hoverBgLight || ''">
+                                    <lucide-icon name="x" size="16"></lucide-icon>
+                                    Rechazar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+
             <div class="section-header-refined">
                 <div class="header-left">
-                    <h2 [ngClass]="currentTheme().textPrimaryClass || ''">Sugerencias para ti</h2>
+                    <h2 [ngClass]="currentTheme().textPrimaryClass || ''">Descubrir Comunidades</h2>
                     <div class="filter-pills">
-                        <button class="pill active" [style.background]="currentTheme().color"
-                            style="color: white">Todos</button>
                         <button class="pill"
-                            [ngClass]="[currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || '']"
-                            style="border-width: 1px;">Populares</button>
+                            [class.active]="filtroActual() === 'todos'"
+                            (click)="filtroActual.set('todos')"
+                            [style.background]="filtroActual() === 'todos' ? currentTheme().color : 'transparent'"
+                            [style.color]="filtroActual() === 'todos' ? 'white' : ''"
+                            [ngClass]="filtroActual() !== 'todos' ? [currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || ''] : []"
+                            style="border-width: 1px;">
+                            Todos
+                        </button>
                         <button class="pill"
-                            [ngClass]="[currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || '']"
-                            style="border-width: 1px;">Recientes</button>
+                            [class.active]="filtroActual() === 'populares'"
+                            (click)="filtroActual.set('populares')"
+                            [style.background]="filtroActual() === 'populares' ? currentTheme().color : 'transparent'"
+                            [style.color]="filtroActual() === 'populares' ? 'white' : ''"
+                            [ngClass]="filtroActual() !== 'populares' ? [currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || ''] : []"
+                            style="border-width: 1px;">
+                            Populares
+                        </button>
+                        <button class="pill"
+                            [class.active]="filtroActual() === 'mis-grupos'"
+                            (click)="filtroActual.set('mis-grupos')"
+                            [style.background]="filtroActual() === 'mis-grupos' ? currentTheme().color : 'transparent'"
+                            [style.color]="filtroActual() === 'mis-grupos' ? 'white' : ''"
+                            [ngClass]="filtroActual() !== 'mis-grupos' ? [currentTheme().textSecondaryClass || '', currentTheme().borderColor || '', currentTheme().hoverBgLight || ''] : []"
+                            style="border-width: 1px;">
+                            Mis Grupos
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div class="refined-grid">
-                @for (grupo of gruposFiltrados(); track grupo.id) {
+            <!-- ========== Mis Grupos (Grid Principal) ========== -->
+            <!-- ========== Grid Principal de Descubrimiento ========== -->
+            <div class="groups-sub-section">
+                <h3 class="section-subtitle" [ngClass]="currentTheme().textSecondaryClass || ''">
+                    @if (filtroActual() === 'mis-grupos') { Tus Comunidades }
+                    @else if (filtroActual() === 'populares') { Comunidades Populares }
+                    @else { Descubre nuevas comunidades }
+                </h3>
+
+                <div class="refined-grid">
+                    @for (grupo of gruposFiltrados(); track grupo.id) {
+                        <ng-container *ngTemplateOutlet="groupCard; context: { $implicit: grupo }"></ng-container>
+                    }
+                </div>
+
+                @if (gruposFiltrados().length === 0) {
+                    <div class="empty-results-state" [ngClass]="currentTheme().textSecondaryClass || ''">
+                        <lucide-icon name="search-x" size="48"></lucide-icon>
+                        <p>No encontramos grupos que coincidan con tu búsqueda.</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Plantilla de Tarjeta Reutilizable -->
+            <ng-template #groupCard let-grupo>
                 <div class="professional-card" [routerLink]="['/grupos', grupo.id]"
                     [ngClass]="[currentTheme().cardBg || '', currentTheme().borderColor || '']">
                     <div class="card-cover-refined" [ngClass]="currentTheme().hoverBgLight || ''">
@@ -144,7 +230,7 @@
                             <button class="btn-join-minimal member-active" (click)="$event.stopPropagation()"
                                 [ngClass]="[currentTheme().hoverBgLight || '', currentTheme().textPrimaryClass || '']"
                                 [style.color]="currentTheme().color">
-                                Miembro
+                                Entrar
                             </button>
                             } @else if (grupo.mi_estado === 'pendiente') {
                             <button class="btn-join-minimal pending-request italic opacity-60"
@@ -161,8 +247,7 @@
                         </div>
                     </div>
                 </div>
-                }
-            </div>
+            </ng-template>
         </section>
     </main>
 

@@ -11,6 +11,7 @@ import { LikesService } from '../../core/servicios/likes/likes';
 import { FotosService } from '../../core/servicios/fotos/fotos';
 import { Theme, ThemeService } from '../../core/servicios/temas';
 import { DetallePost } from '../detalle-post/detalle-post';
+import { environment } from '../../../environments/environment';
 
 interface Post {
   id: number;
@@ -86,8 +87,7 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
 
   fotosPerfilCache = new Map<number, string | null>();
 
-  // ✅ BASE URL FIJA PARA LOCALHOST
-  private readonly BASE_URL = 'http://localhost:3000';
+  private readonly BASE_URL = environment.socketUrl;
 
   constructor(
     private themeService: ThemeService,
@@ -529,7 +529,10 @@ export class PublicacionesPerfil implements OnChanges, OnInit, OnDestroy {
     if (ruta.includes('/undefined') || ruta === 'undefined') return null;
 
     // Si ya es una URL completa de localhost, retornarla
-    if (ruta.startsWith('http://localhost:3000')) return ruta;
+    // Si es una URL completa de localhost o AWS antigua, reescribirla al backend real
+    if (ruta.startsWith('http://localhost:3000') || ruta.startsWith('http://3.146.83.30:3000')) {
+      return ruta.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.BASE_URL);
+    }
 
     // Si es una ruta relativa, construir URL completa
     if (ruta.startsWith('/uploads/')) {

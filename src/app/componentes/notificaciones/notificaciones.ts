@@ -8,6 +8,7 @@ import { Notificacion } from '../../core/modelos/notificacion.model';
 import { AutenticacionService } from '../../core/servicios/autenticacion/autenticacion';
 import { PublicacionesService } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme } from '../../core/servicios/temas';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-notificaciones',
@@ -21,9 +22,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy {
   @Input() isMobile = false;
   @Output() close = new EventEmitter<void>();
 
-  public readonly apiBaseUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : 'http://3.146.83.30:3000';
+  public readonly apiBaseUrl = environment.socketUrl;
   public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
   showNotifications = false;

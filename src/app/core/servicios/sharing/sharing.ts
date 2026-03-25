@@ -6,7 +6,7 @@ export type SharePlatform = 'whatsapp' | 'facebook' | 'twitter' | 'linkedin' | '
     providedIn: 'root'
 })
 export class SharingService {
-    private readonly baseUrl = 'http://localhost:4200'; // Ajustar según entorno
+    private readonly baseUrl = window.location.origin;
 
     private readonly shareUrls: Record<SharePlatform, (url: string, text: string) => string> = {
         whatsapp: (url, text) => `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`,

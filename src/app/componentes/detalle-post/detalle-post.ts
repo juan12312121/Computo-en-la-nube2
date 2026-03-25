@@ -112,6 +112,10 @@ export class DetallePost implements OnInit, OnDestroy {
     this.usuarioActualId = currentUser ? currentUser.id : null;
   }
 
+  get postUrl(): string {
+    return `${window.location.origin}/principal/post/${this.post?.id}`;
+  }
+
   ngOnInit(): void {
     this.themeSubscription = this.themeService.currentTheme$.subscribe(theme => {
       this.currentTheme = theme;
@@ -483,7 +487,7 @@ export class DetallePost implements OnInit, OnDestroy {
   }
 
   shareToSocial(platform: string): void {
-    const postUrl = `http://3.146.83.30:4200/principal/post/${this.post?.id}`;
+    const postUrl = `${window.location.origin}/principal/post/${this.post?.id}`;
     const text = this.post?.content || '';
 
     let shareUrl = '';
@@ -516,7 +520,7 @@ export class DetallePost implements OnInit, OnDestroy {
   }
 
   copyLink(): void {
-    const postUrl = `http://3.146.83.30:4200/principal/post/${this.post?.id}`;
+    const postUrl = `${window.location.origin}/principal/post/${this.post?.id}`;
     navigator.clipboard.writeText(postUrl).then(() => {
       this.linkCopied = true;
       setTimeout(() => {

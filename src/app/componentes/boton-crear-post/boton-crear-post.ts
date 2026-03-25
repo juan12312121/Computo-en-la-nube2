@@ -6,6 +6,7 @@ import { AutenticacionService } from '../../core/servicios/autenticacion/autenti
 import { Usuario } from '../../core/modelos/usuario.model';
 import { Categoria, PublicacionesService, Visibilidad } from '../../core/servicios/publicaciones/publicaciones';
 import { Theme, ThemeService } from '../../core/servicios/temas';
+import { environment } from '../../../environments/environment';
 
 // Interface para documentos adjuntos
 interface DocumentoAdjunto {
@@ -34,9 +35,7 @@ export class BotonCrearPost implements OnInit, OnDestroy {
   private themeSubscription?: Subscription;
 
   // URLs Base
-  public readonly apiBaseUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : 'http://3.146.83.30:3000';
+  public readonly apiBaseUrl = environment.socketUrl;
   public readonly s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
 
   postContent = '';

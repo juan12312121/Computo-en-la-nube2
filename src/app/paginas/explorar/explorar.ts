@@ -145,18 +145,28 @@ export class Explorar implements OnInit, OnDestroy {
 
   // ========== CARGA DE DATOS ==========
   private cargarPublicaciones(): void {
+    console.log('🚀 [Explorar] DEBUG: Cargando publicaciones...');
     this.isLoading.set(true);
+    
     this.publicacionesService.obtenerPublicaciones().subscribe({
       next: (res) => {
+        console.log('📦 [Explorar] DEBUG: Respuesta recibida:', res);
+        
         if (res.success && res.data) {
+          console.log('✨ [Explorar] DEBUG: Publicaciones obtenidas con éxito:', res.data.length);
           const converted = this.convertirPublicacionesAPosts(res.data);
           this.posts.set(converted);
           this.actualizarContadorTags();
           this.cargarFotosPerfilPosts();
+        } else {
+          console.warn('⚠️ [Explorar] DEBUG: Respuesta sin datos o no exitosa:', res);
         }
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: (error) => {
+        console.error('❌ [Explorar] DEBUG: Error al cargar publicaciones:', error);
+        this.isLoading.set(false);
+      }
     });
   }
 
@@ -329,6 +339,9 @@ export class Explorar implements OnInit, OnDestroy {
 
   private normalizarUrlImagen(url: string): string | null {
     if (!url) return null;
+    if (url.startsWith('http://localhost:3000') || url.startsWith('http://3.146.83.30:3000')) {
+      return url.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.apiBaseUrl);
+    }
     if (url.startsWith('http')) return url;
     return `${this.apiBaseUrl}${url.startsWith('/') ? url : '/' + url}`;
   }

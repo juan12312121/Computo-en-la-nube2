@@ -26,7 +26,7 @@ export class ModalCompartir {
   @Output() copiarLink = new EventEmitter<void>();
 
   get urlPost(): string {
-    return `http://3.146.83.30:4200/principal/post/${this.postId}`;
+    return `${window.location.origin}/principal/post/${this.postId}`;
   }
 
   onBackdropClick(event: MouseEvent): void {

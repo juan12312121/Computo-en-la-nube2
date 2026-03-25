@@ -160,9 +160,13 @@ export class Principal implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(postData => {
         const transformed = this.convertirPublicacionAPost(postData);
-        // Evitar duplicados si el usuario actual es quien lo creó
-        if (!this.posts().some(p => p.id === transformed.id)) {
+        // Evitar duplicados (comparación robusta)
+        const existe = this.posts().some(p => Number(p.id) === Number(transformed.id));
+        if (!existe) {
+          console.log('📡 [Socket] Nuevo post recibido y agregado:', transformed.id);
           this.posts.update(list => [transformed, ...list]);
+        } else {
+          console.log('📡 [Socket] Nuevo post ya existe, ignorando:', transformed.id);
         }
       });
 
@@ -188,6 +192,21 @@ export class Principal implements OnInit, OnDestroy {
           }
           return p;
         }));
+      });
+
+    // Escuchar actualizaciones de publicación
+    this.socketService.onEvent<any>('update_post')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(postData => {
+        const transformed = this.convertirPublicacionAPost(postData);
+        this.posts.update(list => list.map(p => p.id === transformed.id ? { ...p, ...transformed } : p));
+      });
+
+    // Escuchar borrado de publicación
+    this.socketService.onEvent<{ id: number }>('delete_post')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        this.posts.update(list => list.filter(p => p.id !== data.id));
       });
   }
 
@@ -581,8 +600,15 @@ export class Principal implements OnInit, OnDestroy {
 
     const newPost = this.convertirPublicacionAPost(pub);
 
-    this.posts.update(list => [newPost, ...list]);
-    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+    // Evitar duplicados si ya fue agregado por el socket (comparación robusta)
+    const existe = this.posts().some(p => Number(p.id) === Number(newPost.id));
+    if (!existe) {
+      console.log('📝 [HTTP] Nuevo post creado y agregado localmente:', newPost.id);
+      this.posts.update(list => [newPost, ...list]);
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+    } else {
+      console.log('📝 [HTTP] Nuevo post ya fue agregado por socket:', newPost.id);
+    }
   }
 
   private abrirPostDesdeURL(postId: number): void {

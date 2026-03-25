@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../modelos/api-response.model';
 import { AutenticacionService } from '../autenticacion/autenticacion';
@@ -172,6 +172,31 @@ export class SeguidorService {
 
   /**
    * ========================================
+   * HELPERS - RESOLVER URLS
+   * ========================================
+   */
+  private resolveUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    // Si es una ruta relativa de perfiles, le ponemos el prefijo del servidor
+    if (url.includes('foto_perfil-') || url.includes('perfil-')) {
+      return `${environment.socketUrl}/uploads/perfiles/${url}`;
+    }
+    if (url.startsWith('/uploads')) {
+      return `${environment.socketUrl}${url}`;
+    }
+    return url;
+  }
+
+  private mapUsuario(usuario: UsuarioSeguidor): UsuarioSeguidor {
+    return {
+      ...usuario,
+      foto_perfil_url: this.resolveUrl(usuario.foto_perfil_url)
+    };
+  }
+
+  /**
+   * ========================================
    * LISTAR SEGUIDORES ✅ CORREGIDO
    * ========================================
    * GET /api/seguidores/seguidores/:usuario_id?limit=50&offset=0
@@ -184,23 +209,18 @@ export class SeguidorService {
     const url = `${this.apiUrl}/seguidores/${usuario_id}?limit=${limit}&offset=${offset}`;
 
     console.log('📋 Obteniendo seguidores de usuario:', usuario_id);
-    console.log('📤 URL:', url);
 
     return this.http.get<ApiResponse<ListaSeguidoresData>>(url, {
       headers: this.getHeaders()
     }).pipe(
-      tap(response => {
-        console.log('========================================');
-        console.log('✅ RESPUESTA SEGUIDORES');
-        console.log('========================================');
-        console.log('📦 Response completo:', response);
-        console.log('✔️ Success:', response.success);
-        console.log('📊 Data:', response.data);
-        console.log('👥 Seguidores array:', response.data?.seguidores);
-        console.log('🔢 Total:', response.data?.total);
-        console.log('📋 Cantidad en array:', response.data?.seguidores?.length || 0);
-        console.log('========================================');
-      })
+      tap((response: ApiResponse<ListaSeguidoresData>) => console.log('✅ Seguidores obtenidos:', response.data?.seguidores?.length || 0)),
+      map((response: ApiResponse<ListaSeguidoresData>) => ({
+        ...response,
+        data: response.data ? {
+          ...response.data,
+          seguidores: response.data.seguidores.map((u: UsuarioSeguidor) => this.mapUsuario(u))
+        } : (null as any)
+      }))
     );
   }
 
@@ -218,23 +238,18 @@ export class SeguidorService {
     const url = `${this.apiUrl}/seguidos/${usuario_id}?limit=${limit}&offset=${offset}`;
 
     console.log('📋 Obteniendo seguidos de usuario:', usuario_id);
-    console.log('📤 URL:', url);
 
     return this.http.get<ApiResponse<ListaSeguidosData>>(url, {
       headers: this.getHeaders()
     }).pipe(
-      tap(response => {
-        console.log('========================================');
-        console.log('✅ RESPUESTA SEGUIDOS');
-        console.log('========================================');
-        console.log('📦 Response completo:', response);
-        console.log('✔️ Success:', response.success);
-        console.log('📊 Data:', response.data);
-        console.log('👥 Seguidos array:', response.data?.seguidos);
-        console.log('🔢 Total:', response.data?.total);
-        console.log('📋 Cantidad en array:', response.data?.seguidos?.length || 0);
-        console.log('========================================');
-      })
+      tap((response: ApiResponse<ListaSeguidosData>) => console.log('✅ Seguidos obtenidos:', response.data?.seguidos?.length || 0)),
+      map((response: ApiResponse<ListaSeguidosData>) => ({
+        ...response,
+        data: response.data ? {
+          ...response.data,
+          seguidos: response.data.seguidos.map((u: UsuarioSeguidor) => this.mapUsuario(u))
+        } : (null as any)
+      }))
     );
   }
 
@@ -242,24 +257,11 @@ export class SeguidorService {
    * ========================================
    * OBTENER ESTADÍSTICAS
    * ========================================
-   * GET /api/seguidores/estadisticas/:usuario_id
    */
   obtenerEstadisticas(usuario_id: number): Observable<ApiResponse<EstadisticasData>> {
     const url = `${this.apiUrl}/estadisticas/${usuario_id}`;
-
-    console.log('📊 Obteniendo estadísticas de usuario:', usuario_id);
-    console.log('📤 URL:', url);
-
     return this.http.get<ApiResponse<EstadisticasData>>(url, {
       headers: this.getHeaders()
-    }).pipe(
-      tap(response => {
-        console.log('✅ Estadísticas obtenidas:', {
-          seguidores: response.data?.seguidores || 0,
-          seguidos: response.data?.seguidos || 0
-        });
-        console.log('📦 Respuesta completa:', response);
-      })
-    );
+    });
   }
 }

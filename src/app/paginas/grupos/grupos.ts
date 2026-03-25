@@ -3,7 +3,7 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { GruposService } from '../../core/servicios/grupos/grupos';
 import { ThemeService } from '../../core/servicios/temas';
 import { Grupo } from '../../core/modelos/grupo.model';
-import { LucideAngularModule, Search, Plus, Users, Shield, Globe, Lock, ArrowRight, MoreHorizontal, Image, FileText, MessageSquare } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { CrearGrupoModalComponent } from './crear-modal/crear-modal';
@@ -23,9 +23,7 @@ import { Subject, takeUntil } from 'rxjs';
     ],
     templateUrl: './grupos.html',
     styleUrls: ['./grupos.css'],
-    providers: [
-        { provide: LucideAngularModule, useValue: LucideAngularModule.pick({ Search, Plus, Users, Shield, Globe, Lock, ArrowRight, MoreHorizontal, Image, FileText, MessageSquare }) }
-    ],
+    providers: [],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GruposComponent implements OnInit, OnDestroy {
@@ -38,18 +36,35 @@ export class GruposComponent implements OnInit, OnDestroy {
     // Signals para estado
     grupos = signal<Grupo[]>([]);
     misGrupos = signal<Grupo[]>([]);
+    invitaciones = signal<any[]>([]);
     busqueda = signal('');
     showCrearModal = signal(false);
+    filtroActual = signal<'todos' | 'populares' | 'mis-grupos'>('todos');
     currentTheme = signal(this.themeService.getCurrentTheme());
     totalMiembros = computed(() => this.misGrupos().reduce((acc, g) => acc + (g.total_miembros || 0), 0));
 
     // Filtrado reactivo
     gruposFiltrados = computed(() => {
+        let list = this.grupos();
         const query = this.busqueda().toLowerCase();
-        return this.grupos().filter(g =>
-            g.nombre.toLowerCase().includes(query) ||
-            g.descripcion?.toLowerCase().includes(query)
-        );
+        const activeFilter = this.filtroActual();
+
+        // Aplicar búsqueda
+        if (query) {
+            list = list.filter(g =>
+                g.nombre.toLowerCase().includes(query) ||
+                g.descripcion?.toLowerCase().includes(query)
+            );
+        }
+
+        // Aplicar filtro de categoría
+        if (activeFilter === 'populares') {
+            list = [...list].sort((a, b) => (b.total_miembros || 0) - (a.total_miembros || 0));
+        } else if (activeFilter === 'mis-grupos') {
+            list = list.filter(g => g.mi_estado === 'activo');
+        }
+
+        return list;
     });
 
     ngOnInit() {
@@ -71,6 +86,18 @@ export class GruposComponent implements OnInit, OnDestroy {
 
         this.gruposService.misGrupos().subscribe(res => {
             if (res.success) this.misGrupos.set(res.data);
+        });
+
+        this.gruposService.obtenerInvitaciones().subscribe(res => {
+            if (res.success) this.invitaciones.set(res.data);
+        });
+    }
+
+    responderInvitacion(invitacionId: number, accion: 'aceptar' | 'rechazar') {
+        this.gruposService.responderInvitacion(invitacionId, accion).subscribe(res => {
+            if (res.success) {
+                this.cargarDatos();
+            }
         });
     }
 

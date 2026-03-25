@@ -58,9 +58,9 @@ export class ImageService {
       return null;
     }
 
-    // Si ya es URL completa de localhost
-    if (imagePath.startsWith('http://localhost:3000')) {
-      return imagePath;
+    // Si es una URL de localhost o AWS antigua, rewrite al backend real
+    if (imagePath.startsWith('http://localhost:3000') || imagePath.startsWith('http://3.146.83.30:3000')) {
+      return imagePath.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.apiBaseUrl);
     }
 
     // Si ya es una URL completa (localhost o externa), retornarla
@@ -263,7 +263,8 @@ export class ImageService {
   isValidLocalUrl(url: string): boolean {
     if (!url) return false;
 
-    // Debe ser de localhost
+    // Debe ser del backend
+    if (url.startsWith(this.apiBaseUrl)) return true;
     if (url.startsWith('http://localhost:3000')) return true;
 
     // O debe ser una ruta relativa válida

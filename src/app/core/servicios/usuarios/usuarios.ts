@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { Usuario } from '../../modelos/usuario.model';
@@ -62,28 +62,59 @@ export class UsuarioService {
     });
   }
 
+  private resolveUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads')) {
+      return `${environment.socketUrl}${url}`;
+    }
+    return url;
+  }
+
+  private mapUsuario(usuario: Usuario): Usuario {
+    if (!usuario) return usuario;
+    return {
+      ...usuario,
+      foto_perfil_url: this.resolveUrl(usuario.foto_perfil_url),
+      foto_portada_url: this.resolveUrl(usuario.foto_portada_url)
+    };
+  }
+
   // Obtener mi perfil
   obtenerMiPerfil(): Observable<ApiResponse<Usuario>> {
     return this.http.get<ApiResponse<Usuario>>(`${this.apiUrl}/me`, {
       headers: this.getHeaders()
-    });
+    }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data ? this.mapUsuario(res.data) : (null as any)
+      }))
+    );
   }
 
   // Obtener perfil de otro usuario
   obtenerPerfil(id: number): Observable<ApiResponse<Usuario>> {
     return this.http.get<ApiResponse<Usuario>>(`${this.apiUrl}/${id}`, {
       headers: this.getHeaders()
-    });
+    }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data ? this.mapUsuario(res.data) : (null as any)
+      }))
+    );
   }
 
   // Actualizar mi perfil (acepta tanto objeto como FormData)
   actualizarPerfil(datos: ActualizarPerfilRequest | FormData): Observable<ApiResponse<Usuario>> {
-    // Si es FormData, no incluir Content-Type (el browser lo maneja automáticamente con boundary)
     const isFormData = datos instanceof FormData;
 
     return this.http.put<ApiResponse<Usuario>>(`${this.apiUrl}/me`, datos, {
       headers: this.getHeaders(!isFormData)
     }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data ? this.mapUsuario(res.data) : (null as any)
+      })),
       tap(response => {
         if (response.success && response.data) {
           this.authService.actualizarUsuarioEnSesion(response.data);
@@ -96,7 +127,15 @@ export class UsuarioService {
   buscarUsuarios(termino: string): Observable<ApiResponse<UsuarioBusqueda[]>> {
     return this.http.get<ApiResponse<UsuarioBusqueda[]>>(`${this.apiUrl}/buscar?q=${termino}`, {
       headers: this.getHeaders()
-    });
+    }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data ? res.data.map(u => ({
+          ...u,
+          foto_perfil_url: this.resolveUrl(u.foto_perfil_url)
+        })) : []
+      }))
+    );
   }
 
   // Eliminar mi cuenta
@@ -118,14 +157,30 @@ export class UsuarioService {
   obtenerSeguidoresActivos(): Observable<ApiResponse<UsuarioActivo[]>> {
     return this.http.get<ApiResponse<UsuarioActivo[]>>(`${this.apiUrl}/me/seguidores/activos`, {
       headers: this.getHeaders()
-    });
+    }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data ? res.data.map(u => ({
+          ...u,
+          foto_perfil_url: this.resolveUrl(u.foto_perfil_url)
+        })) : []
+      }))
+    );
   }
 
   // Obtener todos los usuarios activos (general)
   obtenerUsuariosActivos(): Observable<ApiResponse<UsuarioActivo[]>> {
     return this.http.get<ApiResponse<UsuarioActivo[]>>(`${this.apiUrl}/activos`, {
       headers: this.getHeaders()
-    });
+    }).pipe(
+      map(res => ({
+        ...res,
+        data: res.data ? res.data.map(u => ({
+          ...u,
+          foto_perfil_url: this.resolveUrl(u.foto_perfil_url)
+        })) : []
+      }))
+    );
   }
 
   // Actualizar estado de actividad (1 = activo, 0 = inactivo)

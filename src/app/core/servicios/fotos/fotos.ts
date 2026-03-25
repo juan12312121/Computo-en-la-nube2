@@ -81,6 +81,7 @@ interface FotosBatchResponse {
 }
 
 import { environment } from '../../../../environments/environment';
+import * as Utils from '../../utilidades/formateadores';
 
 @Injectable({
   providedIn: 'root'
@@ -103,50 +104,9 @@ export class FotosService {
     });
   }
 
-  /**
-   * ✅ MEJORADO: Formatear URLs para almacenamiento LOCAL
-   * Normaliza todas las URLs para que apunten a localhost
-   */
   private formatearUrlLocal(url: string, tipo: 'perfil' | 'portada' | 'publicacion'): string {
-    if (!url) return '';
-
-    console.log('🔧 Formateando URL:', { url, tipo });
-
-    // Si ya es una URL completa (localhost o externa como S3), retornarla
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      // console.log('✅ URL ya es completa:', url);
-      return url;
-    }
-
-    // Determinar carpeta según tipo
-    const carpeta =
-      tipo === 'perfil' ? 'perfiles' :
-        tipo === 'portada' ? 'portadas' :
-          'publicaciones';
-
-    // Si es una ruta relativa que empieza con /uploads/
-    if (url.startsWith('/uploads/')) {
-      const urlFinal = `${this.BASE_URL}${url}`;
-      console.log('✅ Construida desde /uploads/:', urlFinal);
-      return urlFinal;
-    }
-
-    // Si solo viene el nombre del archivo
-    if (!url.startsWith('http') && !url.startsWith('/')) {
-      const urlFinal = `${this.BASE_URL}/uploads/${carpeta}/${url}`;
-      console.log('✅ Construida desde nombre:', urlFinal);
-      return urlFinal;
-    }
-
-    // Si viene una ruta parcial
-    if (url.includes('/perfiles/') || url.includes('/portadas/') || url.includes('/publicaciones/')) {
-      const urlFinal = url.startsWith('/') ? `${this.BASE_URL}${url}` : `${this.BASE_URL}/${url}`;
-      console.log('✅ Construida desde ruta parcial:', urlFinal);
-      return urlFinal;
-    }
-
-    console.warn('⚠️ URL no reconocida, retornando original:', url);
-    return url;
+    const folder = tipo === 'perfil' ? 'perfiles' : (tipo === 'portada' ? 'portadas' : 'publicaciones');
+    return Utils.normalizarUrlImagen(url, this.BASE_URL, folder) || '';
   }
 
   // ========== MÉTODOS PARA OBTENER FOTOS ==========

@@ -3,6 +3,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Usuario } from '../../core/modelos/usuario.model';
 import { Theme } from '../../core/servicios/temas';
+import { environment } from '../../../environments/environment';
+import * as Utils from '../../core/utilidades/formateadores';
 
 export interface FormularioEditarPerfil {
   nombre_completo: string;
@@ -25,7 +27,7 @@ export class ModalEditarPerfil {
   @Input() guardando = false;
   @Input() errorGuardado = false;
   @Input() mensajeError = '';
-  @Input() s3BaseUrl = 'https://redstudent-uploads.s3.us-east-2.amazonaws.com';
+  @Input() s3BaseUrl = environment.socketUrl;
 
   @Output() close = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<{
@@ -77,13 +79,7 @@ export class ModalEditarPerfil {
 
   getProfileImage(): string | null {
     if (!this.usuario?.foto_perfil_url) return null;
-
-    if (this.usuario.foto_perfil_url.startsWith('http://') ||
-      this.usuario.foto_perfil_url.startsWith('https://')) {
-      return this.usuario.foto_perfil_url;
-    }
-
-    return `${this.s3BaseUrl}/${this.usuario.foto_perfil_url.replace(/^\/+/, '')}`;
+    return Utils.normalizarUrlImagen(this.usuario.foto_perfil_url, this.s3BaseUrl, 'perfiles');
   }
 
   onFileSelected(event: Event): void {
@@ -97,9 +93,9 @@ export class ModalEditarPerfil {
       return;
     }
 
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      this.errorFoto = 'La imagen no debe superar los 5MB';
+      this.errorFoto = 'La imagen no debe superar los 10MB';
       return;
     }
 

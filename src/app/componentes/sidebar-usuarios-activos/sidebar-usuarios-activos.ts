@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Usuario } from '../../core/modelos/usuario.model';
+import { environment } from '../../../environments/environment';
 
 interface UsuarioConFoto extends Usuario {
   activo: number;
@@ -37,8 +38,7 @@ export class SidebarUsuariosActivos implements OnInit, OnDestroy {
   private subscriptions: Subscription = new Subscription();
   private intervaloActualizacion: any;
 
-  // ✅ BASE URL PARA LOCALHOST
-  private readonly BASE_URL = 'http://localhost:3000';
+  private readonly BASE_URL = environment.socketUrl;
 
   private readonly AVATAR_COLORS = [
     'linear-gradient(to bottom right, #2dd4bf, #0d9488)',
@@ -113,9 +113,9 @@ export class SidebarUsuariosActivos implements OnInit, OnDestroy {
   private construirUrlLocal(foto: string | null): string | null {
     if (!foto) return null;
 
-    // Si ya es URL completa de localhost
-    if (foto.startsWith('http://localhost:3000')) {
-      return foto;
+    // Si es URL de localhost o AWS antigua, reescribir
+    if (foto.startsWith('http://localhost:3000') || foto.startsWith('http://3.146.83.30:3000')) {
+      return foto.replace(/https?:\/\/[^/]+(:[0-9]+)?/, this.BASE_URL);
     }
 
     // Si es ruta relativa
