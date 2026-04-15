@@ -2,7 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } fr
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';
-import { LucideAngularModule, Search, Plus, Users, Shield, Globe, Lock, ArrowRight, MoreHorizontal, Image, FileText, MessageSquare, Camera, Edit, UserCheck, UserPlus, MessageCircle, X, User } from 'lucide-angular';
+import { LucideAngularModule, Search, Plus, Users, Shield, Globe, Lock, ArrowRight, MoreHorizontal, Image, FileText, MessageSquare, Camera, Edit, UserCheck, UserPlus, MessageCircle, X, User, SearchX } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,7 +13,7 @@ export const appConfig: ApplicationConfig = {
       LucideAngularModule.pick({ 
         Search, Plus, Users, Shield, Globe, Lock, ArrowRight, 
         MoreHorizontal, Image, FileText, MessageSquare,
-        Camera, Edit, UserCheck, UserPlus, MessageCircle, X, User
+        Camera, Edit, UserCheck, UserPlus, MessageCircle, X, User, SearchX
       })
     )
   ]
